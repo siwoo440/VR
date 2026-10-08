@@ -88,6 +88,21 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 칠하기는_있는_칸만_바꾼다()
+        {
+            BlockMap map = Create();
+
+            Assert.IsFalse(map.Replace(Vector3Int.zero, 1), "빈 칸은 칠할 수 없어야 합니다.");
+            map.Place(Vector3Int.zero, 0);
+
+            Assert.IsTrue(map.Replace(Vector3Int.zero, 1));
+            Assert.IsTrue(map.TryGet(Vector3Int.zero, out int part));
+            Assert.AreEqual(1, part);
+            Assert.AreEqual(1, map.Count, "칠하기는 블록 수를 바꾸지 않습니다.");
+            Assert.IsFalse(map.Replace(Vector3Int.zero, -1));
+        }
+
+        [Test]
         public void 범위의_두_모서리를_거꾸로_주어도_같은_범위가_된다()
         {
             var map = new BlockMap(new Vector3Int(2, 3, 2), new Vector3Int(-2, 0, -2), 10);

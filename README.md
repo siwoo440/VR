@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 5일차(되돌리기·다시 실행)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 6일차(블록 칠하기와 알림 띠)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -45,6 +45,7 @@
 | 3일차 | 부품 칸에서 고른 블록을 모눈에 놓고 지우기, 놓일 자리 미리 보기 | [`unity/Devlogs/Day03`](unity/Devlogs/Day03/README.md) |
 | 4일차 | 맵 데이터 형식 1판, 놓은 블록을 이 기기에 자동 저장하고 다시 열면 불러오기 | [`unity/Devlogs/Day04`](unity/Devlogs/Day04/README.md) |
 | 5일차 | 놓기·지우기의 되돌리기(Ctrl+Z)와 다시 실행(Ctrl+Y) | [`unity/Devlogs/Day05`](unity/Devlogs/Day05/README.md) |
+| 6일차 | 놓인 블록을 고른 부품으로 칠하기, 화면 위 가운데의 알림 띠 | [`unity/Devlogs/Day06`](unity/Devlogs/Day06/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -55,6 +56,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 1인칭·3인칭 | 마우스 휠 |
 | 부품 고르기 | 1~9 (같은 키를 다시 누르면 풂) |
 | 블록 놓기, 지우기 | 부품을 고른 뒤 마우스 왼쪽, 오른쪽 |
+| 블록 칠하기 | 부품을 고르고 블록을 가리킨 뒤 마우스 가운데 또는 F |
 | 되돌리기, 다시 실행 | Ctrl+Z, Ctrl+Y |
 | 사람들 목록 | Tab |
 | 메뉴 | Esc |
@@ -113,6 +115,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. 블록 칠하기와 알림 띠
-2. 블록 옮기기·돌리기(모양이 다른 부품과 함께)
+1. 만들기 시점(날아다니며 만들기)과 걸어 보기의 전환
+2. Windows 빌드 확인, 블록 옮기기·돌리기(모양이 다른 부품과 함께)
 3. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인

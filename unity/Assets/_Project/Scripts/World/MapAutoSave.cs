@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using AtelierVerse.Core;
 using UnityEngine;
 
 namespace AtelierVerse.World
@@ -105,7 +105,18 @@ namespace AtelierVerse.World
                 header = document;
                 LastLoad = world.Import(document);
                 pending = false;
-                Set(SaveState.Saved, LastLoad.Skipped > 0 ? $"블록 {LastLoad.Skipped}개를 읽지 못했습니다" : "불러왔습니다");
+
+                if (LastLoad.Skipped > 0)
+                {
+                    string skipped = $"블록 {LastLoad.Skipped}개를 읽지 못했습니다";
+                    Set(SaveState.Saved, skipped);
+                    Notice.Post(skipped, NoticeKind.Warning);
+                }
+                else
+                {
+                    Set(SaveState.Saved, "불러왔습니다");
+                }
+
                 return;
             }
 
@@ -118,6 +129,7 @@ namespace AtelierVerse.World
             SetAsidePath = MapStorage.SetAside(path);
             Debug.LogWarning($"[Atelier Verse] 맵 파일을 읽지 못해 옆으로 옮겼습니다({error}): {SetAsidePath ?? path}", this);
             Set(SaveState.Failed, Describe(error));
+            Notice.Post($"{Describe(error)}. 파일은 옆으로 옮겨 두었습니다", NoticeKind.Error);
             MarkDirty();
         }
 
@@ -137,6 +149,7 @@ namespace AtelierVerse.World
                 pending = true;
                 dueTime = Time.unscaledTime + Mathf.Max(delay, 5f);
                 Set(SaveState.Failed, "저장하지 못했습니다");
+                Notice.Post("맵을 저장하지 못했습니다. 잠시 뒤 다시 시도합니다", NoticeKind.Error);
                 return false;
             }
 

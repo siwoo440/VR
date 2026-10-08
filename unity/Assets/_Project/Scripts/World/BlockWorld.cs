@@ -89,6 +89,22 @@ namespace AtelierVerse.World
             return true;
         }
 
+        /// <summary>있는 블록의 부품을 바꾼다(칠하기). 화면의 재질도 함께 바뀐다.</summary>
+        public bool Replace(Vector3Int cell, int partIndex)
+        {
+            if (catalog == null || !catalog.IsValid(partIndex)) return false;
+            if (!Map.Replace(cell, partIndex)) return false;
+
+            if (views.TryGetValue(cell, out PlacedBlock block) && block != null)
+            {
+                block.Initialize(cell, partIndex);
+                if (block.TryGetComponent(out Renderer blockRenderer)) blockRenderer.sharedMaterial = catalog.Get(partIndex).material;
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
         /// <summary>블록을 모두 지운다.</summary>
         public void Clear()
         {

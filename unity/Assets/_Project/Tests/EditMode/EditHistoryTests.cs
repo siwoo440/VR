@@ -165,6 +165,52 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 칠하기를_되돌리면_이전_부품으로_돌아온다()
+        {
+            BlockMap map = CreateMap();
+            map.Place(A, 0);
+            var history = new EditHistory(map);
+
+            Assert.IsTrue(history.Replace(A, 2));
+            Assert.IsTrue(map.TryGet(A, out int painted));
+            Assert.AreEqual(2, painted);
+
+            Assert.IsTrue(history.Undo());
+            Assert.IsTrue(map.TryGet(A, out int restored));
+            Assert.AreEqual(0, restored);
+
+            Assert.IsTrue(history.Redo());
+            Assert.IsTrue(map.TryGet(A, out int again));
+            Assert.AreEqual(2, again);
+        }
+
+        [Test]
+        public void 같은_부품이나_없는_칸은_칠하기가_기록되지_않는다()
+        {
+            BlockMap map = CreateMap();
+            map.Place(A, 0);
+            var history = new EditHistory(map);
+
+            Assert.IsFalse(history.Replace(A, 0));
+            Assert.IsFalse(history.Replace(B, 1));
+            Assert.IsFalse(history.CanUndo);
+        }
+
+        [Test]
+        public void 칠한_뒤_지우기를_되돌리면_칠한_부품으로_돌아온다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            history.Place(A, 0);
+            history.Replace(A, 3);
+            history.Remove(A);
+
+            Assert.IsTrue(history.Undo());
+            Assert.IsTrue(map.TryGet(A, out int part));
+            Assert.AreEqual(3, part);
+        }
+
+        [Test]
         public void 비우면_되돌리기와_다시_실행이_모두_사라진다()
         {
             BlockMap map = CreateMap();

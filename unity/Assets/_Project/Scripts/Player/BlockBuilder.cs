@@ -1,18 +1,31 @@
+using AtelierVerse.Core;
 using AtelierVerse.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace AtelierVerse.Player
 {
+    /// <summary>놓을 수 없는 까닭. 알림 띠에 보여 준다.</summary>
+    public enum BlockedReason
+    {
+        None,
+        OutOfBounds,
+        Occupied,
+        Full,
+        Overlap,
+    }
+
     /// <summary>
-    /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지운다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
+    /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠한다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
     /// 부품을 고르고 마우스를 잡은 상태에서만 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
-    /// 놓기와 지우기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다.
+    /// 놓기·지우기·칠하기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
     /// </summary>
     [RequireComponent(typeof(DesktopPlayerController))]
     public class BlockBuilder : MonoBehaviour
     {
         public const int NoPart = -1;
+        public const string PaintTargetMessage = "칠할 블록을 가리키세요";
+        public const string SamePartMessage = "이미 같은 부품입니다";
 
         private const string MapName = "Player";
         private const float OverlapMargin = 0.49f;
@@ -31,6 +44,7 @@ namespace AtelierVerse.Player
         private MaterialPropertyBlock ghostColor;
         private InputAction placeAction;
         private InputAction removeAction;
+        private InputAction paintAction;
         private bool wasActive;
         private bool hasRemoveTarget;
         private Vector3Int removeCell;
@@ -45,6 +59,12 @@ namespace AtelierVerse.Player
         public Vector3Int TargetCell { get; private set; }
 
         public bool CanPlaceAtTarget { get; private set; }
+
+        /// <summary>조준한 칸에 놓을 수 없는 까닭. 놓을 수 있으면 None이다.</summary>
+        public BlockedReason Blocked { get; private set; }
+
+        /// <summary>조준한 곳에 지우거나 칠할 블록이 있는지.</summary>
+        public bool HasBlockTarget => hasRemoveTarget;
 
         public BlockWorld World => world;
 
@@ -80,6 +100,7 @@ namespace AtelierVerse.Player
             InputActionMap map = actions.FindActionMap(MapName, true);
             placeAction = map.FindAction("Place", true);
             removeAction = map.FindAction("Remove", true);
+            paintAction = map.FindAction("Paint", true);
             map.Enable();
         }
 
@@ -107,17 +128,55 @@ namespace AtelierVerse.Player
 
             if (placeAction.WasPressedThisFrame()) PlaceAtTarget();
             else if (removeAction.WasPressedThisFrame()) RemoveAtTarget();
+            else if (paintAction.WasPressedThisFrame()) PaintAtTarget();
         }
 
         private bool PlaceAtTarget()
         {
-            if (!HasTarget || !CanPlaceAtTarget) return false;
+            if (!HasTarget) return false;
+
+            if (!CanPlaceAtTarget)
+            {
+                Notice.Post(Describe(Blocked), NoticeKind.Warning);
+                return false;
+            }
+
             return world.History.Place(TargetCell, SelectedPart) == PlaceResult.Ok;
         }
 
         private bool RemoveAtTarget()
         {
             return hasRemoveTarget && world.History.Remove(removeCell);
+        }
+
+        /// <summary>조준한 블록을 고른 부품으로 바꾼다. 블록이 없거나 이미 같은 부품이면 알림만 올린다.</summary>
+        private bool PaintAtTarget()
+        {
+            if (!hasRemoveTarget)
+            {
+                Notice.Post(PaintTargetMessage);
+                return false;
+            }
+
+            if (world.TryGetPart(removeCell, out int current) && current == SelectedPart)
+            {
+                Notice.Post(SamePartMessage);
+                return false;
+            }
+
+            return world.History.Replace(removeCell, SelectedPart);
+        }
+
+        private string Describe(BlockedReason reason)
+        {
+            switch (reason)
+            {
+                case BlockedReason.OutOfBounds: return "맵 바깥에는 놓을 수 없습니다";
+                case BlockedReason.Occupied: return "이미 블록이 있는 칸입니다";
+                case BlockedReason.Full: return $"블록이 {world.MaxBlocks}개에 닿아 더 놓을 수 없습니다";
+                case BlockedReason.Overlap: return "캐릭터나 다른 물체와 겹쳐 놓을 수 없습니다";
+                default: return "여기에는 놓을 수 없습니다";
+            }
         }
 
         /// <summary>
@@ -127,6 +186,7 @@ namespace AtelierVerse.Player
         {
             HasTarget = false;
             CanPlaceAtTarget = false;
+            Blocked = BlockedReason.None;
             hasRemoveTarget = false;
             if (!active || player.ViewCamera == null) return;
 
@@ -137,13 +197,29 @@ namespace AtelierVerse.Player
             float cellSize = GridMath.DefaultCellSize;
             TargetCell = GridMath.WorldToCell(hit.point + hit.normal * (cellSize * 0.5f));
             HasTarget = true;
-            CanPlaceAtTarget = world.CheckPlace(TargetCell) == PlaceResult.Ok
-                && !Physics.CheckBox(GridMath.CellToWorldCenter(TargetCell), Vector3.one * (cellSize * OverlapMargin), Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+
+            PlaceResult check = world.CheckPlace(TargetCell);
+            bool overlap = check == PlaceResult.Ok
+                && Physics.CheckBox(GridMath.CellToWorldCenter(TargetCell), Vector3.one * (cellSize * OverlapMargin), Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            Blocked = ReasonOf(check, overlap);
+            CanPlaceAtTarget = Blocked == BlockedReason.None;
 
             if (hit.collider.TryGetComponent(out PlacedBlock block))
             {
                 hasRemoveTarget = true;
                 removeCell = block.Cell;
+            }
+        }
+
+        private static BlockedReason ReasonOf(PlaceResult check, bool overlap)
+        {
+            switch (check)
+            {
+                case PlaceResult.OutOfBounds: return BlockedReason.OutOfBounds;
+                case PlaceResult.Occupied: return BlockedReason.Occupied;
+                case PlaceResult.Full: return BlockedReason.Full;
+                case PlaceResult.UnknownPart: return BlockedReason.Occupied;
+                default: return overlap ? BlockedReason.Overlap : BlockedReason.None;
             }
         }
 

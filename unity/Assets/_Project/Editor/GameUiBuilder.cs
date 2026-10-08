@@ -89,6 +89,7 @@ namespace AtelierVerse.EditorTools
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
             TMP_Text saveLabel = BuildSaveChip(hud);
+            BuildNoticeBar(hud);
             GameObject crosshair = BuildCrosshair(hud);
             GameObject focusHint = BuildFocusHint(hud);
 
@@ -263,13 +264,14 @@ namespace AtelierVerse.EditorTools
             return view;
         }
 
-        /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
+        /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 칠하고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
         private static GameObject BuildBuildHint(RectTransform hud, out TMP_Text countLabel)
         {
             (string key, string label)[] hints =
             {
                 ("왼쪽 누르기", "놓기"),
                 ("오른쪽 누르기", "지우기"),
+                ("가운데·F", "칠하기"),
                 ("Ctrl+Z", "되돌리기"),
                 ("Ctrl+Y", "다시 실행"),
             };
@@ -352,6 +354,40 @@ namespace AtelierVerse.EditorTools
             TMP_Text label = UiFactory.Text("Label", glass.transform, "저장 준비 중", 18f, Paper, true, TextAlignmentOptions.Center);
             UiFactory.Fill(label.rectTransform, 34f, 0f, 12f, 0f);
             return label;
+        }
+
+        /// <summary>화면 위 가운데의 알림 띠(6일차). 평소에는 숨겨져 있고 Notice.Post가 오면 잠시 보인다. 너비는 실행 중에 글자에 맞춘다.</summary>
+        private static NoticeBar BuildNoticeBar(RectTransform hud)
+        {
+            RectTransform holder = UiFactory.Rect("Notice", hud);
+            UiFactory.Place(holder, UiFactory.TopLeft, Vector2.zero, Vector2.zero);
+            holder.anchorMin = new Vector2(0f, 1f);
+            holder.anchorMax = new Vector2(1f, 1f);
+            holder.pivot = new Vector2(0.5f, 1f);
+            holder.anchoredPosition = Vector2.zero;
+            holder.sizeDelta = new Vector2(0f, 0f);
+
+            Image glass = UiFactory.Box("Bar", holder, DarkGlass, 24f);
+            UiFactory.Place(glass.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -Margin - 6f), new Vector2(480f, 48f));
+
+            Image dot = UiFactory.Box("Dot", glass.transform, AtelierPalette.Leaf, 6f);
+            UiFactory.Place(dot.rectTransform, UiFactory.MiddleLeft, new Vector2(16f, 0f), new Vector2(12f, 12f));
+
+            TMP_Text label = UiFactory.Text("Label", glass.transform, string.Empty, 20f, Paper, true, TextAlignmentOptions.Center);
+            UiFactory.Fill(label.rectTransform, 34f, 0f, 34f, 0f);
+
+            glass.gameObject.SetActive(false);
+
+            var bar = holder.gameObject.AddComponent<NoticeBar>();
+            var serialized = new SerializedObject(bar);
+            serialized.FindProperty("bar").objectReferenceValue = glass.gameObject;
+            serialized.FindProperty("label").objectReferenceValue = label;
+            serialized.FindProperty("dot").objectReferenceValue = dot;
+            serialized.FindProperty("infoColor").colorValue = AtelierPalette.Leaf;
+            serialized.FindProperty("warningColor").colorValue = Gold;
+            serialized.FindProperty("errorColor").colorValue = AtelierPalette.Clay;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return bar;
         }
 
         private static GameObject BuildCrosshair(RectTransform hud)
@@ -633,12 +669,12 @@ namespace AtelierVerse.EditorTools
             {
                 ("W A S D", "걷기"),
                 ("마우스", "둘러보기"),
-                ("Space", "점프"),
-                ("Shift", "달리기"),
+                ("Space · Shift", "점프 · 달리기"),
                 ("휠", "1인칭·3인칭 바꾸기"),
                 ("1~9", "부품 고르기"),
                 ("왼쪽 누르기", "블록 놓기"),
                 ("오른쪽 누르기", "블록 지우기"),
+                ("가운데 · F", "블록 칠하기"),
                 ("Ctrl+Z", "되돌리기"),
                 ("Ctrl+Y", "다시 실행"),
                 ("Tab", "사람들 목록"),

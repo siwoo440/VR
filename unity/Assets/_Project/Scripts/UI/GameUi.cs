@@ -16,6 +16,9 @@ namespace AtelierVerse.UI
     /// </summary>
     public class GameUi : MonoBehaviour
     {
+        public const string NothingToUndoMessage = "되돌릴 것이 없습니다";
+        public const string NothingToRedoMessage = "다시 실행할 것이 없습니다";
+
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
 
@@ -215,8 +218,8 @@ namespace AtelierVerse.UI
             // 되돌리기는 부품을 고르지 않았거나 마우스를 잡지 않았어도 되지만, 메뉴가 열려 있으면 이 메서드까지 오지 않는다.
             if (world != null)
             {
-                if (undoAction.WasPressedThisFrame()) world.History.Undo();
-                else if (redoAction.WasPressedThisFrame()) world.History.Redo();
+                if (undoAction.WasPressedThisFrame() && !world.History.Undo()) Notice.Post(NothingToUndoMessage);
+                else if (redoAction.WasPressedThisFrame() && !world.History.Redo()) Notice.Post(NothingToRedoMessage);
             }
 
             if (hotbar == null) return;

@@ -89,6 +89,15 @@ namespace AtelierVerse.World
             return blocks.Remove(cell);
         }
 
+        /// <summary>있는 블록의 부품을 바꾼다. 블록이 없거나 부품 번호가 음수이면 false다.</summary>
+        public bool Replace(Vector3Int cell, int partIndex)
+        {
+            if (partIndex < 0 || !blocks.ContainsKey(cell)) return false;
+
+            blocks[cell] = partIndex;
+            return true;
+        }
+
         public void Clear()
         {
             blocks.Clear();
