@@ -108,7 +108,7 @@ node scripts/serve.mjs
 
 ## 다음 할 일
 
-지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
+지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
 1. 맵의 데이터 형식 확정 (부품 + 속성 + 동작), 놓은 블록 저장하고 불러오기
 2. 블록 옮기기·돌리기·칠하기와 실행 취소
