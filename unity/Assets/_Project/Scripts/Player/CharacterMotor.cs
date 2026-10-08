@@ -28,13 +28,16 @@ namespace AtelierVerse.Player
         private float verticalVelocity;
         private bool jumpRequested;
 
+        // 자신의 마지막 걸음에서 바닥에 닿았는지. Shift처럼 다른 이동이 끼어도 점프와 중력의 판단이 흔들리지 않게 따로 기억한다.
+        private bool grounded;
+
         /// <summary>날기를 켜거나 끌 때 알린다. 값이 true이면 날고 있다.</summary>
         public event Action<bool> FlyModeChanged;
 
         /// <summary>날고 있는지(만들기 시점). 시작할 때와 시작 위치로 돌아갈 때는 걷기다.</summary>
         public bool IsFlying { get; private set; }
 
-        public bool IsGrounded => controller != null && controller.isGrounded;
+        public bool IsGrounded => grounded;
 
         public float WalkSpeed => walkSpeed;
 
@@ -108,8 +111,22 @@ namespace AtelierVerse.Player
             controller.enabled = false;
             transform.SetPositionAndRotation(startPosition, startRotation);
             verticalVelocity = 0f;
+            grounded = false;
             controller.enabled = true;
             SetFlying(false);
+        }
+
+        /// <summary>
+        /// 의도와 상관없이 몸을 수평으로 조금 옮긴다. VR에서 실제로 걸어 머리가 몸에서 벗어났을 때 몸을 머리 밑으로 데려오는 데 쓴다.
+        /// 벽이나 블록에 막히면 덜 옮겨지며, 실제로 옮겨진 만큼을 돌려준다.
+        /// </summary>
+        public Vector3 Shift(Vector3 worldDelta)
+        {
+            if (controller == null || !controller.enabled) return Vector3.zero;
+
+            Vector3 before = transform.position;
+            controller.Move(new Vector3(worldDelta.x, 0f, worldDelta.z));
+            return transform.position - before;
         }
 
         /// <summary>날기를 켜거나 끈다. 끄면 그 자리에서 떨어지기 시작한다.</summary>
@@ -145,7 +162,7 @@ namespace AtelierVerse.Player
             bool jump = jumpRequested;
             jumpRequested = false;
 
-            if (controller.isGrounded)
+            if (grounded)
             {
                 verticalVelocity = -1f;
                 if (jump) verticalVelocity = Mathf.Sqrt(-2f * gravity * jumpHeight);
@@ -154,6 +171,7 @@ namespace AtelierVerse.Player
             verticalVelocity += gravity * deltaTime;
             Vector3 planar = PlanarDirection() * (Sprint ? sprintSpeed : walkSpeed);
             controller.Move((planar + Vector3.up * verticalVelocity) * deltaTime);
+            grounded = controller.isGrounded;
 
             if (avatar != null) avatar.Animate(planar.magnitude, deltaTime);
         }
@@ -163,6 +181,7 @@ namespace AtelierVerse.Player
         {
             jumpRequested = false;
             controller.Move(ComposeFlyMove(PlanarDirection(), Ascend, Descend, flySpeed) * deltaTime);
+            grounded = controller.isGrounded;
 
             if (avatar != null) avatar.Animate(0f, deltaTime);
         }

@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 9일차(조작과 겉모습 나누기)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 10일차(VR 조작과 추적 리그, 실제 헤드셋 연결 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -49,6 +49,7 @@
 | 7일차 | 날기(만들기 시점)와 걸어 보기의 전환 | [`unity/Devlogs/Day07`](unity/Devlogs/Day07/README.md) |
 | 8일차 | Windows 빌드 스크립트, 실제 빌드와 실행 확인, 메뉴의 버전 표시 | [`unity/Devlogs/Day08`](unity/Devlogs/Day08/README.md) |
 | 9일차 | 캐릭터를 몸·카메라 리그·PC 조작으로 나눔(동작은 그대로) | [`unity/Devlogs/Day09`](unity/Devlogs/Day09/README.md) |
+| 10일차 | VR 조작과 추적 리그(머리·두 손, 스틱 이동, 끊어서 돌기). 기본은 키보드·마우스 | [`unity/Devlogs/Day10`](unity/Devlogs/Day10/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -64,6 +65,15 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 되돌리기, 다시 실행 | Ctrl+Z, Ctrl+Y |
 | 사람들 목록 | Tab |
 | 메뉴 | Esc |
+
+VR 조작도 들어 있습니다. 다만 실제 헤드셋에 화면을 내는 연결(OpenXR 패키지)이 아직 없어 가상 기기 테스트로만 확인했습니다.
+
+| VR 조작 | 입력 |
+| --- | --- |
+| 걷기, 달리기 | 왼쪽 스틱(머리가 보는 쪽이 앞), 스틱을 누른 채 밀기 |
+| 돌기 | 오른쪽 스틱 좌우(45도씩 끊어서) |
+| 점프, 날기 켜고 끄기 | 오른손 첫째 단추, 둘째 단추 |
+| 날 때 위·아래 | 오른쪽 스틱 위아래 |
 
 ## Windows 빌드 만들기
 
@@ -131,6 +141,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인
-2. 모양이 다른 부품과 옮기기·돌리기, 부품 고르는 창
-3. 여러 맵 다루기, 시작 위치와 맵 정보
+1. OpenXR 패키지를 넣어 실제 헤드셋에 잇기(패키지 내려받기는 사용자 허락 뒤), VR 메뉴와 VR에서 만들기
+2. Unity Hub에서 Android 빌드 구성 설치(사용자), Quest 단독 빌드와 성능 재기
+3. 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기

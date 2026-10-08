@@ -327,7 +327,9 @@ namespace AtelierVerse.UI
             bool building = hotbar != null && hotbar.SelectedIndex != HotbarModel.None;
 
             if (crosshair != null) crosshair.SetActive(captured && !menuOpen && (firstPerson || building));
-            if (focusHint != null) focusHint.SetActive(!captured && !menuOpen);
+            // "화면을 누르면 둘러볼 수 있습니다"는 마우스를 잡아야 하는 PC 조작에서만 뜻이 있다.
+            bool desktopControl = player != null && player.isActiveAndEnabled;
+            if (focusHint != null) focusHint.SetActive(desktopControl && !captured && !menuOpen);
 
             if (viewLabel != null && (!viewLabelSet || viewLabelFirstPerson != firstPerson))
             {

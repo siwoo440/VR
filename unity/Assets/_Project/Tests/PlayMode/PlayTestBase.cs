@@ -51,6 +51,9 @@ namespace AtelierVerse.Tests
             // 저장 위치는 여기서 바꾸지 않는다. 앞 테스트의 씬이 아직 떠 있어, 바꾸면 그 씬의 남은 변경이 이 테스트의 폴더에 쓰인다.
             mapDirectory = Path.Combine(TestMapRoot, Path.GetRandomFileName());
 
+            // 조작 방식은 테스트마다 기본(키보드·마우스)으로 돌려 둔다. VR 테스트만 씬을 열기 전에 바꾼다.
+            PlayerModeSwitch.Forced = null;
+
             previousFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = TestFrameRate;
 
@@ -78,6 +81,7 @@ namespace AtelierVerse.Tests
             MapAutoSave autoSave = UnityEngine.Object.FindAnyObjectByType<MapAutoSave>();
             if (autoSave != null && autoSave.HasPendingChanges) autoSave.SaveNow();
             if (Directory.Exists(mapDirectory)) Directory.Delete(mapDirectory, true);
+            PlayerModeSwitch.Forced = null;
 
             base.TearDown();
         }
