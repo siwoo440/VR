@@ -16,8 +16,9 @@ namespace AtelierVerse.Player
     }
 
     /// <summary>
-    /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠한다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
-    /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
+    /// 고른 부품을 조준한 자리에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠한다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
+    /// 블록은 칸에 맞추지 않고 가리킨 면 위의 바로 그 자리에 놓인다(14일차). 다른 블록과는 겹쳐도 된다.
+    /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 블록이 아닌 물체와 겹치는 자리에는 놓지 않는다.
     /// 놓기·지우기·칠하기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
     /// 조준 광선, 조작이 막혔는지, 어느 입력 묶음을 읽을지는 이 기기의 캐릭터(LocalPlayer)에게 물으므로 조작 방식을 직접 알지 않는다.
     /// 그래서 PC의 마우스와 VR의 컨트롤러가 같은 길로 블록을 놓는다.
@@ -32,6 +33,7 @@ namespace AtelierVerse.Player
         private const float OverlapMargin = 0.49f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly Collider[] OverlapBuffer = new Collider[32];
 
         [SerializeField] private InputActionAsset actions;
         [SerializeField] private Renderer ghostPrefab;
@@ -48,24 +50,27 @@ namespace AtelierVerse.Player
         private InputAction paintAction;
         private bool wasActive;
         private bool hasRemoveTarget;
-        private Vector3Int removeCell;
+        private int targetBlockId;
 
         /// <summary>놓을 부품의 번호. 고른 부품이 없으면 NoPart다.</summary>
         public int SelectedPart { get; set; } = NoPart;
 
-        /// <summary>조준한 곳에 놓일 칸이 있는지.</summary>
+        /// <summary>조준한 곳에 놓일 자리가 있는지.</summary>
         public bool HasTarget { get; private set; }
 
-        /// <summary>왼쪽을 누르면 블록이 놓일 칸.</summary>
-        public Vector3Int TargetCell { get; private set; }
+        /// <summary>놓기를 누르면 블록이 놓일 자리(블록의 가운데).</summary>
+        public Vector3 TargetPosition { get; private set; }
 
         public bool CanPlaceAtTarget { get; private set; }
 
-        /// <summary>조준한 칸에 놓을 수 없는 까닭. 놓을 수 있으면 None이다.</summary>
+        /// <summary>조준한 자리에 놓을 수 없는 까닭. 놓을 수 있으면 None이다.</summary>
         public BlockedReason Blocked { get; private set; }
 
         /// <summary>조준한 곳에 지우거나 칠할 블록이 있는지.</summary>
         public bool HasBlockTarget => hasRemoveTarget;
+
+        /// <summary>조준한 블록의 번호. HasBlockTarget일 때만 뜻이 있다.</summary>
+        public int TargetBlockId => targetBlockId;
 
         /// <summary>조준 광선이 닿는 거리 안의 무엇인가에 닿았는지.</summary>
         public bool HasAimHit { get; private set; }
@@ -167,12 +172,12 @@ namespace AtelierVerse.Player
                 return false;
             }
 
-            return world.History.Place(TargetCell, SelectedPart) == PlaceResult.Ok;
+            return world.History.Place(SelectedPart, TargetPosition) == PlaceResult.Ok;
         }
 
         private bool RemoveAtTarget()
         {
-            return hasRemoveTarget && world.History.Remove(removeCell);
+            return hasRemoveTarget && world.History.Remove(targetBlockId);
         }
 
         /// <summary>조준한 블록을 고른 부품으로 바꾼다. 블록이 없거나 이미 같은 부품이면 알림만 올린다.</summary>
@@ -184,13 +189,13 @@ namespace AtelierVerse.Player
                 return false;
             }
 
-            if (world.TryGetPart(removeCell, out int current) && current == SelectedPart)
+            if (world.TryGet(targetBlockId, out BlockRecord current) && current.Part == SelectedPart)
             {
                 Notice.Post(SamePartMessage);
                 return false;
             }
 
-            return world.History.Replace(removeCell, SelectedPart);
+            return world.History.Replace(targetBlockId, SelectedPart);
         }
 
         private string Describe(BlockedReason reason)
@@ -198,7 +203,7 @@ namespace AtelierVerse.Player
             switch (reason)
             {
                 case BlockedReason.OutOfBounds: return "맵 바깥에는 놓을 수 없습니다";
-                case BlockedReason.Occupied: return "이미 블록이 있는 칸입니다";
+                case BlockedReason.Occupied: return "이미 같은 자리에 블록이 있습니다";
                 case BlockedReason.Full: return $"블록이 {world.MaxBlocks}개에 닿아 더 놓을 수 없습니다";
                 case BlockedReason.Overlap: return "캐릭터나 다른 물체와 겹쳐 놓을 수 없습니다";
                 default: return "여기에는 놓을 수 없습니다";
@@ -206,7 +211,8 @@ namespace AtelierVerse.Player
         }
 
         /// <summary>
-        /// 조준 광선이 가리키는 곳을 찾는다. 닿은 면의 바깥쪽 칸이 놓일 칸이고, 닿은 것이 놓인 블록이면 그 블록이 지울 대상이다.
+        /// 조준 광선이 가리키는 곳을 찾는다. 닿은 면 위의 그 자리에 블록을 얹은 곳이 놓일 자리이고, 닿은 것이 놓인 블록이면 그 블록이 지우거나 칠할 대상이다.
+        /// 바닥에 묻히는 자리는 바닥 위로 올린다.
         /// </summary>
         private void UpdateTarget(bool active)
         {
@@ -222,21 +228,34 @@ namespace AtelierVerse.Player
             HasAimHit = true;
             AimDistance = hit.distance;
 
-            float cellSize = GridMath.DefaultCellSize;
-            TargetCell = GridMath.WorldToCell(hit.point + hit.normal * (cellSize * 0.5f));
+            TargetPosition = world.ClampHeight(BlockMap.RestOn(hit.point, hit.normal));
             HasTarget = true;
 
-            PlaceResult check = world.CheckPlace(TargetCell);
-            bool overlap = check == PlaceResult.Ok
-                && Physics.CheckBox(GridMath.CellToWorldCenter(TargetCell), Vector3.one * (cellSize * OverlapMargin), Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            PlaceResult check = world.CheckPlace(TargetPosition);
+            bool overlap = check == PlaceResult.Ok && OverlapsOther(TargetPosition);
             Blocked = ReasonOf(check, overlap);
             CanPlaceAtTarget = Blocked == BlockedReason.None;
 
-            if (hit.collider.TryGetComponent(out PlacedBlock block))
+            if (hit.collider.TryGetComponent(out PlacedBlock block) && block.Id != BlockMap.NoId)
             {
                 hasRemoveTarget = true;
-                removeCell = block.Cell;
+                targetBlockId = block.Id;
             }
+        }
+
+        /// <summary>
+        /// 이 자리에 표준 블록을 놓으면 캐릭터나 블록이 아닌 물체와 겹치는지. 놓인 블록끼리는 겹쳐도 되므로 세지 않는다.
+        /// </summary>
+        private static bool OverlapsOther(Vector3 center)
+        {
+            Vector3 half = Vector3.one * (GridMath.DefaultCellSize * OverlapMargin);
+            int count = Physics.OverlapBoxNonAlloc(center, half, OverlapBuffer, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                if (!OverlapBuffer[i].TryGetComponent(out PlacedBlock _)) return true;
+            }
+
+            return false;
         }
 
         private static BlockedReason ReasonOf(PlaceResult check, bool overlap)
@@ -262,7 +281,7 @@ namespace AtelierVerse.Player
             color.a = ghostAlpha;
             ghostColor.SetColor(BaseColorId, color);
             ghost.SetPropertyBlock(ghostColor);
-            ghost.transform.SetPositionAndRotation(GridMath.CellToWorldCenter(TargetCell), Quaternion.identity);
+            ghost.transform.SetPositionAndRotation(TargetPosition, Quaternion.identity);
         }
     }
 }

@@ -325,18 +325,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Block_2_1_3
       objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -402,10 +390,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_0_0_4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
@@ -965,18 +949,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Block_2_1_2
       objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1039,18 +1011,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Block_4_1_3
       objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1112,14 +1072,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_3_0_3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1188,14 +1140,6 @@ PrefabInstance:
       value: Block_-4_0_1
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: -4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
       value: 1
       objectReference: {fileID: 0}
@@ -1260,14 +1204,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_4_0_3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1443,18 +1379,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Block_3_1_3
       objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1517,14 +1441,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Block_3_0_2
       objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1586,18 +1502,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_4_1_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1664,14 +1568,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_-4_0_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: -4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
@@ -2033,14 +1929,6 @@ PrefabInstance:
       value: Block_-5_0_1
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: -5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
       value: 1
       objectReference: {fileID: 0}
@@ -2105,14 +1993,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_4_0_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2179,14 +2059,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_0_1_4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
@@ -2369,14 +2241,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_-1_0_4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
@@ -2680,14 +2544,6 @@ PrefabInstance:
       value: Block_-5_0_2
       objectReference: {fileID: 0}
     - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: -5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: partIndex
       value: 1
       objectReference: {fileID: 0}
@@ -2752,14 +2608,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_2_0_3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2934,18 +2782,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_3_1_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3232,14 +3068,6 @@ PrefabInstance:
     - target: {fileID: 3971723928454848500, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
       propertyPath: m_Name
       value: Block_2_0_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8943157711330964482, guid: 270549f03afb33344ab14631bca5f3f6, type: 3}
-      propertyPath: cell.z
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

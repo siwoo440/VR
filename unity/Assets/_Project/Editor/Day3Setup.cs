@@ -305,8 +305,8 @@ namespace AtelierVerse.EditorTools
                 block.name = $"Block_{cell.x}_{cell.y}_{cell.z}";
                 block.transform.SetPositionAndRotation(GridMath.CellToWorldCenter(cell), Quaternion.identity);
 
+                // 블록의 자리는 트랜스폼이 가진다. 번호는 실행할 때 블록 세계가 붙인다(14일차).
                 var blockData = new SerializedObject(block);
-                blockData.FindProperty("cell").vector3IntValue = cell;
                 blockData.FindProperty("partIndex").intValue = partIndex;
                 blockData.ApplyModifiedPropertiesWithoutUndo();
 

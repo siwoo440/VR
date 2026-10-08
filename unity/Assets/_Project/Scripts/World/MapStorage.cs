@@ -72,6 +72,26 @@ namespace AtelierVerse.World
             return MapDocument.TryParse(json, out document, out error);
         }
 
+        /// <summary>
+        /// 파일의 사본을 옆에 남긴다(이름 뒤에 suffix). 옛 판의 파일을 새 판으로 고쳐 쓰기 전에 원래 내용을 남겨 두는 데 쓴다.
+        /// 이미 같은 이름의 사본이 있으면 그대로 두고 그 경로를 돌려준다. 남기지 못하면 null이다.
+        /// </summary>
+        public static string Backup(string path, string suffix)
+        {
+            if (!File.Exists(path)) return null;
+
+            string copy = path + suffix;
+            try
+            {
+                if (!File.Exists(copy)) File.Copy(path, copy);
+                return copy;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
         /// <summary>읽지 못한 파일을 옆에 두고(.broken-시각) 원래 이름을 비운다. 덮어써서 내용을 잃지 않게 하기 위해서다.</summary>
         public static string SetAside(string path)
         {

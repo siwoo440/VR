@@ -42,6 +42,9 @@ namespace AtelierVerse.World
         /// <summary>마지막으로 읽지 못한 파일을 옮겨 둔 경로. 없으면 null이다.</summary>
         public string SetAsidePath { get; private set; }
 
+        /// <summary>옛 판의 파일을 새 판으로 올려 읽었을 때 원래 파일을 남겨 둔 경로. 없으면 null이다.</summary>
+        public string BackupPath { get; private set; }
+
         public string FilePath => MapStorage.LocalPath;
 
         public bool HasPendingChanges => pending;
@@ -74,7 +77,7 @@ namespace AtelierVerse.World
                 return;
             }
 
-            header = MapDocument.Create(mapName, world.MinCell, world.MaxCell);
+            header = MapDocument.Create(mapName, world.BoundsMin, world.BoundsMax);
             if (loadOnStart) LoadOrAdopt();
         }
 
@@ -115,6 +118,13 @@ namespace AtelierVerse.World
                 else
                 {
                     Set(SaveState.Saved, "불러왔습니다");
+                }
+
+                // 옛 판의 파일이면 원래 파일을 옆에 남기고, 곧 지금 판으로 다시 저장한다.
+                if (document.WasUpgraded)
+                {
+                    BackupPath = MapStorage.Backup(path, $".v{document.LoadedVersion}.bak");
+                    MarkDirty();
                 }
 
                 return;

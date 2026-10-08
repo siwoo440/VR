@@ -243,8 +243,8 @@ namespace AtelierVerse.Tests
 
             // 머리 앞 1.2m쯤에 블록을 세운다.
             BlockWorld world = Object.FindAnyObjectByType<BlockWorld>();
-            Vector3Int cell = GridMath.WorldToCell(rig.Head.position + rig.HeadForwardOnPlane * 1.2f);
-            Assert.AreEqual(PlaceResult.Ok, world.Place(cell, 0), "앞을 막을 블록을 놓지 못했습니다.");
+            Vector3 wallSpot = rig.Head.position + rig.HeadForwardOnPlane * 1.2f;
+            Assert.AreEqual(PlaceResult.Ok, world.Add(0, wallSpot), "앞을 막을 블록을 놓지 못했습니다.");
             yield return new WaitForFixedUpdate();
             yield return Frames(2);
             Assert.IsTrue(Physics.Raycast(rig.Head.position, rig.HeadForwardOnPlane, out RaycastHit wall, 3f), "블록이 머리 앞을 막고 있지 않습니다.");

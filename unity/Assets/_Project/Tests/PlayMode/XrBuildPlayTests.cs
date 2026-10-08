@@ -20,8 +20,11 @@ namespace AtelierVerse.Tests
         private const int GoldPart = 0;
         private const int BluePart = 1;
 
-        // 캐릭터가 처음 서는 자리(0.5, 0, -5.5)의 3m 앞에 있는 빈 바닥 칸.
-        private static readonly Vector3Int FloorCell = new Vector3Int(0, 0, -3);
+        // 캐릭터가 처음 서는 자리(0.5, 0, -5.5)의 3m 앞 빈 바닥에 블록을 얹었을 때의 가운데 자리.
+        private static readonly Vector3 FloorSpot = new Vector3(0.5f, 0.5f, -2.5f);
+
+        // 칸에 맞지 않는 바닥의 한 점.
+        private static readonly Vector3 OffGridPoint = new Vector3(0.83f, 0f, -2.37f);
 
         private BlockWorld world;
         private BlockBuilder builder;
@@ -96,50 +99,66 @@ namespace AtelierVerse.Tests
             int before = world.Count;
             ui.Hotbar.Select(GoldPart);
 
-            Vector3 floorPoint = GridMath.CellToWorldCenter(FloorCell);
+            Vector3 floorPoint = FloorSpot;
             floorPoint.y = 0f;
             yield return PointRightHandAt(floorPoint);
 
             Assert.IsFalse(ui.Player.IsPointingAtUi);
             Assert.IsTrue(builder.HasTarget, "가리킨 곳에 놓일 칸이 없습니다.");
-            Assert.AreEqual(FloorCell, builder.TargetCell);
+            Assert.Less(Vector3.Distance(FloorSpot, builder.TargetPosition), 0.01f, "가리킨 바닥 위의 자리가 아닙니다.");
             Assert.IsTrue(builder.CanPlaceAtTarget);
             Assert.IsTrue(builder.HasAimHit);
             Assert.AreEqual(Vector3.Distance(rig.RightPointer.position, floorPoint), rig.PointerLength, 0.05f, "광선이 블록을 놓을 자리에서 끝나지 않았습니다.");
 
             GameObject ghost = GameObject.Find("BlockGhost");
             Assert.IsNotNull(ghost, "놓일 자리의 미리 보기 블록이 보이지 않습니다.");
-            Assert.AreEqual(GridMath.CellToWorldCenter(FloorCell), ghost.transform.position);
+            Assert.Less(Vector3.Distance(FloorSpot, ghost.transform.position), 0.01f);
 
             yield return PullTrigger();
 
             Assert.AreEqual(before + 1, world.Count, "방아쇠로 블록이 놓이지 않았습니다.");
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(GoldPart, part);
             Assert.AreEqual($"블록 {world.Count}/{world.MaxBlocks}", ui.Palette.BlockCountText);
+        }
+
+        [UnityTest]
+        public IEnumerator 칸에_맞지_않는_바닥을_가리키면_그_자리에_놓인다()
+        {
+            yield return LoadVrBuild();
+            ui.Hotbar.Select(BluePart);
+
+            yield return PointRightHandAt(OffGridPoint);
+            Vector3 expected = OffGridPoint + Vector3.up * 0.5f;
+            Assert.Less(Vector3.Distance(expected, builder.TargetPosition), 0.01f, "가리킨 자리가 칸의 가운데로 당겨졌습니다.");
+
+            yield return PullTrigger();
+
+            Assert.IsTrue(BlockNear(world, expected, out BlockRecord record, 0.01f), "가리킨 자리에 놓이지 않았습니다.");
+            Assert.AreEqual(BluePart, record.Part);
         }
 
         [UnityTest]
         public IEnumerator 왼손_방아쇠로_칠하고_오른손_옆_단추로_지운다()
         {
             yield return LoadVrBuild();
-            Assert.AreEqual(PlaceResult.Ok, world.History.Place(FloorCell, GoldPart));
+            Assert.AreEqual(PlaceResult.Ok, world.History.Place(GoldPart, FloorSpot));
             // 물리 갱신을 기다린 바로 그 시점에는 가상 기기에 값을 넣을 수 없으므로 프레임을 더 넘긴다.
             yield return new WaitForFixedUpdate();
             yield return Frames(2);
             int before = world.Count;
 
             ui.Hotbar.Select(BluePart);
-            yield return PointRightHandAt(GridMath.CellToWorldCenter(FloorCell));
+            yield return PointRightHandAt(FloorSpot);
             Assert.IsTrue(builder.HasBlockTarget, "가리킨 블록을 찾지 못했습니다.");
 
             yield return PullLeftTrigger();
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int painted));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int painted));
             Assert.AreEqual(BluePart, painted, "왼손 방아쇠로 칠해지지 않았습니다.");
             Assert.AreEqual(before, world.Count, "칠하기가 블록 수를 바꿨습니다.");
 
             yield return SqueezeGrip();
-            Assert.IsFalse(world.Has(FloorCell), "오른손 옆 단추로 지워지지 않았습니다.");
+            Assert.IsFalse(HasBlockNear(world, FloorSpot), "오른손 옆 단추로 지워지지 않았습니다.");
             Assert.AreEqual(before - 1, world.Count);
         }
 
@@ -148,19 +167,19 @@ namespace AtelierVerse.Tests
         {
             yield return LoadVrBuild();
             ui.Hotbar.Select(GoldPart);
-            Vector3 floorPoint = GridMath.CellToWorldCenter(FloorCell);
+            Vector3 floorPoint = FloorSpot;
             floorPoint.y = 0f;
             yield return PointRightHandAt(floorPoint);
             yield return PullTrigger();
-            Assert.IsTrue(world.Has(FloorCell));
+            Assert.IsTrue(HasBlockNear(world, FloorSpot));
 
             yield return PointRightHandAt(CenterOf(Find<Button>(ui.Palette, "Undo")));
             yield return PullTrigger();
-            Assert.IsFalse(world.Has(FloorCell), "부품 판의 되돌리기 단추가 놓은 블록을 되돌리지 않았습니다.");
+            Assert.IsFalse(HasBlockNear(world, FloorSpot), "부품 판의 되돌리기 단추가 놓은 블록을 되돌리지 않았습니다.");
 
             yield return PointRightHandAt(CenterOf(Find<Button>(ui.Palette, "Redo")));
             yield return PullTrigger();
-            Assert.IsTrue(world.Has(FloorCell), "부품 판의 다시 실행 단추가 동작하지 않았습니다.");
+            Assert.IsTrue(HasBlockNear(world, FloorSpot), "부품 판의 다시 실행 단추가 동작하지 않았습니다.");
         }
 
         [UnityTest]
@@ -173,7 +192,7 @@ namespace AtelierVerse.Tests
             yield return OpenMenuWithController();
             Assert.IsFalse(ui.Palette.IsShown, "메뉴가 열려 있으면 부품 판을 감춥니다.");
 
-            Vector3 floorPoint = GridMath.CellToWorldCenter(FloorCell);
+            Vector3 floorPoint = FloorSpot;
             floorPoint.y = 0f;
             yield return PointRightHandAt(floorPoint);
             Assert.IsFalse(builder.HasTarget, "메뉴가 열려 있는데 놓일 칸을 가리키고 있습니다.");
@@ -240,12 +259,12 @@ namespace AtelierVerse.Tests
             BeginCapture();
 
             // 쌓아 둔 블록 옆의 바닥을 가리키는 모습.
-            world.History.Place(new Vector3Int(1, 0, -3), BluePart);
-            world.History.Place(new Vector3Int(1, 1, -3), BluePart);
+            world.History.Place(BluePart, CellCenter(1, 0, -3));
+            world.History.Place(BluePart, CellCenter(1, 1, -3));
             Set(leftController.devicePosition, new Vector3(-0.2f, 1.08f, 0.5f));
             Set(headset.centerEyeRotation, Quaternion.Euler(22f, -4f, 0f));
             ui.Hotbar.Select(GoldPart);
-            Vector3 floorPoint = GridMath.CellToWorldCenter(FloorCell);
+            Vector3 floorPoint = FloorSpot;
             floorPoint.y = 0f;
             yield return PointRightHandAt(floorPoint);
             yield return Frames(3);

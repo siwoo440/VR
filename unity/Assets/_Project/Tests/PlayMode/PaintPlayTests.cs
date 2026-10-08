@@ -20,7 +20,8 @@ namespace AtelierVerse.Tests
         private const int GoldPart = 0;
         private const int BluePart = 1;
 
-        private static readonly Vector3Int FloorCell = new Vector3Int(0, 0, -4);
+        // 45도 아래를 보고 놓은 블록이 놓이는 자리쯤(칸의 가운데가 아니다).
+        private static readonly Vector3 FloorSpot = AimedFloorSpot;
 
         private BlockWorld world;
         private BlockBuilder builder;
@@ -34,10 +35,10 @@ namespace AtelierVerse.Tests
 
             yield return Tap(mouse.middleButton);
 
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(GoldPart, part);
             Assert.AreEqual(SceneBlockCount + 1, world.Count, "칠하기는 블록 수를 바꾸지 않습니다.");
-            Assert.AreEqual(world.Catalog.Get(GoldPart).material, FindBlock(FloorCell).GetComponent<Renderer>().sharedMaterial);
+            Assert.AreEqual(world.Catalog.Get(GoldPart).material, FindViewNear(world, FloorSpot).GetComponent<Renderer>().sharedMaterial);
             Assert.AreEqual(2, world.History.UndoCount);
         }
 
@@ -49,7 +50,7 @@ namespace AtelierVerse.Tests
 
             yield return Tap(keyboard.fKey);
 
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(GoldPart, part);
         }
 
@@ -61,12 +62,12 @@ namespace AtelierVerse.Tests
             yield return Tap(mouse.middleButton);
 
             yield return TapWithCtrl(keyboard.zKey);
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int restored));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int restored));
             Assert.AreEqual(BluePart, restored);
-            Assert.AreEqual(world.Catalog.Get(BluePart).material, FindBlock(FloorCell).GetComponent<Renderer>().sharedMaterial);
+            Assert.AreEqual(world.Catalog.Get(BluePart).material, FindViewNear(world, FloorSpot).GetComponent<Renderer>().sharedMaterial);
 
             yield return TapWithCtrl(keyboard.yKey);
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int again));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int again));
             Assert.AreEqual(GoldPart, again);
         }
 
@@ -80,7 +81,7 @@ namespace AtelierVerse.Tests
 
             yield return Tap(mouse.middleButton);
 
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(BluePart, part);
             Assert.AreEqual(1, world.History.UndoCount);
             Assert.IsTrue(notice.IsVisible);
@@ -150,9 +151,9 @@ namespace AtelierVerse.Tests
         public IEnumerator 읽지_못한_블록이_있으면_알림이_나온다()
         {
             PrepareMapDirectory();
-            MapDocument document = MapDocument.Create("내 맵", new Vector3Int(-8, 0, -8), new Vector3Int(7, 11, 7));
-            document.blocks.Add(new MapBlock { part = "block.gold", cell = new Vector3Int(0, 0, 0) });
-            document.blocks.Add(new MapBlock { part = "block.future", cell = new Vector3Int(1, 0, 0) });
+            MapDocument document = MapDocument.Create("내 맵", new Vector3(-8f, 0f, -8f), new Vector3(8f, 12f, 8f));
+            document.blocks.Add(new MapBlock { part = "block.gold", position = CellCenter(0, 0, 0) });
+            document.blocks.Add(new MapBlock { part = "block.future", position = CellCenter(1, 0, 0) });
             MapStorage.Save(document, MapStorage.LocalPath);
 
             yield return LoadPaintScene();
@@ -205,23 +206,13 @@ namespace AtelierVerse.Tests
         {
             yield return AimWithPart(45f, keyboard.digit2Key);
             yield return Tap(mouse.leftButton);
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(BluePart, part);
 
             yield return Tap(keyboard.digit1Key);
             yield return Frames(2);
             Assert.AreEqual(GoldPart, ui.Hotbar.SelectedIndex);
             Assert.IsTrue(builder.HasBlockTarget, "놓은 블록을 가리키고 있어야 합니다.");
-        }
-
-        private PlacedBlock FindBlock(Vector3Int cell)
-        {
-            foreach (PlacedBlock block in world.GetComponentsInChildren<PlacedBlock>())
-            {
-                if (block.Cell == cell) return block;
-            }
-
-            return null;
         }
     }
 }

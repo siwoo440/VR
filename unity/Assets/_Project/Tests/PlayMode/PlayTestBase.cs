@@ -41,6 +41,12 @@ namespace AtelierVerse.Tests
 
         private static readonly string TestMapRoot = Path.Combine(Path.GetTempPath(), "atelier-verse-tests");
 
+        /// <summary>
+        /// 처음 선 자리(0.5, 0, -5.5)에서 45도 아래를 보고 놓은 블록이 놓이는 자리쯤. 눈높이만큼 앞의 바닥이며 칸의 가운데가 아니다.
+        /// 블록은 가리킨 그 자리에 놓이므로, 테스트는 이 근처(BlockNear의 반경)에 블록이 있는지를 본다.
+        /// </summary>
+        protected static readonly Vector3 AimedFloorSpot = new Vector3(0.5f, 0.5f, -3.95f);
+
         /// <summary>이 테스트의 맵 파일 폴더. 첫 LoadSandbox에서 저장 위치가 되고, 테스트가 끝나면 지운다.</summary>
         protected string mapDirectory;
 
@@ -163,6 +169,47 @@ namespace AtelierVerse.Tests
             {
                 yield return null;
             }
+        }
+
+        /// <summary>모눈 칸의 가운데 자리. 테스트에서 블록을 놓을 자리를 칸 번호로 적을 때 쓴다(블록 한 변이 1이다).</summary>
+        protected static Vector3 CellCenter(int x, int y, int z)
+        {
+            return GridMath.CellToWorldCenter(new Vector3Int(x, y, z));
+        }
+
+        /// <summary>position 근처에 가운데가 있는 블록의 기록을 찾는다. 옆 블록(1 떨어짐)과 헷갈리지 않게 반경은 반 변보다 작게 둔다.</summary>
+        protected static bool BlockNear(BlockWorld world, Vector3 position, out BlockRecord record, float radius = 0.3f)
+        {
+            return world.TryFindNear(position, radius, out record);
+        }
+
+        protected static bool HasBlockNear(BlockWorld world, Vector3 position, float radius = 0.3f)
+        {
+            return world.TryFindNear(position, radius, out _);
+        }
+
+        protected static bool TryGetPartNear(BlockWorld world, Vector3 position, out int part)
+        {
+            bool found = world.TryFindNear(position, 0.3f, out BlockRecord record);
+            part = found ? record.Part : -1;
+            return found;
+        }
+
+        /// <summary>position 근처의 블록을 화면에서(오브젝트로) 찾는다. 기록과 화면이 함께 맞는지 볼 때 쓴다.</summary>
+        protected static PlacedBlock FindViewNear(BlockWorld world, Vector3 position, float radius = 0.3f)
+        {
+            PlacedBlock nearest = null;
+            float best = radius;
+            foreach (PlacedBlock block in world.GetComponentsInChildren<PlacedBlock>())
+            {
+                float distance = Vector3.Distance(block.transform.position, position);
+                if (distance > best) continue;
+
+                best = distance;
+                nearest = block;
+            }
+
+            return nearest;
         }
 
         protected static T Find<T>(Component root, string name) where T : Component

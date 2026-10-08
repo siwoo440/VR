@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 9일
-- 마지막 작업: Unity 13일차(VR에서 만들기. 오른손 광선으로 가리켜 놓기·지우기·칠하기, 왼손 위의 부품 판 `XrHandPalette`. 블록 놓기는 `LocalPlayer.InputMapName`의 입력 묶음을 읽어 PC와 VR이 같은 코드를 씀. 기본은 키보드·마우스. 실제 헤드셋으로는 확인하지 못함)
-- 마지막 검증: 편집 모드 테스트 97개 통과, 플레이 모드 테스트 107개 통과(그림 찍기 9개 포함, `-captureDir` 없이 돌리면 그 9개는 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
+- 마지막 작업: Unity 14일차(자유 배치의 기반. 블록을 칸이 아니라 고유 번호와 자리로 기록하고 가리킨 면 위의 그 자리에 놓음. 블록끼리 겹쳐도 됨. 맵 형식 2판과 1판 파일 올려 읽기. 길이의 표준은 블록 한 변 = 1)
+- 마지막 검증: 편집 모드 테스트 108개 통과, 플레이 모드 테스트 114개 통과(그림 찍기 10개 포함, `-captureDir` 없이 돌리면 그 10개는 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(이 컴퓨터의 1판 저장 파일이 사본을 남기고 2판으로 올라감, 그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 14일차. 자유 배치의 기반(맵의 요소를 칸이 아니라 자리로 다루기. 2026-10-09 결정). 사용자가 헤드셋으로 켜 본 결과가 있으면 그것부터. 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 15일차. 돌리기·옮기기와 맞추기 도우미. 사용자가 헤드셋으로 켜 본 결과가 있으면 그것부터. 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -24,7 +24,7 @@
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`). VR로 켜려면 그 옆의 `AtelierVerse-VR.bat`
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day13`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day14`가 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -161,12 +161,21 @@
 - 되돌리기·다시 실행을 `GameUi.Undo`·`Redo`로 모음(키와 부품 판의 단추가 함께 씀). 메뉴 도움말의 VR 안내에 만들기 조작을 더함.
 - `Day13Setup`: 게임 화면 프리팹 다시 조립, 캐릭터 프리팹 다시 잇기.
 
+### Unity 14일차
+
+- 사용자 결정(2026-10-09): 맵의 요소는 칸에 맞추지 않고 자유롭게 배치하고, 길이의 표준은 블록 하나의 1×1×1.
+- 블록의 기록 `BlockMap`: 블록마다 고유 번호(1부터, 다시 쓰지 않음), 부품, 가운데의 자리(1mm 단위로 다듬음), 방향(`BlockRecord`). 블록끼리 겹쳐도 되지만 가운데가 같은 자리에는 둘을 두지 않음. 범위는 상자이고 블록이 다 들어와야 함.
+- 놓기 `BlockBuilder`: 가리킨 면 위의 그 자리에 반 변만큼 띄워 얹음(`BlockMap.RestOn`). 바닥에 묻히는 자리는 높이만 올림(`ClampHeight`). 캐릭터나 블록이 아닌 물체와 겹치면 막고, 블록끼리의 겹침은 막지 않음. 지우기·칠하기는 블록의 번호로.
+- 되돌리기 `EditHistory`: 번호 기준. 지운 블록은 같은 번호로 되살아남(`IBlockStore.Restore`). 옮기기·돌리기의 기록 `Move`도 있음(도구는 아직 없음).
+- 맵 형식 2판(`docs/MAP-FORMAT.md`): 블록을 `id`·`part`·`position`·`rotation`으로 적음. 1판 파일은 칸의 가운데 자리로 올려 읽고, 원래 파일을 `.v1.bak`으로 남긴 뒤 2판으로 다시 저장함.
+- `Day14Setup`: 블록 프리팹과 씬의 블록에서 쓰이지 않는 칸 번호를 지움(자리와 부품은 그대로).
+
 ### 아직 동작하지 않는 것
 
 - **VR은 실제 헤드셋으로 확인하지 못했습니다.** VR 조작(10일차), OpenXR 연결(11일차), VR 메뉴(12일차), VR에서 만들기(13일차)는 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. 부품 판과 메뉴의 크기·자리는 그림만 보고 정했고, 판은 블록에 가릴 수 있습니다. 오른손으로 가리키고 왼손에 부품 판을 드는 것으로 고정되어 있습니다. VR에서는 저장 표시가 보이지 않고 놓을 때의 진동과 소리가 없습니다. Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
 - 다른 사람의 캐릭터는 아직 없습니다.
 - 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
-- 블록 옮기기·돌리기가 없습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
+- 블록을 돌리고 옮기는 도구와 격자에 맞추는 도우미가 없습니다. 블록은 똑바로 선 채로만 놓이고, 반듯하게 맞추려면 손으로 맞춰야 합니다(기록과 파일 형식에는 방향과 옮기기의 자리가 있음). 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
 - 날기 속도는 하나(7m/s)이고 벽을 통과하지 못합니다.
 - 빌드는 Mono이며 아이콘·시작 화면은 Unity 기본값입니다. 실행 파일에서 사람이 직접 조작해 본 적은 없습니다.
 - 알림은 마지막 하나만 보입니다. 저장 실패 알림은 실제 실패 상황에서 확인하지 않았습니다.
@@ -180,7 +189,9 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 13일차 : VR에서 만들기 |
+| (이 문서가 든 커밋) | 14일차 : 자유 배치의 기반 |
+| `ae42973` | 자유 배치 결정에 맞춰 문서 수정 |
+| `90557ce` | 13일차 : VR에서 만들기 |
 | `3ce4915` | 12일차 : VR 메뉴 |
 | `39d8d32` | 11일차 : OpenXR 연결 |
 | `d95ae1b` | 10일차 : VR 조작과 추적 리그 |
@@ -239,14 +250,14 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup ~ Day13Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
+  Editor/           Day1Setup ~ Day14Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
   Input/            AtelierInput.inputactions (Player 맵, Game 맵, XR 맵, UI 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
   Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel), XrSession
   Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, XrRig, XrPlayerController, PlayerModeSwitch, LocalPlayer, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar, XrUiPanel, XrHandPalette
-  Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
+  Scripts/World/    GridMath, BlockMap(+BlockRecord), BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
   Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests, XrUiPanelTests, UiInputTests, XrHandPaletteTests
   Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTestBase, XrPlayTests, XrMenuPlayTests, XrBuildPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
@@ -264,19 +275,21 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 
 ### 블록
 
-- 맵의 블록은 `BlockMap`(칸 → 부품 번호)이 기록하고 `BlockWorld`가 화면의 블록과 맞춥니다. 블록을 놓거나 지울 때는 `BlockWorld.Place`·`Remove`만 씁니다. 씬에 블록을 직접 놓으면 기록에 오르지 않습니다.
-- 씬에 미리 놓는 블록은 `BlockWorld`의 자식으로 두고 `PlacedBlock`에 칸과 부품 번호를 적습니다. 시작할 때 기록에 오릅니다.
+- **블록은 칸이 아니라 번호로 가리킵니다**(14일차). 맵의 블록은 `BlockMap`(번호 → `BlockRecord`: 부품, 가운데의 자리, 방향)이 기록하고 `BlockWorld`가 화면의 블록과 맞춥니다. 블록을 놓고 지우고 고칠 때는 `BlockWorld.Add`·`Remove`·`Set`만 씁니다. 씬에 블록을 직접 놓으면 기록에 오르지 않습니다.
+- 블록은 칸에 맞추지 않고 어디에나 놓이며 서로 겹쳐도 됩니다. 새 기능을 만들 때 "칸 하나에 블록 하나"나 "블록의 자리는 정수"를 가정하지 않습니다. 자리를 견줄 때는 같은지(`==`)를 보지 말고 가까운지를 봅니다(`BlockWorld.TryFindNear`, `BlockRecord.SamePose`). 길이의 표준은 블록 한 변 = 1(`GridMath.DefaultCellSize`, `BlockMap.HalfSize`)입니다.
+- 블록을 고치는 동작의 이름은 `Set`입니다. `MonoBehaviour`인 `BlockWorld`에 `Update`라는 이름의 메서드를 두면 Unity가 매 프레임 부르는 것으로 여기므로 그 이름을 쓰지 않습니다.
+- 씬에 미리 놓는 블록은 `BlockWorld`의 자식으로 두고 `PlacedBlock`에 부품 번호를 적습니다. 자리와 방향은 트랜스폼의 것을 그대로 쓰고, 번호는 시작할 때 기록에 올리면서 붙습니다(씬에 저장하지 않음).
 - 부품 목록(`PartCatalog`)의 순서가 부품 칸의 순서이고 부품 번호입니다. 부품의 `id`(`block.gold` 등)는 저장에 쓸 이름이라 바꾸지 않습니다.
-- `BlockBuilder`는 화면 가운데에서 광선을 쏘아 닿은 면의 바깥쪽 칸에 놓습니다. 캐릭터는 `Ignore Raycast` 층이라 광선에 걸리지 않고, 겹침 검사(`CheckBox`)에는 걸려서 자기가 선 칸에는 놓이지 않습니다.
+- `BlockBuilder`는 조준 광선이 닿은 면 위의 그 자리에 블록을 얹습니다(`BlockMap.RestOn`으로 반 변만큼 띄움, `ClampHeight`로 바닥에 묻히지 않게). 캐릭터는 `Ignore Raycast` 층이라 광선에 걸리지 않고, 겹침 검사(`OverlapBoxNonAlloc`)에는 걸려서 자기가 선 자리에는 놓이지 않습니다. 겹침 검사는 놓인 블록(`PlacedBlock`)을 세지 않습니다.
 - 부품을 고르거나 마우스를 잡은 바로 그 프레임에는 놓지 않습니다(한 프레임 기다림). 마우스를 잡는 누름으로 블록이 놓이는 것을 막기 위해서입니다.
 
 ### 되돌리기
 
-- 이용자의 편집은 `BlockWorld.History`(`EditHistory`)를 거칩니다. `BlockWorld.Place`·`Remove`는 기록하지 않는 바탕 동작이라 직접 부르면 되돌릴 수 없습니다. 새 도구(칠하기, 옮기기)는 `EditHistory`에 동작을 더해 같은 기록을 쓰게 합니다.
-- 기록은 "칸, 이전 부품, 이후 부품" 하나입니다. 되돌릴 때 칸이 이미 그 상태면 성공으로 보고, 상한이 가득 차 놓지 못하면 기록을 남긴 채 실패합니다.
+- 이용자의 편집은 `BlockWorld.History`(`EditHistory`)를 거칩니다. `BlockWorld.Add`·`Remove`·`Set`은 기록하지 않는 바탕 동작이라 직접 부르면 되돌릴 수 없습니다. 새 도구(칠하기, 옮기기)는 `EditHistory`에 동작을 더해 같은 기록을 쓰게 합니다.
+- 기록은 "몇 번 블록이 어떤 상태에서 어떤 상태로" 하나입니다(`BlockChange`). 되돌릴 때 블록이 이미 그 상태면 성공으로 보고, 없으면 같은 번호로 되살리며(`Restore`), 상한이 가득 차 놓지 못하면 기록을 남긴 채 실패합니다. 번호가 같아야 그 블록을 가리키는 뒤의 기록이 맞으므로, 되살릴 때 새 번호를 붙이지 않습니다.
 - 파일에서 불러오거나(`Import`) 모두 지우면(`Clear`) 기록이 비워집니다.
 - 키는 입력 자산의 `Game` 맵에 OneModifier 묶음(`<Keyboard>/ctrl` + `z`, `y`)으로 들어 있습니다. 테스트에서는 `TapWithCtrl`로 Ctrl을 먼저 누릅니다. Ctrl+Shift+Z를 Redo에 더하면 Ctrl+Z와 함께 울리므로 넣지 않았습니다.
-- 칠하기는 `EditHistory.Replace`(이전 부품 → 새 부품)로 기록합니다. 되돌릴 때는 `IBlockStore.Replace`로 부품만 바꾸고 블록을 지우고 다시 만들지 않습니다.
+- 칠하기는 `EditHistory.Replace`(부품만 바꿈), 옮기기와 돌리기는 `EditHistory.Move`(자리와 방향만 바꿈)로 기록합니다. 둘 다 `IBlockStore.Set`으로 블록을 고치며 블록을 지우고 다시 만들지 않습니다.
 
 ### 알림 띠
 
@@ -284,11 +297,12 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 - `NoticeBar`는 `GameUI` 프리팹의 `Hud/Notice`에 있고 띠(`Bar`)는 평소 꺼져 있습니다. 보이는 시간은 `NoticeModel`이 `Time.unscaledTime`으로 셉니다(메뉴로 시간을 멈춰도 사라짐).
 - 띠의 너비는 실행 중에 글자 너비로 맞추므로, 문구를 길게 써도 잘리지 않지만 화면 폭(1920 기준)을 넘지 않게 씁니다.
 - 테스트 틀: 앞 테스트의 씬에 남은 편집이 다음 테스트로 새지 않도록 `PlayTestBase.TearDown`이 남은 변경을 저장합니다. 새 플레이 모드 테스트 클래스는 반드시 `PlayTestBase`를 상속합니다(`SandboxPlayTests`가 상속하지 않아 6일차에 걷기 테스트가 앞 테스트의 블록에 막힌 적이 있음).
+- 블록을 다루는 플레이 모드 테스트는 칸 대신 자리를 봅니다. `PlayTestBase`의 `CellCenter(x, y, z)`(칸의 가운데 자리), `BlockNear`·`HasBlockNear`·`TryGetPartNear`(그 자리 근처 반경 0.3 안의 블록), `FindViewNear`(화면의 블록)를 씁니다. 45도 아래를 보고 놓은 블록의 자리쯤은 `AimedFloorSpot`입니다. 눈높이에 따라 조금씩 달라지므로 정확한 좌표와 견주지 않습니다.
 
 ### 맵 저장
 
-- 파일 형식은 `docs/MAP-FORMAT.md`가 기준입니다. 항목을 더하거나 바꾸면 `MapDocument.CurrentVersion`을 올리고 `Upgrade`에 옛 판을 바꾸는 단계를 더한 뒤 문서를 고칩니다. 부품의 `id`를 바꾸면 저장된 파일을 읽지 못하므로 바꾸지 않습니다.
-- `MapAutoSave`는 Sandbox 씬의 `BlockWorld` 오브젝트에 붙어 있습니다. 블록은 `BlockWorld.Place`·`Remove`로만 바꿔야 `Changed`가 울리고 저장이 예약됩니다.
+- 파일 형식은 `docs/MAP-FORMAT.md`가 기준이며 지금은 2판입니다. 항목을 더하거나 바꾸면 `MapDocument.CurrentVersion`을 올리고 옛 판을 바꾸는 단계를 더한 뒤 문서를 고칩니다. 블록의 모양이 바뀌는 판은 옛 구조를 따로 두고 읽습니다(`MapDocumentV1`, `UpgradeFromV1`). 부품의 `id`를 바꾸면 저장된 파일을 읽지 못하므로 바꾸지 않습니다. 옛 판의 파일을 읽으면 `MapAutoSave`가 원래 파일을 옆에 남기고(`BackupPath`) 곧 새 판으로 다시 저장합니다.
+- `MapAutoSave`는 Sandbox 씬의 `BlockWorld` 오브젝트에 붙어 있습니다. 블록은 `BlockWorld.Add`·`Remove`·`Set`으로만 바꿔야 `Changed`가 울리고 저장이 예약됩니다.
 - 저장 폴더는 `MapStorage.Directory`로 바꿀 수 있습니다. 플레이 모드 테스트는 `PlayTestBase`가 테스트마다 임시 폴더로 바꿔 이 기기의 실제 파일을 건드리지 않습니다. 씬을 열기 전에 맵 파일을 미리 써 두는 테스트는 `PrepareMapDirectory()`를 먼저 불러야 합니다(앞 테스트의 씬이 내려가며 저장하는 시점 때문).
 - `MapAutoSave`는 씬이 내려갈 때(`OnDisable`) 남은 변경을 저장합니다. 테스트에서 씬을 다시 열 때 앞 씬의 블록이 따라오는 것처럼 보이면 이 때문입니다.
 
@@ -364,7 +378,7 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 # 편집 모드 테스트 (-quit을 붙이지 않는다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform EditMode -testResults <결과.xml> -logFile <로그>
 
-# 플레이 모드 테스트. -captureDir을 주면 화면 그림 23장도 찍는다(2~13일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
+# 플레이 모드 테스트. -captureDir을 주면 화면 그림 24장도 찍는다(2~14일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform PlayMode -captureDir <그림 폴더> -testResults <결과.xml> -logFile <로그>
 
 # 아직 적용하지 않은 일차의 셋업 적용
@@ -424,7 +438,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 - 헤드셋으로 확인하기: Meta Quest Link 또는 SteamVR을 설치해 헤드셋을 PC에 잇고, `unity/Builds/Windows/AtelierVerse-VR.bat`을 열어 화면·두 손·스틱 이동·눈높이, 왼손 메뉴 단추로 뜨는 메뉴(글자가 읽히는지, 판의 거리와 크기, 광선의 방향, 방아쇠로 눌리는지), 왼손 위의 부품 판과 블록 놓기·지우기·칠하기(판의 크기와 자리, 가리킨 곳에 놓이는지)를 확인(방법은 `unity/Devlogs`의 `Day11`·`Day12`·`Day13` 일지에 있는 "직접 확인하는 방법"). 이 컴퓨터에는 OpenXR 런타임이 없음
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(Quest 단독 빌드 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
-- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기, 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
+- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기(칸에 붙지 않고 가리킨 자리에 놓이는지, 겹쳐 놓이는지. 자유 배치가 손에 맞는지), 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
 - `unity/Builds/Windows/AtelierVerse.exe`를 직접 열어 창 크기, 조작, 메뉴의 "게임 끝내기"를 확인
 - 통합 계정의 실제 연결(홈페이지 저장소의 `docs/UNIFIED-ACCOUNT.md`)
 
@@ -434,8 +448,8 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
 1. **헤드셋으로 켜 본 결과가 있으면 그것부터.** 사용자가 `AtelierVerse-VR.bat`으로 켜 본 결과(화면이 나오는지, 두 손, 눈높이, 스틱, 메뉴의 글자와 판의 거리·크기, 광선의 방향, 부품 판의 크기와 자리, 가리킨 곳에 블록이 놓이는지)를 받아 고칩니다. VR 화면이 켜지지 않으면 실행 로그(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\Player.log`)의 `[XR]` 줄을 봅니다. 그래픽 장치가 둘인 PC에서만 켜지지 않으면 사전 초기화를 남긴 VR 전용 빌드를 검토합니다(`docs/BACKLOG.md` 3.4).
-2. **14일차: 자유 배치의 기반.** 사용자 결정(2026-10-09)에 따라 맵의 요소를 칸에 맞추지 않고 자유롭게 놓게 바꿉니다. 지금은 구조 전체가 칸에 묶여 있습니다. `BlockMap`이 칸(`Vector3Int`) 하나에 블록 하나를 기록하고, `IBlockStore`·`EditHistory`·`BlockWorld`·`PlacedBlock`·`BlockBuilder`·맵 형식 1판이 모두 칸으로 블록을 가리킵니다. 할 일: 요소마다 고유 번호와 자리(소수 좌표)를 갖는 기록으로 바꾸기, 맵 형식 2판(`cell` 대신 자리와 방향. 1판 파일은 칸의 가운데 자리로 올려 읽기), 되돌리기 기록을 요소 번호 기준으로 바꾸기, 놓기는 가리킨 면 위의 그 자리에(칸의 가운데로 당기지 않음), 지우기·칠하기는 요소 기준으로, 씬에 미리 놓인 블록 19개를 요소로 옮기기. 길이의 표준은 지금과 같이 블록 한 변 = 1(Unity의 1m)이고 모눈 바닥은 자로 남깁니다. 칸을 쓰는 테스트(편집 모드 4개 파일, 플레이 모드 6개 파일)를 함께 고칩니다. 아직 정하지 않은 것은 `docs/BACKLOG.md` 5절에 있습니다. Claude의 가안: 요소끼리 겹쳐도 됨, 14일차에는 똑바로 선 채로만 놓고 돌리기는 다음 일차, 맞추기 도우미는 두되 끈 것이 기본.
-3. **그다음: 돌리기·옮기기와 맞추기 도우미, 모양이 다른 부품과 부품 고르는 창.** 자유 배치의 기반 위에서 합니다. 놓을 때 돌리기, 놓인 요소 옮기기, 격자에 맞추는 도우미, 반 블록·경사·기둥·계단(크기는 블록 한 변 1을 기준으로 정함), 부품이 아홉 칸을 넘을 때의 고르는 창. 부품 고르는 창은 PC의 화면과 VR의 부품 판 양쪽에서 열 수 있어야 하고, 돌리는 입력도 두 조작의 묶음에 같은 이름으로 넣습니다.
+2. **15일차: 돌리기·옮기기와 맞추기 도우미.** 자유 배치의 기반(14일차) 위에서 합니다. 놓을 때 돌리기(미리 보기 블록이 함께 돎), 놓인 블록 옮기기(`EditHistory.Move`가 이미 있음), 격자에 맞추는 도우미(켜면 1칸·반 칸·1/4칸. 계산은 `GridMath`). PC와 VR 양쪽에 넣고, 입력은 두 조작의 묶음(`Player`, `XR`)에 같은 이름으로 넣습니다. 정해야 할 것은 `docs/BACKLOG.md` 5절에 있습니다. Claude의 가안: 돌리기는 좌우로만(15도씩), 맞추기 도우미는 두되 끈 것이 기본. 블록이 돌면 겹침 검사와 범위 검사의 상자도 돌아야 하는지 살핍니다(지금은 똑바로 선 상자로 봄).
+3. **16일차부터: 모양이 다른 부품과 부품 고르는 창.** 반 블록·경사·기둥·계단(크기는 블록 한 변 1을 기준으로 정함), 부품이 아홉 칸을 넘을 때의 고르는 창. 부품 고르는 창은 PC의 화면과 VR의 부품 판 양쪽에서 열 수 있어야 합니다. 부품마다 크기가 달라지면 `BlockMap.HalfSize`를 쓰는 곳(얹는 높이, 범위 검사, 겹침 검사)을 부품의 크기로 바꿉니다.
 4. **VR의 나머지.** 부품 판 다듬기(크기, 손 위의 자리, 손목에 붙이기나 놓아두기), VR 메뉴와 부품 판을 늘 위에 그리기(지금은 블록에 가릴 수 있음), 판의 크기와 거리 설정, 주로 쓰는 손 고르기, 놓을 때의 진동과 소리, 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
 5. 그 뒤는 1-A(혼자 만들기)의 나머지: 여러 맵 다루기, 시작 위치와 맵 정보, 부품 수 상한 정하기(Quest에서 재기).
 
@@ -469,7 +483,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day13/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day14/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

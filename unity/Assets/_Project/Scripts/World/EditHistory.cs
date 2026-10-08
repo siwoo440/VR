@@ -4,42 +4,55 @@ using UnityEngine;
 
 namespace AtelierVerse.World
 {
-    /// <summary>블록 기록이 되돌리기에 내어 주는 최소한의 동작. BlockMap과 BlockWorld가 구현한다.</summary>
+    /// <summary>블록 기록이 되돌리기에 내어 주는 최소한의 동작. BlockMap과 BlockWorld가 구현한다. 블록은 번호로 가리킨다.</summary>
     public interface IBlockStore
     {
-        bool TryGetPart(Vector3Int cell, out int partIndex);
+        bool TryGet(int id, out BlockRecord record);
 
-        PlaceResult Place(Vector3Int cell, int partIndex);
+        /// <summary>블록을 새로 놓고 새 번호를 준다.</summary>
+        PlaceResult Add(int partIndex, Vector3 position, Quaternion rotation, out int id);
 
-        bool Remove(Vector3Int cell);
+        /// <summary>번호가 정해진 블록을 그대로 되살린다.</summary>
+        PlaceResult Restore(BlockRecord record);
 
-        /// <summary>있는 블록의 부품을 바꾼다. 블록이 없거나 부품을 모르면 false다.</summary>
-        bool Replace(Vector3Int cell, int partIndex);
+        bool Remove(int id);
+
+        /// <summary>있는 블록의 부품, 자리, 방향을 바꾼다. 블록이 없거나 바꿀 수 없으면 false다.</summary>
+        bool Set(BlockRecord record);
     }
 
-    /// <summary>칸 하나의 변화. 부품이 없으면 EditHistory.NoPart다.</summary>
+    /// <summary>블록 하나의 변화. 앞이나 뒤에 블록이 없었으면 HadBefore·HasAfter가 false다.</summary>
     public struct BlockChange
     {
-        public Vector3Int Cell;
-        public int Before;
-        public int After;
+        public int Id;
+        public bool HadBefore;
+        public BlockRecord Before;
+        public bool HasAfter;
+        public BlockRecord After;
 
-        public BlockChange(Vector3Int cell, int before, int after)
+        public static BlockChange Placed(BlockRecord after)
         {
-            Cell = cell;
-            Before = before;
-            After = after;
+            return new BlockChange { Id = after.Id, HasAfter = true, After = after };
+        }
+
+        public static BlockChange Removed(BlockRecord before)
+        {
+            return new BlockChange { Id = before.Id, HadBefore = true, Before = before };
+        }
+
+        public static BlockChange Changed(BlockRecord before, BlockRecord after)
+        {
+            return new BlockChange { Id = before.Id, HadBefore = true, Before = before, HasAfter = true, After = after };
         }
     }
 
     /// <summary>
-    /// 블록 세계 위의 기록 층. 놓기·지우기·칠하기를 하나씩 기록해 되돌리고(Undo) 다시 실행한다(Redo).
-    /// 뒤에 생기는 도구(옮기기)도 이 층을 거치면 같은 방식으로 되돌릴 수 있다.
+    /// 블록 세계 위의 기록 층. 놓기·지우기·칠하기·옮기기를 하나씩 기록해 되돌리고(Undo) 다시 실행한다(Redo).
+    /// 블록을 번호로 가리키므로, 지운 블록을 되돌리면 같은 번호로 돌아와 그 뒤의 기록이 계속 맞는다.
     /// 화면과 무관해서 편집 모드 테스트로 검사한다.
     /// </summary>
     public class EditHistory
     {
-        public const int NoPart = -1;
         public const int DefaultCapacity = 100;
 
         private readonly IBlockStore store;
@@ -66,33 +79,52 @@ namespace AtelierVerse.World
 
         public bool CanRedo => redoStack.Count > 0;
 
-        /// <summary>블록을 놓고 기록한다. 놓지 못하면 기록하지 않는다.</summary>
-        public PlaceResult Place(Vector3Int cell, int partIndex)
+        /// <summary>블록을 놓고 기록한다. 놓지 못하면 기록하지 않는다. 놓였으면 새 번호가 id에 담긴다.</summary>
+        public PlaceResult Place(int partIndex, Vector3 position, Quaternion rotation, out int id)
         {
-            PlaceResult result = store.Place(cell, partIndex);
-            if (result == PlaceResult.Ok) Push(new BlockChange(cell, NoPart, partIndex));
+            PlaceResult result = store.Add(partIndex, position, rotation, out id);
+            if (result == PlaceResult.Ok && store.TryGet(id, out BlockRecord placed)) Push(BlockChange.Placed(placed));
             return result;
         }
 
-        /// <summary>블록을 지우고 기록한다. 지울 블록이 없으면 기록하지 않는다.</summary>
-        public bool Remove(Vector3Int cell)
+        /// <summary>블록을 똑바로 선 채로 놓고 기록한다.</summary>
+        public PlaceResult Place(int partIndex, Vector3 position)
         {
-            if (!store.TryGetPart(cell, out int before)) return false;
-            if (!store.Remove(cell)) return false;
+            return Place(partIndex, position, Quaternion.identity, out _);
+        }
 
-            Push(new BlockChange(cell, before, NoPart));
+        /// <summary>블록을 지우고 기록한다. 지울 블록이 없으면 기록하지 않는다.</summary>
+        public bool Remove(int id)
+        {
+            if (!store.TryGet(id, out BlockRecord before)) return false;
+            if (!store.Remove(id)) return false;
+
+            Push(BlockChange.Removed(before));
             return true;
         }
 
         /// <summary>있는 블록을 다른 부품으로 바꾸고(칠하기) 기록한다. 블록이 없거나 이미 같은 부품이면 기록하지 않는다.</summary>
-        public bool Replace(Vector3Int cell, int partIndex)
+        public bool Replace(int id, int partIndex)
         {
-            if (!store.TryGetPart(cell, out int before)) return false;
-            if (before == partIndex) return false;
-            if (!store.Replace(cell, partIndex)) return false;
+            if (!store.TryGet(id, out BlockRecord before)) return false;
+            if (before.Part == partIndex) return false;
 
-            Push(new BlockChange(cell, before, partIndex));
-            return true;
+            BlockRecord after = before;
+            after.Part = partIndex;
+            return Change(before, after);
+        }
+
+        /// <summary>있는 블록의 자리와 방향을 바꾸고(옮기기, 돌리기) 기록한다. 블록이 없거나 이미 그 자리와 방향이면 기록하지 않는다.</summary>
+        public bool Move(int id, Vector3 position, Quaternion rotation)
+        {
+            if (!store.TryGet(id, out BlockRecord before)) return false;
+
+            BlockRecord after = before;
+            after.Position = BlockMap.Quantize(position);
+            after.Rotation = rotation;
+            if (before.SamePose(after)) return false;
+
+            return Change(before, after);
         }
 
         /// <summary>마지막 편집을 되돌린다. 되돌릴 것이 없거나 되돌리지 못하면 false이고 기록은 그대로 남는다.</summary>
@@ -101,7 +133,7 @@ namespace AtelierVerse.World
             if (undoList.Count == 0) return false;
 
             BlockChange change = undoList[undoList.Count - 1];
-            if (!Apply(change.Cell, change.Before)) return false;
+            if (!Apply(change.Id, change.HadBefore, change.Before)) return false;
 
             undoList.RemoveAt(undoList.Count - 1);
             redoStack.Push(change);
@@ -115,7 +147,7 @@ namespace AtelierVerse.World
             if (redoStack.Count == 0) return false;
 
             BlockChange change = redoStack.Peek();
-            if (!Apply(change.Cell, change.After)) return false;
+            if (!Apply(change.Id, change.HasAfter, change.After)) return false;
 
             redoStack.Pop();
             undoList.Add(change);
@@ -133,6 +165,16 @@ namespace AtelierVerse.World
             Changed?.Invoke();
         }
 
+        private bool Change(BlockRecord before, BlockRecord after)
+        {
+            if (!store.Set(after)) return false;
+
+            // 기록에는 다듬어진 값(자리의 단위, 방향의 정규화)을 남긴다.
+            if (store.TryGet(after.Id, out BlockRecord stored)) after = stored;
+            Push(BlockChange.Changed(before, after));
+            return true;
+        }
+
         private void Push(BlockChange change)
         {
             redoStack.Clear();
@@ -142,24 +184,24 @@ namespace AtelierVerse.World
         }
 
         /// <summary>
-        /// 칸을 target 상태로 맞춘다. 기록을 거치지 않고 바뀐 칸이 있어도 막히지 않도록,
-        /// 이미 그 상태이면 성공으로 보고 다른 부품이 있으면 바꿔 넣는다.
+        /// 번호의 블록을 target 상태로 맞춘다(has가 false이면 없는 상태). 기록을 거치지 않고 바뀐 블록이 있어도 막히지 않도록,
+        /// 이미 그 상태이면 성공으로 보고, 있으면 고쳐 놓고, 없으면 같은 번호로 되살린다.
         /// </summary>
-        private bool Apply(Vector3Int cell, int target)
+        private bool Apply(int id, bool has, BlockRecord target)
         {
-            bool exists = store.TryGetPart(cell, out int current);
+            bool exists = store.TryGet(id, out BlockRecord current);
 
-            if (target == NoPart)
+            if (!has)
             {
-                return !exists || store.Remove(cell);
+                return !exists || store.Remove(id);
             }
 
             if (exists)
             {
-                return current == target || store.Replace(cell, target);
+                return (current.Part == target.Part && current.SamePose(target)) || store.Set(target);
             }
 
-            return store.Place(cell, target) == PlaceResult.Ok;
+            return store.Restore(target) == PlaceResult.Ok;
         }
     }
 }

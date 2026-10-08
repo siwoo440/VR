@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 13일차(VR에서 만들기, 실제 헤드셋 확인 전)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 14일차(자유 배치의 기반. VR은 실제 헤드셋 확인 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -53,6 +53,7 @@
 | 11일차 | OpenXR 연결. VR로 시작했을 때만 VR 화면을 켜고, 기기가 없으면 키보드·마우스로 돌아옴 | [`unity/Devlogs/Day11`](unity/Devlogs/Day11/README.md) |
 | 12일차 | VR 메뉴. VR에서 화면을 눈앞의 판으로 띄우고 오른손 광선으로 누름. 화면과 도구가 조작 방식을 직접 알지 않게 함 | [`unity/Devlogs/Day12`](unity/Devlogs/Day12/README.md) |
 | 13일차 | VR에서 만들기. 왼손 위의 부품 판에서 고르고 오른손으로 가리켜 블록을 놓고 지우고 칠함 | [`unity/Devlogs/Day13`](unity/Devlogs/Day13/README.md) |
+| 14일차 | 자유 배치의 기반. 블록을 칸에 맞추지 않고 가리킨 자리에 놓음(겹쳐도 됨). 맵 형식 2판 | [`unity/Devlogs/Day14`](unity/Devlogs/Day14/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -63,7 +64,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 둘러보기 | 화면을 한 번 누른 뒤 마우스 |
 | 1인칭·3인칭 | 마우스 휠 |
 | 부품 고르기 | 1~9 (같은 키를 다시 누르면 풂) |
-| 블록 놓기, 지우기 | 부품을 고른 뒤 마우스 왼쪽, 오른쪽 |
+| 블록 놓기, 지우기 | 부품을 고른 뒤 마우스 왼쪽, 오른쪽. 블록은 칸에 맞추지 않고 가리킨 자리에 놓임 |
 | 블록 칠하기 | 부품을 고르고 블록을 가리킨 뒤 마우스 가운데 또는 F |
 | 되돌리기, 다시 실행 | Ctrl+Z, Ctrl+Y |
 | 사람들 목록 | Tab |

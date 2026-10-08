@@ -125,5 +125,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b447835c7a6d4c66ac5ff084b0485afa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.World.PlacedBlock
-  cell: {x: 0, y: 0, z: 0}
   partIndex: 0

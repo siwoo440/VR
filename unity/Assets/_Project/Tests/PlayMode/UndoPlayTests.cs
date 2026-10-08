@@ -17,8 +17,9 @@ namespace AtelierVerse.Tests
         private const int SceneBlockCount = 19;
         private const float SaveWait = 1.6f;
 
-        private static readonly Vector3Int FloorCell = new Vector3Int(0, 0, -4);
-        private static readonly Vector3Int StepCell = new Vector3Int(0, 0, 4);
+        // 45도 아래를 보고 놓은 블록이 놓이는 자리쯤(칸의 가운데가 아니다).
+        private static readonly Vector3 FloorSpot = AimedFloorSpot;
+        private static readonly Vector3 StepSpot = new Vector3(0.5f, 0.5f, 4.5f);
 
         private BlockWorld world;
 
@@ -33,14 +34,14 @@ namespace AtelierVerse.Tests
 
             yield return TapWithCtrl(keyboard.zKey);
             Assert.AreEqual(SceneBlockCount, world.Count);
-            Assert.IsFalse(world.Has(FloorCell));
+            Assert.IsFalse(HasBlockNear(world, FloorSpot));
             yield return null;
-            Assert.IsNull(FindBlock(FloorCell), "기록에서는 지워졌는데 화면에 블록이 남아 있습니다.");
+            Assert.IsNull(FindViewNear(world, FloorSpot), "기록에서는 지워졌는데 화면에 블록이 남아 있습니다.");
 
             yield return TapWithCtrl(keyboard.yKey);
-            Assert.IsTrue(world.TryGetPart(FloorCell, out int part));
+            Assert.IsTrue(TryGetPartNear(world, FloorSpot, out int part));
             Assert.AreEqual(1, part);
-            Assert.IsNotNull(FindBlock(FloorCell), "다시 실행했는데 화면에 블록이 없습니다.");
+            Assert.IsNotNull(FindViewNear(world, FloorSpot), "다시 실행했는데 화면에 블록이 없습니다.");
         }
 
         [UnityTest]
@@ -66,17 +67,17 @@ namespace AtelierVerse.Tests
             player.transform.position = new Vector3(0.5f, 0f, 1.5f);
             body.enabled = true;
 
-            Assert.IsTrue(world.TryGetPart(StepCell, out int original));
+            Assert.IsTrue(TryGetPartNear(world, StepSpot, out int original));
             yield return AimWithPart(20f, keyboard.digit1Key);
             yield return Tap(mouse.rightButton);
-            Assert.IsFalse(world.Has(StepCell));
+            Assert.IsFalse(HasBlockNear(world, StepSpot));
 
             yield return TapWithCtrl(keyboard.zKey);
 
-            Assert.IsTrue(world.TryGetPart(StepCell, out int restored));
+            Assert.IsTrue(TryGetPartNear(world, StepSpot, out int restored));
             Assert.AreEqual(original, restored, "되돌린 블록의 부품이 다릅니다.");
             Assert.AreEqual("block.ivory", world.Catalog.Get(restored).id);
-            Assert.AreEqual(world.Catalog.Get(restored).material, FindBlock(StepCell).GetComponent<Renderer>().sharedMaterial);
+            Assert.AreEqual(world.Catalog.Get(restored).material, FindViewNear(world, StepSpot).GetComponent<Renderer>().sharedMaterial);
         }
 
         [UnityTest]
@@ -101,7 +102,7 @@ namespace AtelierVerse.Tests
             MapAutoSave autoSave = Object.FindAnyObjectByType<MapAutoSave>();
             Assert.IsNotNull(autoSave);
 
-            world.History.Place(new Vector3Int(3, 0, -3), 0);
+            world.History.Place(0, CellCenter(3, 0, -3));
             yield return new WaitForSeconds(SaveWait);
             Assert.IsTrue(MapStorage.TryLoad(autoSave.FilePath, out MapDocument saved, out _));
             Assert.AreEqual(SceneBlockCount + 1, saved.blocks.Count);
@@ -118,13 +119,13 @@ namespace AtelierVerse.Tests
         public IEnumerator 씬을_다시_열면_기록이_비워진다()
         {
             yield return LoadUndoScene();
-            world.History.Place(new Vector3Int(3, 0, -3), 0);
+            world.History.Place(0, CellCenter(3, 0, -3));
             Assert.IsTrue(world.History.CanUndo);
 
             yield return LoadUndoScene();
 
             Assert.IsFalse(world.History.CanUndo, "파일에서 불러온 맵에는 되돌릴 기록이 없어야 합니다.");
-            Assert.IsTrue(world.Has(new Vector3Int(3, 0, -3)), "씬을 떠날 때 저장한 블록은 남아 있어야 합니다.");
+            Assert.IsTrue(HasBlockNear(world, CellCenter(3, 0, -3)), "씬을 떠날 때 저장한 블록은 남아 있어야 합니다.");
         }
 
         [UnityTest]
@@ -167,16 +168,6 @@ namespace AtelierVerse.Tests
             world = Object.FindAnyObjectByType<BlockWorld>();
             Assert.IsNotNull(world, "Sandbox 씬에서 블록 세계를 찾을 수 없습니다.");
             yield return Frames(2);
-        }
-
-        private PlacedBlock FindBlock(Vector3Int cell)
-        {
-            foreach (PlacedBlock block in world.GetComponentsInChildren<PlacedBlock>())
-            {
-                if (block.Cell == cell) return block;
-            }
-
-            return null;
         }
     }
 }
