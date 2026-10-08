@@ -926,3 +926,74 @@ code /* 코드 글자 */
         border-bottom: 0.09rem solid var(--av-ink); /* 아래 경계선 */
     } /* 경계선 전환 끝 */
 } /* 나머지 휴대폰 끝 */
+
+.av-settings /* 설정: 카드 배치 */
+{ /* 설정 배치 시작 */
+    display: grid; /* 격자 배치 */
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); /* 화면에 맞춘 열 수 */
+    gap: 1.25rem; /* 카드 간격 */
+    align-items: start; /* 위쪽 정렬 */
+    max-width: 60rem; /* 최대 너비 */
+} /* 설정 배치 끝 */
+
+.av-range /* 값 조절 막대 */
+{ /* 조절 막대 시작 */
+    width: 100%; /* 가로 채움 */
+    min-height: 2.75rem; /* 누르기 높이 */
+    accent-color: var(--av-blue); /* 블루 조절 색 */
+} /* 조절 막대 끝 */
+
+.av-key-list /* 조작 키 목록 */
+{ /* 키 목록 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 0.5rem; /* 줄 간격 */
+} /* 키 목록 끝 */
+
+.av-key-list li /* 조작 키 한 줄 */
+{ /* 키 줄 시작 */
+    display: flex; /* 가로 나열 */
+    align-items: center; /* 세로 가운데 */
+    justify-content: space-between; /* 양끝 정렬 */
+    gap: 1rem; /* 키와 설명 간격 */
+} /* 키 줄 끝 */
+
+.av-narrow /* 좁은 본문 */
+{ /* 좁은 본문 시작 */
+    max-width: 46rem; /* 읽기 좋은 너비 */
+} /* 좁은 본문 끝 */
+
+.av-notice-list /* 알림: 알림 목록 */
+{ /* 알림 목록 시작 */
+    gap: 0.2rem; /* 줄 간격 */
+    padding: 0.6rem; /* 얇은 안쪽 여백 */
+} /* 알림 목록 끝 */
+
+.av-text-link /* 글 안 링크 */
+{ /* 글 링크 시작 */
+    color: var(--av-blue); /* 블루 글자 */
+    font-weight: 700; /* 링크 굵기 */
+    text-decoration: underline; /* 밑줄 표시 */
+    text-underline-offset: 0.15em; /* 밑줄 간격 */
+} /* 글 링크 끝 */
+
+.av-search-large /* 검색: 큰 검색칸 */
+{ /* 큰 검색칸 시작 */
+    max-width: 40rem; /* 최대 너비 */
+} /* 큰 검색칸 끝 */
+
+.av-search-large .av-input /* 큰 검색 입력칸 */
+{ /* 큰 입력칸 시작 */
+    min-height: 3.25rem; /* 큰 높이 */
+    font-size: 1.1rem; /* 큰 글자 */
+} /* 큰 입력칸 끝 */
+
+.av-welcome-list /* 처음 안내: 시작 순서 */
+{ /* 시작 순서 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 0.75rem; /* 걸음 간격 */
+} /* 시작 순서 끝 */
+
+.av-table tbody tr[aria-current="true"] > * /* 신고 처리: 고른 줄 */
+{ /* 고른 줄 시작 */
+    background: color-mix(in srgb, var(--av-gold) 16%, transparent); /* 옅은 골드 바탕 */
+} /* 고른 줄 끝 */

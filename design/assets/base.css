@@ -209,6 +209,7 @@ img, svg /* 그림 */
 .av-main /* 본문 영역 */
 { /* 본문 영역 시작 */
     display: grid; /* 세로 격자 */
+    grid-template-columns: minmax(0, 1fr); /* 내용이 화면 너비를 넘지 않게 한 열 */
     flex: 1; /* 남은 높이 채움 */
     gap: clamp(1.25rem, 3vw, 2rem); /* 구역 간격 */
     align-content: start; /* 위쪽 정렬 */

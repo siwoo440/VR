@@ -1,0 +1,101 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>설정 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="settings" data-av-title="설정"> <!-- 설정 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <div class="av-tabs" role="tablist" aria-label="설정 분류"> <!-- 설정 분류 탭 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="settings" data-av-value="screen" aria-selected="true">화면</button> <!-- 화면 설정 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="settings" data-av-value="control" aria-selected="false">조작</button> <!-- 조작 설정 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="settings" data-av-value="vr" aria-selected="false">VR</button> <!-- VR 설정 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="settings" data-av-value="account" aria-selected="false">계정</button> <!-- 계정 설정 -->
+        </div> <!-- 설정 분류 탭 끝 -->
+
+        <section class="av-settings" data-av-when="settings=screen"> <!-- 화면 설정 내용 -->
+            <div class="av-card"> <!-- 화면 모드 카드 -->
+                <h2 class="av-card-title">화면 모드</h2> <!-- 카드 제목 -->
+                <div class="av-segment"><button type="button" data-av-set="set-mode" aria-pressed="true">기기 설정 따름</button><button type="button" data-av-set="set-mode" aria-pressed="false">밝게</button><button type="button" data-av-set="set-mode" aria-pressed="false">어둡게</button></div> <!-- 화면 모드 고르기 -->
+                <label class="av-switch">움직임 줄이기<input type="checkbox"></label> <!-- 움직임 줄이기 -->
+                <p class="av-help">움직임을 줄이면 화면이 바뀔 때의 효과를 끕니다. 기기에서 같은 설정을 켜 두면 자동으로 따릅니다.</p> <!-- 움직임 안내 -->
+            </div> <!-- 화면 모드 카드 끝 -->
+            <div class="av-card"> <!-- 그래픽 카드 -->
+                <h2 class="av-card-title">그래픽</h2> <!-- 카드 제목 -->
+                <div class="av-field"><span class="av-label">품질</span><div class="av-segment"><button type="button" data-av-set="set-quality" aria-pressed="true">자동</button><button type="button" data-av-set="set-quality" aria-pressed="false">낮음</button><button type="button" data-av-set="set-quality" aria-pressed="false">높음</button></div><p class="av-help">자동은 기기 성능에 맞춰 조절합니다. VR 기기에서는 끊김을 막기 위해 낮은 쪽으로 맞춥니다.</p></div> <!-- 품질 고르기 -->
+                <label class="av-switch">그림자 표시<input type="checkbox" checked></label> <!-- 그림자 -->
+            </div> <!-- 그래픽 카드 끝 -->
+        </section> <!-- 화면 설정 내용 끝 -->
+
+        <section class="av-settings" data-av-when="settings=control" hidden> <!-- 조작 설정 내용 -->
+            <div class="av-card"> <!-- 시점 카드 -->
+                <h2 class="av-card-title">시점</h2> <!-- 카드 제목 -->
+                <div class="av-field"><label class="av-label" for="set-sense">마우스 감도</label><input class="av-range" id="set-sense" type="range" min="1" max="10" value="5"></div> <!-- 마우스 감도 -->
+                <label class="av-switch">위아래 시점 반대로<input type="checkbox"></label> <!-- 시점 반전 -->
+            </div> <!-- 시점 카드 끝 -->
+            <div class="av-card av-card-flat"> <!-- 조작 키 카드 -->
+                <h2 class="av-card-title">조작 키</h2> <!-- 카드 제목 -->
+                <ul class="av-key-list"> <!-- 조작 키 목록 -->
+                    <li><span class="av-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>이동</span></li> <!-- 이동 키 -->
+                    <li><span class="av-keys"><kbd>Space</kbd></span><span>점프</span></li> <!-- 점프 키 -->
+                    <li><span class="av-keys"><kbd>Enter</kbd></span><span>채팅 입력</span></li> <!-- 채팅 키 -->
+                    <li><span class="av-keys"><kbd>R</kbd></span><span>부품 돌리기 (에디터)</span></li> <!-- 회전 키 -->
+                    <li><span class="av-keys"><kbd>Del</kbd></span><span>부품 지우기 (에디터)</span></li> <!-- 지우기 키 -->
+                </ul> <!-- 조작 키 목록 끝 -->
+                <p class="av-help">키를 바꾸는 기능은 첫 버전에 넣지 않습니다.</p> <!-- 키 변경 안내 -->
+            </div> <!-- 조작 키 카드 끝 -->
+        </section> <!-- 조작 설정 내용 끝 -->
+
+        <section class="av-settings" data-av-when="settings=vr" hidden> <!-- VR 설정 내용 -->
+            <div class="av-card"> <!-- 이동 방식 카드 -->
+                <h2 class="av-card-title">VR에서 움직이는 방법</h2> <!-- 카드 제목 -->
+                <div class="av-field"><span class="av-label">이동</span><div class="av-segment"><button type="button" data-av-set="set-move" aria-pressed="true">순간 이동</button><button type="button" data-av-set="set-move" aria-pressed="false">부드럽게 걷기</button></div></div> <!-- 이동 방식 -->
+                <div class="av-field"><span class="av-label">방향 돌리기</span><div class="av-segment"><button type="button" data-av-set="set-turn" aria-pressed="true">끊어서 돌기</button><button type="button" data-av-set="set-turn" aria-pressed="false">부드럽게 돌기</button></div></div> <!-- 회전 방식 -->
+                <p class="av-help">처음에는 멀미가 덜한 순간 이동과 끊어서 돌기가 켜져 있습니다.</p> <!-- 기본값 안내 -->
+            </div> <!-- 이동 방식 카드 끝 -->
+            <div class="av-card"> <!-- 편안함 카드 -->
+                <h2 class="av-card-title">편안함</h2> <!-- 카드 제목 -->
+                <label class="av-switch">움직일 때 시야 가장자리 어둡게<input type="checkbox" checked></label> <!-- 시야 좁히기 -->
+                <label class="av-switch">앉아서 이용<input type="checkbox"></label> <!-- 앉은 자세 -->
+                <p class="av-help">이 화면은 설정 값만 정합니다. VR 기기 안에서 보이는 메뉴는 VR 구현과 함께 따로 구상합니다.</p> <!-- 범위 안내 -->
+            </div> <!-- 편안함 카드 끝 -->
+        </section> <!-- VR 설정 내용 끝 -->
+
+        <section class="av-settings" data-av-when="settings=account" hidden> <!-- 계정 설정 내용 -->
+            <div class="av-card"> <!-- 로그인 카드 -->
+                <h2 class="av-card-title">로그인</h2> <!-- 카드 제목 -->
+                <div class="av-row av-row-plain"><span class="av-avatar"><span class="av-icon" data-i="lock"></span></span><span class="av-row-text"><span class="av-row-title">Palettra 계정으로 로그인함</span><span class="av-row-sub">이메일과 로그인 방법은 홈페이지에서 관리합니다.</span></span></div> <!-- 통합 계정 안내 -->
+                <div class="av-cluster"><button class="av-button av-button-small" type="button" disabled>홈페이지 내 정보 열기 · 주소 확정 후 연결</button><a class="av-button av-button-quiet av-button-small" href="signin.html">로그아웃</a></div> <!-- 내 정보 이동과 로그아웃 -->
+            </div> <!-- 로그인 카드 끝 -->
+            <div class="av-card av-card-flat"> <!-- 알림과 공개 범위 카드 -->
+                <h2 class="av-card-title">알림과 공개 범위</h2> <!-- 카드 제목 -->
+                <div class="av-cluster"><a class="av-button av-button-small" href="feed.html">알림 받기 설정</a><a class="av-button av-button-small" href="profile.html">공개 범위 설정</a><button class="av-button av-button-quiet av-button-small" type="button">차단 목록</button></div> <!-- 관련 설정 이동 -->
+            </div> <!-- 알림과 공개 범위 카드 끝 -->
+            <div class="av-card av-card-flat"> <!-- 내용 지우기 카드 -->
+                <h2 class="av-card-title">이 서비스에서 내 내용 지우기</h2> <!-- 카드 제목 -->
+                <p class="av-note">내가 만든 맵과 조립품, 이 서비스의 이름과 캐릭터를 지웁니다. Palettra 계정은 지워지지 않으며, 계정 탈퇴는 홈페이지에서 합니다.</p> <!-- 지우기 범위 안내 -->
+                <div class="av-cluster"><button class="av-button av-button-danger av-button-small" type="button" data-av-open="wipe">내용 지우기</button></div> <!-- 지우기 대화상자 열기 -->
+            </div> <!-- 내용 지우기 카드 끝 -->
+        </section> <!-- 계정 설정 내용 끝 -->
+
+        <dialog class="av-dialog" id="wipe" aria-labelledby="wipe-title"> <!-- 지우기 확인 대화상자 -->
+            <form class="av-dialog-body" method="dialog"> <!-- 확인 양식 -->
+                <h2 class="av-card-title" id="wipe-title">이 서비스의 내 내용을 모두 지울까요?</h2> <!-- 대화상자 제목 -->
+                <p class="av-note">맵 3개와 조립품이 바로 지워지며 되돌릴 수 없습니다.</p> <!-- 지우기 결과 안내 -->
+                <div class="av-field"><label class="av-label" for="wipe-confirm">확인을 위해 "지우기"를 입력해 주세요</label><input class="av-input" id="wipe-confirm" autocomplete="off"></div> <!-- 확인 입력 -->
+                <div class="av-cluster"><button class="av-button av-button-danger" type="submit" disabled>모두 지우기</button><button class="av-button" type="button" data-av-close>취소</button></div> <!-- 지우기와 취소 -->
+            </form> <!-- 확인 양식 끝 -->
+        </dialog> <!-- 지우기 확인 대화상자 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 설정 화면 끝 -->
+</html> <!-- 문서 끝 -->

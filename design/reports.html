@@ -1,0 +1,55 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>신고 처리 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="index" data-av-title="신고 처리"> <!-- 운영자 신고 처리 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <p class="av-note"><span class="av-tape av-tape-clay">운영자 전용</span> 이용자에게는 보이지 않는 화면입니다. 혼자 운영하는 조건에 맞춰 한 화면에서 확인과 처리를 끝내도록 구성했습니다. <span class="av-stage">2단계</span></p> <!-- 화면 안내와 도입 단계 -->
+
+        <div class="av-cluster" role="group" aria-label="신고 상태"> <!-- 신고 상태 칩 -->
+            <button class="av-chip" type="button" data-color="clay" data-av-set="report-state" aria-pressed="true">처리 대기 3</button> <!-- 처리 대기 -->
+            <button class="av-chip" type="button" data-color="leaf" data-av-set="report-state" aria-pressed="false">처리 완료</button> <!-- 처리 완료 -->
+            <button class="av-chip" type="button" data-color="none" data-av-set="report-state" aria-pressed="false">기각</button> <!-- 기각 -->
+        </div> <!-- 신고 상태 칩 끝 -->
+
+        <div class="av-columns"> <!-- 목록과 상세 -->
+            <div class="av-card av-card-flat av-table-wrap"> <!-- 신고 목록 카드 -->
+                <table class="av-table"> <!-- 신고 목록 표 -->
+                    <thead><tr><th scope="col">대상</th><th scope="col">사유</th><th scope="col">신고 수</th><th scope="col">받은 때</th></tr></thead> <!-- 표 머리 -->
+                    <tbody> <!-- 표 내용 -->
+                        <tr aria-current="true"><th scope="row">맵 · 옥상 불꽃놀이</th><td>다른 사람의 제작물 도용</td><td>4</td><td>2시간 전</td></tr> <!-- 고른 신고 -->
+                        <tr><th scope="row">조립품 · 카페 의자</th><td>부적절한 내용</td><td>1</td><td>어제</td></tr> <!-- 신고 2 -->
+                        <tr><th scope="row">방 채팅 · 종이배 호수</th><td>괴롭힘·혐오 표현</td><td>2</td><td>어제</td></tr> <!-- 신고 3 -->
+                    </tbody> <!-- 표 내용 끝 -->
+                </table> <!-- 신고 목록 표 끝 -->
+            </div> <!-- 신고 목록 카드 끝 -->
+
+            <aside class="av-card" aria-label="고른 신고 상세"> <!-- 신고 상세 -->
+                <h2 class="av-card-title">맵 · 옥상 불꽃놀이</h2> <!-- 대상 이름 -->
+                <div class="av-scene av-grid-paper" data-av-scene="옥상 불꽃놀이"></div> <!-- 대상 미리보기 -->
+                <p class="av-note">제작자 하늘담 · 신고 4건 · 사유: 다른 사람의 제작물 도용</p> <!-- 신고 요약 -->
+                <p>"제가 만든 전망대 조립품을 이름만 바꿔 올렸습니다."</p> <!-- 신고 내용 예시 -->
+                <div class="av-field"><label class="av-label" for="report-note">처리 메모</label><textarea class="av-textarea" id="report-note" placeholder="무엇을 확인했고 왜 이렇게 처리했는지 적습니다."></textarea></div> <!-- 처리 메모 -->
+                <div class="av-cluster"> <!-- 처리 버튼 -->
+                    <button class="av-button av-button-danger av-button-small" type="button" data-av-toast="맵을 숨겼습니다.">숨기기</button> <!-- 대상 숨김 -->
+                    <button class="av-button av-button-small" type="button" data-av-toast="제작자에게 안내를 보냈습니다.">제작자에게 안내</button> <!-- 제작자 안내 -->
+                    <button class="av-button av-button-quiet av-button-small" type="button" data-av-toast="신고를 기각했습니다.">기각</button> <!-- 신고 기각 -->
+                </div> <!-- 처리 버튼 끝 -->
+                <p class="av-help">숨긴 대상은 제작자 본인에게만 보이고, 처리 기록이 남습니다.</p> <!-- 처리 결과 안내 -->
+            </aside> <!-- 신고 상세 끝 -->
+        </div> <!-- 목록과 상세 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 운영자 신고 처리 화면 끝 -->
+</html> <!-- 문서 끝 -->

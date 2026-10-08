@@ -847,3 +847,142 @@ button.av-row /* 버튼으로 쓴 줄 */
     font-size: 0.78rem; /* 키 글자 크기 */
     font-weight: 700; /* 키 굵기 */
 } /* 키 끝 */
+
+.av-row[data-unread] /* 읽지 않은 줄 */
+{ /* 읽지 않은 줄 시작 */
+    background: color-mix(in srgb, var(--av-blue) 8%, transparent); /* 옅은 블루 바탕 */
+} /* 읽지 않은 줄 끝 */
+
+.av-row[data-unread]::before /* 읽지 않음 표시 점 */
+{ /* 표시 점 시작 */
+    content: ""; /* 빈 내용 */
+    flex: none; /* 크기 고정 */
+    width: 0.5rem; /* 점 너비 */
+    height: 0.5rem; /* 점 높이 */
+    border-radius: 50%; /* 원 모양 */
+    background: var(--av-blue); /* 블루 점 */
+} /* 표시 점 끝 */
+
+.av-skeleton /* 불러오는 중 자리 표시 */
+{ /* 자리 표시 시작 */
+    display: block; /* 줄 단위 배치 */
+    height: 1rem; /* 기본 높이 */
+    border-radius: 0.35rem; /* 자리 표시 모서리 */
+    background: linear-gradient(90deg, var(--av-surface) 25%, color-mix(in srgb, var(--av-line) 45%, var(--av-surface)) 50%, var(--av-surface) 75%); /* 흐르는 띠 */
+    background-size: 200% 100%; /* 띠 이동 범위 */
+    animation: av-skeleton 1.4s linear infinite; /* 흐르는 움직임 */
+} /* 자리 표시 끝 */
+
+.av-skeleton[data-shape="scene"] /* 그림 자리 표시 */
+{ /* 그림 자리 시작 */
+    height: auto; /* 비율로 높이 결정 */
+    aspect-ratio: 16 / 10; /* 맵 그림 비율 */
+    border-radius: var(--av-radius-small); /* 그림 모서리 */
+} /* 그림 자리 끝 */
+
+.av-skeleton[data-shape="short"] /* 짧은 글 자리 표시 */
+{ /* 짧은 글 시작 */
+    width: 45%; /* 짧은 너비 */
+} /* 짧은 글 끝 */
+
+@keyframes av-skeleton /* 자리 표시 움직임 */
+{ /* 움직임 시작 */
+    from /* 처음 */
+    { /* 처음 시작 */
+        background-position: 200% 0; /* 오른쪽에서 출발 */
+    } /* 처음 끝 */
+
+    to /* 마지막 */
+    { /* 마지막 시작 */
+        background-position: -200% 0; /* 왼쪽으로 이동 */
+    } /* 마지막 끝 */
+} /* 움직임 끝 */
+
+.av-state /* 상태 안내(빈 화면·오류·제한) */
+{ /* 상태 안내 시작 */
+    display: grid; /* 세로 격자 */
+    justify-items: center; /* 가로 가운데 */
+    gap: 0.6rem; /* 내용 간격 */
+    padding: 2rem 1.25rem; /* 안쪽 여백 */
+    text-align: center; /* 가운데 정렬 */
+} /* 상태 안내 끝 */
+
+.av-state-mark /* 상태 표식 */
+{ /* 표식 시작 */
+    display: grid; /* 가운데 배치 */
+    place-items: center; /* 가운데 정렬 */
+    width: 3.5rem; /* 표식 너비 */
+    height: 3.5rem; /* 표식 높이 */
+    border: 0.09rem solid var(--av-ink); /* 잉크 외곽선 */
+    border-radius: var(--av-radius); /* 표식 모서리 */
+    background: color-mix(in srgb, var(--av-gold) 26%, var(--av-paper)); /* 골드 바탕 */
+    transform: rotate(-4deg); /* 살짝 기울임 */
+} /* 표식 끝 */
+
+.av-state[data-tone="error"] .av-state-mark /* 오류 표식 */
+{ /* 오류 표식 시작 */
+    background: color-mix(in srgb, var(--av-clay) 24%, var(--av-paper)); /* 테라코타 바탕 */
+} /* 오류 표식 끝 */
+
+.av-state-title /* 상태 제목 */
+{ /* 상태 제목 시작 */
+    font-size: 1.1rem; /* 제목 글자 크기 */
+    font-weight: 800; /* 제목 굵기 */
+} /* 상태 제목 끝 */
+
+.av-table /* 표 */
+{ /* 표 시작 */
+    width: 100%; /* 가로 채움 */
+    border-collapse: collapse; /* 테두리 합침 */
+    font-size: 0.92rem; /* 표 글자 크기 */
+} /* 표 끝 */
+
+.av-table th, .av-table td /* 표 칸 */
+{ /* 표 칸 시작 */
+    padding: 0.65rem 0.9rem; /* 안쪽 여백 */
+    border-bottom: 1px solid var(--av-line); /* 아래 경계선 */
+    text-align: left; /* 왼쪽 정렬 */
+    vertical-align: middle; /* 세로 가운데 */
+} /* 표 칸 끝 */
+
+.av-table thead th /* 표 머리 칸 */
+{ /* 표 머리 시작 */
+    background: var(--av-surface); /* 작업대 바탕 */
+    font-size: 0.84rem; /* 머리 글자 크기 */
+    white-space: nowrap; /* 줄바꿈 방지 */
+} /* 표 머리 끝 */
+
+.av-table tbody tr:last-child > * /* 표 마지막 줄 */
+{ /* 마지막 줄 시작 */
+    border-bottom: 0; /* 아래 경계선 제거 */
+} /* 마지막 줄 끝 */
+
+.av-table-wrap /* 표 감싸는 카드 */
+{ /* 표 카드 시작 */
+    padding: 0; /* 여백 제거 */
+    overflow-x: auto; /* 가로 넘침 스크롤 */
+} /* 표 카드 끝 */
+
+@media (pointer: coarse), (max-width: 45rem) /* 손가락으로 누르는 화면 */
+{ /* 누르기 크기 시작 */
+    .av-button-small, .av-segment button, button.av-chip, a.av-chip /* 작은 버튼·구분 선택·누르는 칩 */
+    { /* 높이 키움 시작 */
+        min-height: 2.75rem; /* 누르기 권장 높이 */
+    } /* 높이 키움 끝 */
+
+    .av-button-icon.av-button-small /* 작은 아이콘 버튼 */
+    { /* 너비 키움 시작 */
+        width: 2.75rem; /* 누르기 권장 너비 */
+    } /* 너비 키움 끝 */
+
+    .av-swatch /* 색 견본 */
+    { /* 견본 키움 시작 */
+        width: 2.75rem; /* 누르기 권장 너비 */
+        height: 2.75rem; /* 누르기 권장 높이 */
+    } /* 견본 키움 끝 */
+
+    a.av-avatar /* 누르는 아바타 */
+    { /* 아바타 키움 시작 */
+        --av-avatar-size: 2.75rem; /* 누르기 권장 크기 */
+    } /* 아바타 키움 끝 */
+} /* 누르기 크기 끝 */

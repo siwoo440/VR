@@ -1,0 +1,56 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>검색 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="explore" data-av-title="검색"> <!-- 검색 결과 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <form class="av-search av-search-large" action="search.html" role="search"> <!-- 검색 양식 -->
+            <label class="av-sr" for="search-query">맵, 조립품, 제작자 검색</label> <!-- 입력 이름 -->
+            <span class="av-icon" data-i="search"></span> <!-- 검색 아이콘 -->
+            <input class="av-input" id="search-query" name="q" type="search" value="의자"> <!-- 검색어 입력 -->
+        </form> <!-- 검색 양식 끝 -->
+        <p class="av-note">"의자" 검색 결과입니다. 공개한 맵과 조립품만 찾습니다. <span class="av-stage">2단계</span></p> <!-- 결과 안내와 도입 단계 -->
+
+        <div class="av-tabs" role="tablist" aria-label="결과 종류"> <!-- 결과 종류 탭 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="search" data-av-value="kits" aria-selected="true">조립품 3</button> <!-- 조립품 결과 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="search" data-av-value="maps" aria-selected="false">맵 2</button> <!-- 맵 결과 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="search" data-av-value="makers" aria-selected="false">제작자 0</button> <!-- 제작자 결과 -->
+        </div> <!-- 결과 종류 탭 끝 -->
+
+        <section class="av-section" data-av-when="search=kits"> <!-- 조립품 결과 내용 -->
+            <ul class="av-part-list"> <!-- 조립품 목록 -->
+                <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span><span class="av-row-text"><span class="av-row-title">접이식 의자</span><span class="av-row-sub">도토리 제작 · 가져다 쓴 수 214</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 결과 1 -->
+                <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="chair" data-av-color="clay"></span><span class="av-row-text"><span class="av-row-title">카페 의자</span><span class="av-row-sub">도토리 제작 · 가져다 쓴 수 96</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 결과 2 -->
+                <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="table" data-av-color="gold"></span><span class="av-row-text"><span class="av-row-title">의자 딸린 탁자</span><span class="av-row-sub">하늘담 제작 · 가져다 쓴 수 41</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 결과 3 -->
+            </ul> <!-- 조립품 목록 끝 -->
+        </section> <!-- 조립품 결과 내용 끝 -->
+
+        <section class="av-section" data-av-when="search=maps" hidden> <!-- 맵 결과 내용 -->
+            <div class="av-card-grid"> <!-- 맵 카드 격자 -->
+                <a class="av-card av-map-card" href="map.html"><div class="av-scene av-grid-paper" data-av-scene="의자 전시장"></div><div class="av-map-body"><h2 class="av-card-title">의자 전시장</h2><p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span><span>도토리</span></p><p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>312</span><span><span class="av-icon" data-i="heart"></span>48</span></p></div></a> <!-- 맵 결과 1 -->
+                <a class="av-card av-map-card" href="map.html"><div class="av-scene av-grid-paper" data-av-scene="의자 뺏기 놀이터"></div><div class="av-map-body"><h2 class="av-card-title">의자 뺏기 놀이터</h2><p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="2" data-av-color="blue"></span><span>모과</span></p><p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>127</span><span><span class="av-icon" data-i="heart"></span>19</span></p></div></a> <!-- 맵 결과 2 -->
+            </div> <!-- 맵 카드 격자 끝 -->
+        </section> <!-- 맵 결과 내용 끝 -->
+
+        <section class="av-section" data-av-when="search=makers" hidden> <!-- 제작자 결과 내용 -->
+            <div class="av-card av-card-flat av-state"> <!-- 결과 없음 안내 -->
+                <span class="av-state-mark"><span class="av-icon" data-i="search"></span></span> <!-- 상태 표식 -->
+                <p class="av-state-title">찾는 제작자가 없습니다</p> <!-- 상태 제목 -->
+                <p class="av-note">이름을 다르게 적어 보거나, 맵과 조립품 결과에서 제작자를 찾아보세요.</p> <!-- 다음 행동 안내 -->
+            </div> <!-- 결과 없음 안내 끝 -->
+        </section> <!-- 제작자 결과 내용 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 검색 결과 화면 끝 -->
+</html> <!-- 문서 끝 -->

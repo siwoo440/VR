@@ -63,6 +63,7 @@
     [
         { id: "plans", href: "plans.html", icon: "crown", label: "구독" }, // 요금제
         { id: "profile", href: "profile.html", icon: "user", label: "프로필" }, // 내 정보
+        { id: "settings", href: "settings.html", icon: "gear", label: "설정" }, // 설정
         { id: "index", href: "index.html", icon: "grid", label: "시안 목록" } // 시안 첫 페이지
     ]; // 아래 메뉴 끝
 
@@ -137,8 +138,8 @@
             `<p class="av-draft"><span class="av-stage">시안</span>실제 서비스가 아닌 화면 시안이며, 표시된 이름·숫자·금액은 모두 예시입니다.</p>` + // 시안 안내
             `<header class="av-topbar">` + // 상단 띠 시작
             `<h1 class="av-topbar-title">${title}</h1>` + // 화면 제목
-            `<label class="av-search"><span class="av-sr">맵과 제작자 검색</span><span class="av-icon" data-i="search"></span><input class="av-input" type="search" placeholder="맵, 조립품, 제작자 검색"></label>` + // 검색칸
-            `<a class="av-button av-button-quiet av-button-icon" href="feed.html" aria-label="알림 3개"><span class="av-icon" data-i="bell"></span></a>` + // 알림 버튼
+            `<form class="av-search" action="search.html" role="search"><label class="av-sr" for="av-top-search">맵과 제작자 검색</label><span class="av-icon" data-i="search"></span><input class="av-input" id="av-top-search" name="q" type="search" placeholder="맵, 조립품, 제작자 검색"></form>` + // 검색칸
+            `<a class="av-button av-button-quiet av-button-icon" href="notifications.html" aria-label="알림 3개"${current === "notifications" ? ' aria-current="page"' : ""}><span class="av-icon" data-i="bell"></span></a>` + // 알림 버튼
             `<button class="av-button av-button-quiet av-button-icon" type="button" data-av-mode></button>` + // 화면 모드 버튼
             `<a class="av-avatar" href="profile.html" aria-label="내 프로필" data-av-avatar="1" data-av-color="gold" data-status="online"></a>` + // 내 아바타
             `</header>` + // 상단 띠 끝
@@ -163,15 +164,55 @@
                 return; // 다른 누르기는 건너뜀
             }
             const name = button.dataset.avSet; // 묶음 이름
-            const attribute = button.getAttribute("role") === "tab" ? "aria-selected" : "aria-pressed"; // 상태 속성
+            const isTab = button.getAttribute("role") === "tab"; // 탭 여부
+            const attribute = isTab ? "aria-selected" : "aria-pressed"; // 상태 속성
             document.querySelectorAll(`[data-av-set="${name}"]`).forEach((other) => // 같은 묶음 순회
             {
                 other.setAttribute(attribute, String(other === button)); // 고른 것만 켜기
+                if (isTab) // 탭 확인
+                {
+                    other.tabIndex = other === button ? 0 : -1; // 고른 탭만 탭 키로 도달
+                }
             });
             document.querySelectorAll(`[data-av-when^="${name}="]`).forEach((panel) => // 연결된 내용 순회
             {
                 panel.hidden = panel.dataset.avWhen !== `${name}=${button.dataset.avValue}`; // 맞는 내용만 표시
             });
+        });
+    }
+
+    function enhanceTabs() // 탭과 내용 짝짓기
+    {
+        document.querySelectorAll('[role="tab"][data-av-set][data-av-value]').forEach((tab) => // 탭 순회
+        {
+            const key = `${tab.dataset.avSet}-${tab.dataset.avValue}`; // 탭 구분 값
+            const panels = [...document.querySelectorAll(`[data-av-when="${tab.dataset.avSet}=${tab.dataset.avValue}"]`)]; // 탭에 딸린 내용
+            tab.id = tab.id || `av-tab-${key}`; // 탭 식별자
+            tab.tabIndex = tab.getAttribute("aria-selected") === "true" ? 0 : -1; // 고른 탭만 탭 키로 도달
+            panels.forEach((panel, index) => // 내용 순회
+            {
+                panel.id = panel.id || `av-panel-${key}-${index}`; // 내용 식별자
+                panel.setAttribute("role", "tabpanel"); // 탭 내용 역할
+                panel.setAttribute("aria-labelledby", tab.id); // 내용 이름은 탭 이름
+            });
+            if (panels.length > 0) // 내용 확인
+            {
+                tab.setAttribute("aria-controls", panels.map((panel) => panel.id).join(" ")); // 탭이 여는 내용 표시
+            }
+        });
+        document.addEventListener("keydown", (event) => // 방향키 감지
+        {
+            const tab = event.target.closest?.('[role="tab"][data-av-set]'); // 초점이 있는 탭
+            if (!tab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) // 탭과 이동 키 확인
+            {
+                return; // 다른 키는 건너뜀
+            }
+            const tabs = [...document.querySelectorAll(`[role="tab"][data-av-set="${tab.dataset.avSet}"]`)]; // 같은 묶음의 탭
+            const index = tabs.indexOf(tab); // 현재 위치
+            const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length; // 옮길 위치
+            event.preventDefault(); // 화면 스크롤 방지
+            tabs[next].focus(); // 초점 이동
+            tabs[next].click(); // 옮긴 탭 고르기
         });
     }
 
@@ -241,6 +282,7 @@
         fillIcons(document); // 아이콘 채우기
         applyMode(document.documentElement.dataset.colorMode); // 모드 버튼 그리기
         bindSets(); // 고르기 묶음 연결
+        enhanceTabs(); // 탭과 내용 짝짓기
         bindToggles(); // 켜고 끄기 연결
         bindMode(); // 모드 버튼 연결
         window.AtelierScene?.refresh(); // 새로 생긴 아바타 그리기

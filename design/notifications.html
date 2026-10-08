@@ -1,0 +1,58 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>알림 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="notifications" data-av-title="알림"> <!-- 알림 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <section class="av-section av-narrow"> <!-- 알림 구역 -->
+            <div class="av-section-head"> <!-- 구역 머리 -->
+                <p class="av-note av-section-title">나에게 온 초대와 반응을 모아 봅니다. <span class="av-stage">2단계</span></p> <!-- 화면 안내와 도입 단계 -->
+                <div class="av-segment" aria-label="알림 범위"> <!-- 알림 범위 고르기 -->
+                    <button type="button" data-av-set="notice-scope" aria-pressed="true">전체</button> <!-- 전체 알림 -->
+                    <button type="button" data-av-set="notice-scope" aria-pressed="false">읽지 않음 3</button> <!-- 읽지 않은 알림 -->
+                </div> <!-- 알림 범위 고르기 끝 -->
+                <button class="av-button av-button-quiet av-button-small" type="button" data-av-toast="모두 읽은 것으로 표시했습니다.">모두 읽음</button> <!-- 모두 읽음 -->
+            </div> <!-- 구역 머리 끝 -->
+            <ul class="av-card av-notice-list"> <!-- 알림 목록 -->
+                <li class="av-row" data-unread> <!-- 읽지 않은 초대 -->
+                    <span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="room"></span> <!-- 보낸 사람 -->
+                    <span class="av-row-text"><span class="av-row-title">모과 님이 방에 초대했습니다</span><span class="av-row-sub">모과의 보드게임 카페 · 3 / 8명 · 방금</span></span> <!-- 알림 내용 -->
+                    <a class="av-button av-button-primary av-button-small" href="room.html">입장</a> <!-- 방 입장 -->
+                </li> <!-- 읽지 않은 초대 끝 -->
+                <li class="av-row" data-unread> <!-- 읽지 않은 새 맵 -->
+                    <span class="av-avatar" data-av-avatar="4" data-av-color="clay"></span> <!-- 제작자 -->
+                    <span class="av-row-text"><span class="av-row-title">하늘담 님이 새 맵을 공개했습니다</span><span class="av-row-sub">옥상 불꽃놀이 · 2시간 전</span></span> <!-- 알림 내용 -->
+                    <a class="av-button av-button-small" href="map.html">구경하기</a> <!-- 맵 이동 -->
+                </li> <!-- 읽지 않은 새 맵 끝 -->
+                <li class="av-row" data-unread> <!-- 읽지 않은 리믹스 -->
+                    <span class="av-avatar" data-av-avatar="5" data-av-color="blue"></span> <!-- 리믹스한 사람 -->
+                    <span class="av-row-text"><span class="av-row-title">새벽달 님이 내 맵을 리믹스했습니다</span><span class="av-row-sub">점프 연습장 · 어제</span></span> <!-- 알림 내용 -->
+                    <a class="av-button av-button-small" href="map.html">보기</a> <!-- 리믹스 맵 이동 -->
+                </li> <!-- 읽지 않은 리믹스 끝 -->
+                <li class="av-row"> <!-- 읽은 좋아요 -->
+                    <span class="av-avatar" data-av-avatar="3" data-av-color="leaf"></span> <!-- 좋아요한 사람 -->
+                    <span class="av-row-text"><span class="av-row-title">도토리 님 외 4명이 내 맵을 좋아합니다</span><span class="av-row-sub">햇살 다락방 · 3일 전</span></span> <!-- 알림 내용 -->
+                </li> <!-- 읽은 좋아요 끝 -->
+                <li class="av-row"> <!-- 읽은 운영 공지 -->
+                    <span class="av-avatar"><span class="av-icon" data-i="megaphone"></span></span> <!-- 공지 표시 -->
+                    <span class="av-row-text"><span class="av-row-title">운영 공지: 화요일 새벽 점검</span><span class="av-row-sub">점검 중에는 방에 들어올 수 없습니다 · 3일 전</span></span> <!-- 알림 내용 -->
+                    <a class="av-button av-button-quiet av-button-small" href="feed.html">소식 보기</a> <!-- 소식 이동 -->
+                </li> <!-- 읽은 운영 공지 끝 -->
+            </ul> <!-- 알림 목록 끝 -->
+            <p class="av-help">받을 알림의 종류는 <a class="av-text-link" href="feed.html">소식의 알림 받기</a>에서 정합니다. 차단한 사람의 알림은 오지 않습니다.</p> <!-- 알림 설정 안내 -->
+        </section> <!-- 알림 구역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 알림 화면 끝 -->
+</html> <!-- 문서 끝 -->

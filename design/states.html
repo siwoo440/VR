@@ -1,0 +1,53 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>상태 화면 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="index" data-av-title="상태 화면"> <!-- 상태 화면 모음 -->
+    <main> <!-- 화면 본문 시작 -->
+        <p class="av-note">내용이 없거나, 불러오는 중이거나, 문제가 생겼을 때 각 화면에 끼워 넣는 안내 모음입니다. 무엇이 일어났는지와 다음에 할 일을 함께 적습니다.</p> <!-- 화면 안내 -->
+
+        <section class="av-section"> <!-- 불러오는 중 구역 -->
+            <h2 class="av-section-title"><mark>불러오는 중</mark></h2> <!-- 구역 제목 -->
+            <div class="av-card-grid" aria-busy="true" aria-label="맵을 불러오는 중"> <!-- 자리 표시 격자 -->
+                <div class="av-card av-map-card"><span class="av-skeleton" data-shape="scene"></span><span class="av-skeleton"></span><span class="av-skeleton" data-shape="short"></span></div> <!-- 맵 카드 자리 1 -->
+                <div class="av-card av-map-card"><span class="av-skeleton" data-shape="scene"></span><span class="av-skeleton"></span><span class="av-skeleton" data-shape="short"></span></div> <!-- 맵 카드 자리 2 -->
+                <div class="av-card av-map-card"><span class="av-skeleton" data-shape="scene"></span><span class="av-skeleton"></span><span class="av-skeleton" data-shape="short"></span></div> <!-- 맵 카드 자리 3 -->
+            </div> <!-- 자리 표시 격자 끝 -->
+            <p class="av-help">실제 카드와 같은 크기의 자리 표시를 먼저 보여 줘서 화면이 밀리지 않게 합니다.</p> <!-- 자리 표시 안내 -->
+        </section> <!-- 불러오는 중 구역 끝 -->
+
+        <section class="av-section"> <!-- 내용 없음 구역 -->
+            <h2 class="av-section-title"><mark>내용이 없을 때</mark></h2> <!-- 구역 제목 -->
+            <div class="av-kit-grid"> <!-- 안내 격자 -->
+                <div class="av-card av-grid-paper av-state"><span class="av-part-icon" data-av-block="cube" data-av-color="gold"></span><p class="av-state-title">아직 만든 맵이 없습니다</p><p class="av-note">빈 모눈 바닥에 블록을 놓아 첫 방을 만들어 보세요.</p><a class="av-button av-button-primary" href="editor.html"><span class="av-icon" data-i="plus"></span>새 맵 만들기</a></div> <!-- 첫 맵 없음 -->
+                <div class="av-card av-card-flat av-state"><span class="av-state-mark"><span class="av-icon" data-i="bell"></span></span><p class="av-state-title">새 소식이 없습니다</p><p class="av-note">제작자를 팔로우하면 새 맵과 조립품 소식이 여기에 모입니다.</p><a class="av-button" href="explore.html">제작자 둘러보기</a></div> <!-- 소식 없음 -->
+                <div class="av-card av-card-flat av-state"><span class="av-state-mark"><span class="av-icon" data-i="chat"></span></span><p class="av-state-title">대화가 없습니다</p><p class="av-note">친구에게 첫 메시지를 보내거나 방에 초대해 보세요.</p></div> <!-- 대화 없음 -->
+            </div> <!-- 안내 격자 끝 -->
+        </section> <!-- 내용 없음 구역 끝 -->
+
+        <section class="av-section"> <!-- 문제 발생 구역 -->
+            <h2 class="av-section-title"><mark>문제가 생겼을 때</mark></h2> <!-- 구역 제목 -->
+            <div class="av-kit-grid"> <!-- 안내 격자 -->
+                <div class="av-card av-state" data-tone="error" role="alert"><span class="av-state-mark"><span class="av-icon" data-i="link"></span></span><p class="av-state-title">연결이 끊겼습니다</p><p class="av-note">만들던 내용은 이 기기에 남아 있습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p><button class="av-button av-button-primary" type="button">다시 연결</button></div> <!-- 연결 끊김 -->
+                <div class="av-card av-state" data-tone="error"><span class="av-state-mark"><span class="av-icon" data-i="users"></span></span><p class="av-state-title">방이 가득 찼습니다</p><p class="av-note">한 방에는 8명까지 들어올 수 있습니다. 자리가 나면 다시 들어오거나 같은 맵으로 새 방을 열 수 있습니다.</p><div class="av-cluster"><a class="av-button av-button-primary" href="room.html">새 방 열기</a><a class="av-button" href="map.html">맵으로 돌아가기</a></div></div> <!-- 방 가득 참 -->
+                <div class="av-card av-state" data-tone="error"><span class="av-state-mark"><span class="av-icon" data-i="lock"></span></span><p class="av-state-title">비공개 맵입니다</p><p class="av-note">제작자가 공개하지 않은 맵입니다. 초대 링크를 받았다면 그 링크로 들어와 주세요.</p><a class="av-button" href="studio.html">내 작업실로</a></div> <!-- 권한 없음 -->
+                <div class="av-card av-state" data-tone="error"><span class="av-state-mark"><span class="av-icon" data-i="search"></span></span><p class="av-state-title">찾을 수 없는 화면입니다</p><p class="av-note">주소가 바뀌었거나 지워진 맵일 수 있습니다.</p><a class="av-button" href="studio.html">내 작업실로</a></div> <!-- 없는 화면 -->
+                <div class="av-card av-state"><span class="av-state-mark"><span class="av-icon" data-i="gear"></span></span><p class="av-state-title">점검 중입니다</p><p class="av-note">점검이 끝나면 다시 들어올 수 있습니다. 만든 맵은 그대로 있습니다.</p></div> <!-- 점검 중 -->
+                <div class="av-card av-state" data-tone="error"><span class="av-state-mark"><span class="av-icon" data-i="vr"></span></span><p class="av-state-title">이 기기에서는 VR로 볼 수 없습니다</p><p class="av-note">VR 기기의 브라우저에서 같은 링크를 열어 주세요. 지금 기기에서는 화면으로 계속 이용할 수 있습니다.</p><button class="av-button" type="button" data-av-toast="방 링크를 복사했습니다.">링크 복사</button></div> <!-- VR 미지원 -->
+            </div> <!-- 안내 격자 끝 -->
+        </section> <!-- 문제 발생 구역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 상태 화면 모음 끝 -->
+</html> <!-- 문서 끝 -->
