@@ -3,6 +3,7 @@
     "rootNamespace": "AtelierVerse.Tests",
     "references": [
         "AtelierVerse.Runtime",
+        "AtelierVerse.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

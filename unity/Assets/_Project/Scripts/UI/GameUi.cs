@@ -22,6 +22,7 @@ namespace AtelierVerse.UI
         public const string FlyOffMessage = "걷기로 돌아왔습니다";
         public const string WalkLabel = "걷기";
         public const string FlyLabel = "날기";
+        public const string BrandName = "Atelier | Verse";
 
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
@@ -45,6 +46,7 @@ namespace AtelierVerse.UI
         [SerializeField] private TMP_Text roomLabel;
         [SerializeField] private TMP_Text menuRoomLabel;
         [SerializeField] private TMP_Text menuNameLabel;
+        [SerializeField] private TMP_Text brandLabel;
         [SerializeField] private TMP_Text viewLabel;
         [SerializeField] private TMP_Text saveLabel;
         [SerializeField] private Color saveTextColor = Color.white;
@@ -255,6 +257,8 @@ namespace AtelierVerse.UI
             if (roomLabel != null) roomLabel.text = $"{roomName}  <color=#{muted}>{LocalPeopleCount}/{RoomRules.MaxPeople}</color>";
             if (menuRoomLabel != null) menuRoomLabel.text = $"{roomName} · {LocalPeopleCount}/{RoomRules.MaxPeople}";
             if (menuNameLabel != null) menuNameLabel.text = localDisplayName;
+            // 어느 판에서 생긴 문제인지 알 수 있도록 메뉴에 버전을 적는다. 값은 프로젝트 설정의 bundleVersion이다.
+            if (brandLabel != null) brandLabel.text = $"{BrandName}  v{Application.version}";
 
             foreach (PeopleListView list in peopleLists)
             {

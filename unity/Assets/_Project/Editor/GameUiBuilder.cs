@@ -94,7 +94,7 @@ namespace AtelierVerse.EditorTools
             GameObject crosshair = BuildCrosshair(hud);
             GameObject focusHint = BuildFocusHint(hud);
 
-            QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out PeopleListView menuPeople);
+            QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople);
             CreateEventSystem(root.transform);
 
             var serialized = new SerializedObject(ui);
@@ -110,6 +110,7 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("roomLabel").objectReferenceValue = roomLabel;
             serialized.FindProperty("menuRoomLabel").objectReferenceValue = menuRoomLabel;
             serialized.FindProperty("menuNameLabel").objectReferenceValue = menuNameLabel;
+            serialized.FindProperty("brandLabel").objectReferenceValue = brandLabel;
             serialized.FindProperty("viewLabel").objectReferenceValue = viewLabel;
             serialized.FindProperty("saveLabel").objectReferenceValue = saveLabel;
             serialized.FindProperty("saveTextColor").colorValue = Paper;
@@ -437,7 +438,7 @@ namespace AtelierVerse.EditorTools
 
         // ── Esc 메뉴 ────────────────────────────────────────────────
 
-        private static QuickMenuView BuildQuickMenu(RectTransform canvas, Icons icons, out TMP_Text roomLabel, out TMP_Text nameLabel, out PeopleListView people)
+        private static QuickMenuView BuildQuickMenu(RectTransform canvas, Icons icons, out TMP_Text roomLabel, out TMP_Text nameLabel, out TMP_Text brandLabel, out PeopleListView people)
         {
             RectTransform holder = UiFactory.Rect("QuickMenu", canvas);
             UiFactory.Fill(holder);
@@ -466,8 +467,9 @@ namespace AtelierVerse.EditorTools
             roomLabel = UiFactory.Text("Room", panel.transform, "시험 작업실 · 1/8", 20f, Muted);
             UiFactory.Place(roomLabel.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding + 72f, -58f), new Vector2(480f, 28f));
 
-            TMP_Text brand = UiFactory.Text("Brand", panel.transform, "Atelier | Verse", 22f, Muted, true, TextAlignmentOptions.Right);
-            UiFactory.Place(brand.rectTransform, UiFactory.TopRight, new Vector2(-PanelPadding, -38f), new Vector2(300f, 32f));
+            // 서비스 이름과 버전(실행 중에 GameUi가 채움)
+            brandLabel = UiFactory.Text("Brand", panel.transform, "Atelier | Verse", 22f, Muted, true, TextAlignmentOptions.Right);
+            UiFactory.Place(brandLabel.rectTransform, UiFactory.TopRight, new Vector2(-PanelPadding, -38f), new Vector2(360f, 32f));
 
             // 탭: 고른 탭 아래에 형광펜 선이 깔린다
             string[] tabNames = { "바로가기", "사람들", "설정", "도움말" };

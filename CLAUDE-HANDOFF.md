@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 7일차(날기 V, Space 위·Shift 아래, 걷기·날기 표시)
-- 마지막 검증: 편집 모드 테스트 66개 통과, 플레이 모드 테스트 65개 통과(화면 그림 찍기 6개 포함, `-captureDir` 없이 돌리면 59개 통과·6개 건너뜀). 에디터에서 직접 해 보는 확인, Windows 빌드, Quest 실행은 하지 않음
+- 마지막 작업: Unity 8일차(Windows 빌드 스크립트 `scripts/build-windows.mjs`, 실제 빌드 104MB·61초와 10초 실행 확인, 메뉴의 버전 표시, 창 모드 1600×900)
+- 마지막 검증: 편집 모드 테스트 73개 통과, 플레이 모드 테스트 60개 통과·6개 건너뜀(그림 찍기, `-captureDir`을 주면 66개 통과). Windows 빌드 성공과 실행 파일의 자동 확인(열기·저장·끝내기) 통과. 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행은 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 8일차(Windows 빌드 확인). 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 9일차(조작과 겉모습 나누기). 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -22,8 +22,9 @@
 3. Unity Hub에서 `unity` 폴더를 프로젝트로 추가해 열기. 처음 열면 `Library`를 새로 만드느라 몇 분 걸림
 4. `Assets/_Project/Scenes/Sandbox` 씬에서 재생. 조작은 `README.md`의 "Unity 프로젝트" 절 참고
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
+6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`)
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day07`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day08`이 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -44,6 +45,7 @@
 | `docs/BACKLOG.md` | 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록. 영역별 표와 "가장 먼저 할 것" |
 | `docs/MAP-FORMAT.md` | 맵 파일 형식 1판. 구조, 읽을 때의 검사, 저장 위치, 판을 올리는 방법 |
 | `scripts/serve.mjs` | 화면 시안 미리보기 서버 |
+| `scripts/build-windows.mjs` | Windows 빌드와 자동 실행 확인(`--run`) |
 | `scripts/unity-verify.mjs` | 에디터가 열려 있을 때 쓰는 검증용 사본 도구(아래 "검증 방법") |
 
 이 저장소 밖에 있는 것은 다음과 같습니다.
@@ -107,11 +109,19 @@
 - 날기(`DesktopPlayerController.IsFlying`, `SetFlying`): V(`Player` 맵의 `Fly`)로 켜고 끔. 중력 없이 Space(Jump)로 오르고 Shift(Sprint)로 내려오며 속도 7m/s. 블록과 부딪힘. 시작 위치로 돌아가면 꺼짐. 저장하지 않음.
 - 오른쪽 아래 걷기·날기 표시(`GameUi.modeLabel`·`modeDot`), 켜고 끌 때 알림, 키 안내와 도움말의 V.
 
+### Unity 8일차
+
+- `Editor/BuildPlayer.cs`: Windows 64비트 빌드(Mono, 빌드 설정의 씬). 명령줄 `-executeMethod AtelierVerse.EditorTools.BuildPlayer.BuildWindows -buildOut 폴더 [-development]`, 메뉴 `Atelier Verse/Windows 빌드 만들기`.
+- `scripts/build-windows.mjs`: 빌드 뒤 `--run`으로 실행 파일을 `-quitAfter 10 -screenshotOut`으로 띄워 종료 코드·로그 예외·맵 파일·화면 그림을 확인. 2026-10-08 실제로 104MB·61초 빌드, 실행 확인 통과.
+- `Bootstrap`이 `-quitAfter 초`와 `-screenshotOut 경로`를 읽음(자동 확인 전용, 인자가 없으면 전과 같음).
+- 플레이어 설정: 창 모드(1600×900, 크기 조절), 뒤에서도 실행, Mono. Esc 메뉴에 `v{Application.version}` 표시(`GameUi.brandLabel`).
+
 ### 아직 동작하지 않는 것
 
 - 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
 - 블록 옮기기·돌리기가 없습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
 - 날기 속도는 하나(7m/s)이고 벽을 통과하지 못합니다.
+- 빌드는 Mono이며 아이콘·시작 화면은 Unity 기본값입니다. 실행 파일에서 사람이 직접 조작해 본 적은 없습니다.
 - 알림은 마지막 하나만 보입니다. 저장 실패 알림은 실제 실패 상황에서 확인하지 않았습니다.
 - 블록 수 상한 500개와 블록 하나를 게임 오브젝트 하나로 두는 방식은 임시입니다. Quest에서 재 본 뒤에 정합니다.
 - 바로가기의 내 작업실·맵 둘러보기·캐릭터·안전·신고는 "준비 중"으로 표시되고 누를 수 없습니다.
@@ -124,7 +134,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 7일차 : 날기와 걸어 보기 |
+| (이 문서가 든 커밋) | 8일차 : Windows 빌드 확인 |
+| `838d9ed` | 7일차 : 날기와 걸어 보기 |
 | `2335df9` | 6일차 : 블록 칠하기와 알림 띠 |
 | `1d8dd2c` | 5일차 : 되돌리기와 다시 실행 |
 | `5603bce` | 4일차 : 맵 데이터 형식과 저장·불러오기 |
@@ -175,7 +186,7 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup ~ Day7Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture
+  Editor/           Day1Setup ~ Day8Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer
   Input/            AtelierInput.inputactions (Player 맵, Game 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
@@ -183,8 +194,8 @@ unity/Assets/_Project/
   Scripts/Player/   DesktopPlayerController, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar
   Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests
-  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 ```
@@ -267,6 +278,9 @@ Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVer
 
 # 특정 일차의 셋업 다시 적용
 Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVerse.EditorTools.Day2Setup.Apply -logFile <로그>
+
+# Windows 빌드와 자동 실행 확인(저장소 폴더에서). 빌드만 하려면 --run을 뺀다
+node scripts/build-windows.mjs --run
 ```
 
 - 결과는 `<결과.xml>`의 `test-run` 줄(통과·실패 수)과 로그의 `error CS`로 확인합니다.
@@ -296,7 +310,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 ### 명령줄로 확인할 수 없는 것
 
-실제 마우스 포인터로 단추가 눌리는지, 마우스 시점의 느낌, 점프, Windows 빌드, Quest에서의 실행입니다. 확인하지 않은 것은 확인하지 않았다고 일지와 보고에 적습니다.
+실제 마우스 포인터로 단추가 눌리는지, 마우스 시점의 느낌, 점프, 실행 파일에서의 직접 조작, Quest에서의 실행입니다. Windows 빌드는 `build-windows.mjs --run`이 "열리고, 저장하고, 끝난다"까지만 확인합니다. 확인하지 않은 것은 확인하지 않았다고 일지와 보고에 적습니다.
 
 ---
 ## 사용자 결정이 필요한 항목
@@ -313,6 +327,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(VR 리그를 만드는 일차 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
 - 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기, 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
+- `unity/Builds/Windows/AtelierVerse.exe`를 직접 열어 창 크기, 조작, 메뉴의 "게임 끝내기"를 확인
 - 통합 계정의 실제 연결(홈페이지 저장소의 `docs/UNIFIED-ACCOUNT.md`)
 
 ---
@@ -320,10 +335,9 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
-1. **8일차: Windows 빌드 확인.** 명령줄 빌드 스크립트(`-buildWindows64Player` 또는 에디터 스크립트의 `BuildPipeline`)를 만들고 실제로 빌드해 실행합니다. 확인할 것: 에디터 밖에서 걷기·놓기·저장이 되는지, 저장 폴더(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps`)가 실제로 만들어지는지, 메뉴의 "게임 끝내기"로 꺼지는지, 창 크기와 전체 화면. 빌드 결과물(`unity/Builds/`)은 `.gitignore`에 이미 있습니다. 메뉴에 버전 표기(`Application.version`)를 함께 넣을지 검토합니다.
-2. **조작과 겉모습 나누기.** `DesktopPlayerController`의 입력·걷기·날기·카메라를 나누어 다른 사람의 캐릭터와 VR 캐릭터가 같은 겉모습을 쓰게 합니다.
-3. **VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다. 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1입니다. `GameUI`의 메뉴를 눈앞에 띄우는 방식으로 옮깁니다.
-4. 그 뒤는 1-A(혼자 만들기)의 나머지: 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기, 부품 수 상한 정하기(Quest에서 재기).
+1. **9일차: 조작과 겉모습 나누기.** `DesktopPlayerController`의 입력·걷기·날기·카메라를 나누어, 입력이 없는 다른 사람의 캐릭터(1-D)와 VR 캐릭터(1-B)가 같은 겉모습(`AvatarView`, `Nameplate`)을 쓰게 합니다. 가안: `CharacterMotor`(이동·중력·날기, 입력과 무관) + `DesktopInput`(키·마우스 → 모터) + `ViewRig`(카메라 거리·어깨). 기존 테스트 131개가 그대로 통과해야 하고, 프리팹 구조가 바뀌면 9일차 셋업이 `Player_Desktop`을 다시 만듭니다.
+2. **VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다. 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1입니다. `GameUI`의 메뉴를 눈앞에 띄우는 방식으로 옮깁니다.
+3. 그 뒤는 1-A(혼자 만들기)의 나머지: 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -355,7 +369,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day07/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day08/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

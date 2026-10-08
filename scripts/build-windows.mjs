@@ -1,0 +1,100 @@
+// Windows 실행 파일을 명령줄로 만들고, 원하면 바로 실행해 저장 파일과 로그로 확인하는 도구
+// 사용법: node scripts/build-windows.mjs [--out 폴더] [--development] [--run] [--quit-after 초] [--skip-build] [--unity Unity.exe 경로]
+import { spawnSync } from "node:child_process"; // 외부 프로그램 실행
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs"; // 파일 확인
+import { homedir } from "node:os"; // 사용자 폴더
+import { join, normalize, resolve } from "node:path"; // 경로 처리
+import { fileURLToPath } from "node:url"; // 파일 주소 변환
+
+const REPO = normalize(join(fileURLToPath(new URL(".", import.meta.url)), "..")); // 저장소 폴더
+const PROJECT = join(REPO, "unity"); // Unity 프로젝트 폴더
+const EXECUTABLE = "AtelierVerse.exe"; // 실행 파일 이름
+const SAVE_FILE = join(homedir(), "AppData", "LocalLow", "Palettra Games", "Atelier Verse", "maps", "local.map.json"); // 실행 파일이 쓰는 맵 파일
+const args = process.argv.slice(2); // 명령줄 인자
+
+function option(name, fallback) // 이름 뒤의 값 읽기
+{
+    const index = args.indexOf(name); // 인자 위치
+    return index >= 0 && index + 1 < args.length ? args[index + 1] : fallback; // 값 또는 기본값
+} // option 끝
+
+function flag(name) // 켜짐 여부 읽기
+{
+    return args.includes(name); // 포함 여부
+} // flag 끝
+
+function grep(file, pattern) // 로그에서 줄 찾기
+{
+    if (!existsSync(file)) return []; // 파일 없음
+    return readFileSync(file, "utf8").split(/\r?\n/).filter((line) => pattern.test(line)); // 맞는 줄
+} // grep 끝
+
+function folderSize(folder) // 폴더 전체 크기(바이트)
+{
+    let total = 0; // 합계
+    for (const entry of readdirSync(folder, { withFileTypes: true })) // 항목마다
+    {
+        const path = join(folder, entry.name); // 항목 경로
+        total += entry.isDirectory() ? folderSize(path) : statSync(path).size; // 하위 폴더 또는 파일 크기
+    }
+    return total; // 합계 반환
+} // folderSize 끝
+
+function defaultUnity() // 프로젝트 버전에 맞는 Unity 실행 파일
+{
+    const text = readFileSync(join(PROJECT, "ProjectSettings", "ProjectVersion.txt"), "utf8"); // 버전 파일
+    const version = /m_EditorVersion:\s*(\S+)/.exec(text)?.[1] ?? ""; // 에디터 버전
+    return join("C:\\Program Files\\Unity\\Hub\\Editor", version, "Editor", "Unity.exe"); // 기본 설치 위치
+} // defaultUnity 끝
+
+const out = resolve(option("--out", join(PROJECT, "Builds", "Windows"))); // 출력 폴더
+const unity = option("--unity", defaultUnity()); // Unity 실행 파일
+const executable = join(out, EXECUTABLE); // 만들어질 실행 파일
+mkdirSync(out, { recursive: true }); // 출력 폴더 준비
+
+if (!flag("--skip-build")) // 빌드 단계
+{
+    if (!existsSync(unity)) // Unity 확인
+    {
+        console.error(`Unity 실행 파일이 없습니다: ${unity} (--unity 경로로 지정)`); // 안내
+        process.exit(1); // 실패 종료
+    }
+    const log = join(out, "build.log"); // 빌드 로그
+    const unityArgs = ["-batchmode", "-quit", "-projectPath", PROJECT, "-executeMethod", "AtelierVerse.EditorTools.BuildPlayer.BuildWindows", "-buildOut", out, "-logFile", log]; // Unity 인자
+    if (flag("--development")) unityArgs.push("-development"); // 개발용 빌드
+    console.log(`빌드 시작: ${out}`); // 시작 안내
+    const started = Date.now(); // 시작 시각
+    const build = spawnSync(unity, unityArgs, { stdio: "ignore" }); // Unity 실행(끝날 때까지 기다림)
+    console.log(`빌드 종료 코드 ${build.status}, ${Math.round((Date.now() - started) / 1000)}초`); // 결과
+    for (const line of grep(log, /\[Atelier Verse\] Windows 빌드/)) console.log(line.replace(/^.*?\[Atelier Verse\]/, "[Atelier Verse]")); // 요약 줄
+    if (build.status !== 0 || !existsSync(executable)) // 실패 처리
+    {
+        for (const line of grep(log, /error CS|Exception|Error building/).slice(0, 10)) console.error(line); // 오류 줄
+        console.error(`빌드가 끝나지 않았습니다. 로그: ${log}`); // 안내
+        process.exit(build.status || 1); // 실패 종료
+    }
+}
+
+if (!existsSync(executable)) // 실행 파일 확인
+{
+    console.error(`실행 파일이 없습니다: ${executable}`); // 안내
+    process.exit(1); // 실패 종료
+}
+console.log(`실행 파일: ${executable} (폴더 전체 ${(folderSize(out) / 1024 / 1024).toFixed(0)}MB)`); // 크기 안내
+
+if (flag("--run")) // 실행 확인 단계
+{
+    const seconds = option("--quit-after", "10"); // 끝내기까지의 초
+    const screenshot = join(out, "smoke.png"); // 화면 그림
+    const log = join(out, "player.log"); // 실행 로그
+    const exeArgs = ["-quitAfter", seconds, "-screenshotOut", screenshot, "-logFile", log, "-screen-fullscreen", "0", "-screen-width", "1280", "-screen-height", "720"]; // 실행 인자
+    console.log(`실행 시작: ${seconds}초 뒤 스스로 끝남`); // 안내
+    const run = spawnSync(executable, exeArgs, { stdio: "ignore", timeout: (Number(seconds) + 90) * 1000 }); // 실행(끝날 때까지 기다림)
+    console.log(`실행 종료 코드 ${run.status}${run.error ? ` (${run.error.message})` : ""}`); // 결과
+    for (const line of grep(log, /\[Atelier Verse\]/)) console.log(line); // 앱의 안내 줄
+    const problems = grep(log, /Exception|NullReference|error CS/).filter((line) => !/\[Atelier Verse\]/.test(line)); // 예외 줄
+    console.log(problems.length ? `로그의 예외 ${problems.length}줄:\n${problems.slice(0, 10).join("\n")}` : "로그에 예외 없음"); // 예외 안내
+    console.log(`저장 파일: ${existsSync(SAVE_FILE) ? "있음" : "없음"} ${SAVE_FILE}`); // 저장 확인
+    console.log(`화면 그림: ${existsSync(screenshot) ? "있음" : "없음"} ${screenshot}`); // 그림 확인
+    if (run.status !== 0 || !existsSync(SAVE_FILE) || problems.length > 0) process.exit(1); // 하나라도 틀리면 실패
+}

@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 7일차(날기와 걸어 보기)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 8일차(Windows 빌드)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -47,6 +47,7 @@
 | 5일차 | 놓기·지우기의 되돌리기(Ctrl+Z)와 다시 실행(Ctrl+Y) | [`unity/Devlogs/Day05`](unity/Devlogs/Day05/README.md) |
 | 6일차 | 놓인 블록을 고른 부품으로 칠하기, 화면 위 가운데의 알림 띠 | [`unity/Devlogs/Day06`](unity/Devlogs/Day06/README.md) |
 | 7일차 | 날기(만들기 시점)와 걸어 보기의 전환 | [`unity/Devlogs/Day07`](unity/Devlogs/Day07/README.md) |
+| 8일차 | Windows 빌드 스크립트, 실제 빌드와 실행 확인, 메뉴의 버전 표시 | [`unity/Devlogs/Day08`](unity/Devlogs/Day08/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -62,6 +63,18 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 되돌리기, 다시 실행 | Ctrl+Z, Ctrl+Y |
 | 사람들 목록 | Tab |
 | 메뉴 | Esc |
+
+## Windows 빌드 만들기
+
+Unity Hub에 프로젝트 버전(`6000.3.21f1`)의 에디터가 기본 위치에 설치되어 있으면 아래 한 줄로 실행 파일을 만듭니다. 결과는 `unity/Builds/Windows/AtelierVerse.exe`이며 저장소에는 들어가지 않습니다.
+
+```bash
+node scripts/build-windows.mjs
+```
+
+`--run`을 붙이면 만든 실행 파일을 10초 동안 실제로 띄웠다가 스스로 끝내고, 맵 파일이 만들어졌는지와 로그에 예외가 없는지, 화면 그림(`smoke.png`)을 확인합니다. `--development`는 개발용 빌드, `--out 폴더`는 다른 출력 폴더, `--skip-build --run`은 이미 만든 실행 파일만 다시 확인합니다. 에디터 메뉴 `Atelier Verse/Windows 빌드 만들기`로도 만들 수 있습니다.
+
+실행 파일은 `-quitAfter 초`와 `-screenshotOut 경로` 인자를 알아듣습니다(자동 확인용).
 
 ## 시안 보는 방법
 
@@ -117,6 +130,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. Windows 빌드 확인
-2. 조작과 겉모습 나누기, 블록 옮기기·돌리기(모양이 다른 부품과 함께)
-3. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인
+1. 조작과 겉모습 나누기
+2. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인
+3. 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기
