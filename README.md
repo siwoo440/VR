@@ -22,7 +22,7 @@
 | 둘러보기 | `design/explore.html` | 공개 맵 검색, 지금 열린 방 | 2단계 |
 | 맵 상세 | `design/map.html` | 맵 소개, 방 열기, 초대 링크, 리믹스, 신고 | 2단계 |
 | 소식 | `design/feed.html` | 친구·제작자 소식, 알림 설정 | 2단계 |
-| 메시지 | `design/messages.html` | 1:1 대화, 그룹, 공지 채널 | 3~4단계 |
+| 메시지 | `design/messages.html` | 1:1 대화, 그룹, 공지 채널 | 4단계 |
 | 상점 | `design/shop.html` | 꾸미기 아이템, 제작자 마켓, 내 보관함 | 4~5단계 |
 | 구독 | `design/plans.html` | 무료와 구독 요금제 비교 | 4단계 |
 | 구성요소 | `design/components.html` | 색, 버튼, 입력, 카드, 캐릭터, 부품 그림 모음 | 공통 |
