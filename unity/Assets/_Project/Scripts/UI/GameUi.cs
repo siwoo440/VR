@@ -14,7 +14,8 @@ namespace AtelierVerse.UI
     /// 게임 화면 전체를 묶는 곳. 늘 보이는 화면(위쪽 띠, 사람들 목록, 부품 칸)과 Esc 메뉴를 잇고,
     /// 메뉴가 열려 있는 동안 캐릭터 조작을 막는다. 부품 칸에서 고른 부품을 블록 놓기(BlockBuilder)에 알려 준다.
     /// 캐릭터는 이 기기의 캐릭터(LocalPlayer)로만 알고, 키보드·마우스인지 VR인지는 그쪽에 묻는다.
-    /// VR에서는 화면을 눈앞의 판(XrUiPanel)으로 띄우고, 메뉴가 열려 있는 동안 오른손 광선을 보인다.
+    /// VR에서는 화면을 눈앞의 판(XrUiPanel)으로 띄우고, 부품 칸과 상태 표시는 왼손 위의 부품 판(XrHandPalette)에 보인다.
+    /// 오른손 광선은 가리킨 화면이나 블록을 놓을 자리에서 끝나게 한다.
     /// </summary>
     public class GameUi : MonoBehaviour
     {
@@ -38,6 +39,7 @@ namespace AtelierVerse.UI
         [SerializeField] private InputActionAsset actions;
         [SerializeField] private LocalPlayer player;
         [SerializeField] private XrUiPanel xrPanel;
+        [SerializeField] private XrHandPalette palette;
         [SerializeField] private HotbarView hotbar;
         [SerializeField] private QuickMenuView menu;
         [SerializeField] private PeopleListView[] peopleLists;
@@ -88,6 +90,9 @@ namespace AtelierVerse.UI
 
         public XrUiPanel XrPanel => xrPanel;
 
+        /// <summary>VR에서 왼손 위에 뜨는 부품 판.</summary>
+        public XrHandPalette Palette => palette;
+
         private bool InVr => player != null && player.IsVr;
 
         private void Awake()
@@ -132,6 +137,14 @@ namespace AtelierVerse.UI
             }
 
             if (hotbar != null) hotbar.Model.SelectionChanged += ShowSelectedPart;
+            if (palette != null)
+            {
+                // 부품 판의 부품 칸은 화면 아래의 부품 칸과 같은 선택 상태를 쓴다.
+                if (hotbar != null && palette.Hotbar != null) palette.Hotbar.Bind(hotbar.Model);
+                palette.UndoRequested += Undo;
+                palette.RedoRequested += Redo;
+            }
+
             if (world != null) world.Changed += ShowBlockCount;
             if (autoSave != null) autoSave.Changed += ShowSaveState;
             GameSettings.Changed += ApplySettings;
@@ -142,6 +155,12 @@ namespace AtelierVerse.UI
             GameSettings.Changed -= ApplySettings;
             if (autoSave != null) autoSave.Changed -= ShowSaveState;
             if (world != null) world.Changed -= ShowBlockCount;
+            if (palette != null)
+            {
+                palette.RedoRequested -= Redo;
+                palette.UndoRequested -= Undo;
+            }
+
             if (hotbar != null) hotbar.Model.SelectionChanged -= ShowSelectedPart;
             if (player != null)
             {
@@ -189,6 +208,7 @@ namespace AtelierVerse.UI
                 ReadPlayKeys();
             }
 
+            if (palette != null) palette.SetWanted(InVr && !IsMenuOpen);
             UpdatePointer();
             RefreshHud();
         }
@@ -226,21 +246,15 @@ namespace AtelierVerse.UI
         }
 
         /// <summary>
-        /// VR에서 메뉴를 열면 판을 지금의 눈앞에 놓아 그 자리에 두고 오른손 광선을 보인다.
-        /// 닫으면 판이 다시 머리를 따라오고 광선을 감춘다. PC에서는 아무 일도 하지 않는다.
+        /// VR에서 메뉴를 열면 판을 지금의 눈앞에 놓아 그 자리에 둔다. 닫으면 판이 다시 머리를 따라온다.
+        /// PC에서는 아무 일도 하지 않는다.
         /// </summary>
         private void ShowVrMenu(bool open)
         {
-            if (!InVr) return;
+            if (!InVr || xrPanel == null) return;
 
-            if (xrPanel != null)
-            {
-                xrPanel.Follow = !open;
-                if (open) xrPanel.PlaceForMenu();
-            }
-
-            XrRig rig = player.XrRig;
-            if (rig != null) rig.ShowPointer(open);
+            xrPanel.Follow = !open;
+            if (open) xrPanel.PlaceForMenu();
         }
 
         /// <summary>조작 방식에 맞게 화면을 놓는다: PC는 화면에 겹쳐서, VR은 눈앞의 판으로. 시작할 때와 조작 방식이 바뀔 때 부른다.</summary>
@@ -265,7 +279,14 @@ namespace AtelierVerse.UI
                 }
             }
 
-            if (rig != null) rig.ShowPointer(vr && menuOpen);
+            if (palette != null)
+            {
+                if (vr && rig != null) palette.Attach(rig.LeftHand, player.ViewCamera);
+                else palette.Detach();
+            }
+
+            // VR의 광선은 UpdatePointer가 매 프레임 고친다. PC로 돌아오면 여기서 감춘다.
+            if (rig != null && !vr) rig.ShowPointer(false);
         }
 
         private void OnControlModeChanged(ControlMode mode)
@@ -273,15 +294,38 @@ namespace AtelierVerse.UI
             ApplyControlMode();
         }
 
-        /// <summary>VR에서 메뉴가 열려 있는 동안, 광선이 화면에 닿았으면 닿은 자리에서 끝나게 한다.</summary>
+        /// <summary>
+        /// VR의 오른손 광선을 고친다. 화면(메뉴, 부품 판)에 닿았으면 닿은 자리에서, 블록을 놓을 자리를 가리키면 그 자리에서 끝난다.
+        /// 메뉴가 닫혀 있고 부품도 고르지 않아 가리켜 할 일이 없을 때는, 가리키는 방향만 알 수 있게 짧게 둔다.
+        /// </summary>
         private void UpdatePointer()
         {
-            if (!InVr || !IsMenuOpen || xrPanel == null) return;
+            if (!InVr) return;
 
             XrRig rig = player.XrRig;
             if (rig == null) return;
 
-            rig.SetPointerLength(xrPanel.TryGetPointerHit(out float distance) ? distance : XrRig.DefaultPointerLength);
+            bool building = hotbar != null && hotbar.SelectedIndex != HotbarModel.None;
+            float length;
+            if (xrPanel != null && xrPanel.TryGetPointerHit(out float uiDistance)) length = uiDistance;
+            else if (IsMenuOpen) length = XrRig.DefaultPointerLength;
+            else if (builder != null && builder.HasAimHit) length = builder.AimDistance;
+            else length = building ? XrRig.DefaultPointerLength : XrRig.IdlePointerLength;
+
+            rig.ShowPointer(true);
+            rig.SetPointerLength(length);
+        }
+
+        /// <summary>마지막 편집을 되돌린다. 되돌릴 것이 없으면 알린다. Ctrl+Z와 부품 판의 단추가 부른다.</summary>
+        public void Undo()
+        {
+            if (world != null && !world.History.Undo()) Notice.Post(NothingToUndoMessage);
+        }
+
+        /// <summary>되돌린 편집을 다시 실행한다. 다시 실행할 것이 없으면 알린다. Ctrl+Y와 부품 판의 단추가 부른다.</summary>
+        public void Redo()
+        {
+            if (world != null && !world.History.Redo()) Notice.Post(NothingToRedoMessage);
         }
 
         private void RespawnAndClose()
@@ -307,11 +351,8 @@ namespace AtelierVerse.UI
             if (peopleAction.WasPressedThisFrame()) GameSettings.ShowPeopleList = !GameSettings.ShowPeopleList;
 
             // 되돌리기는 부품을 고르지 않았거나 마우스를 잡지 않았어도 되지만, 메뉴가 열려 있으면 이 메서드까지 오지 않는다.
-            if (world != null)
-            {
-                if (undoAction.WasPressedThisFrame() && !world.History.Undo()) Notice.Post(NothingToUndoMessage);
-                else if (redoAction.WasPressedThisFrame() && !world.History.Redo()) Notice.Post(NothingToRedoMessage);
-            }
+            if (undoAction.WasPressedThisFrame()) Undo();
+            else if (redoAction.WasPressedThisFrame()) Redo();
 
             if (hotbar == null) return;
 
@@ -355,11 +396,16 @@ namespace AtelierVerse.UI
         {
             if (builder != null) builder.SelectedPart = index;
             if (buildHint != null) buildHint.SetActive(index != HotbarModel.None);
+            if (palette != null) palette.ShowTitle(hotbar != null ? hotbar.SelectedItemName : string.Empty);
         }
 
         private void ShowBlockCount()
         {
-            if (blockCountLabel != null && world != null) blockCountLabel.text = $"블록 {world.Count}/{world.MaxBlocks}";
+            if (world == null) return;
+
+            string text = $"블록 {world.Count}/{world.MaxBlocks}";
+            if (blockCountLabel != null) blockCountLabel.text = text;
+            if (palette != null) palette.ShowBlockCount(text);
         }
 
         /// <summary>날기를 켜고 끌 때 표시를 바꾸고 조작법을 알린다.</summary>
@@ -372,8 +418,11 @@ namespace AtelierVerse.UI
         /// <summary>오른쪽 아래의 걷기·날기 표시.</summary>
         private void ShowFlyMode(bool flying)
         {
-            if (modeLabel != null) modeLabel.text = flying ? FlyLabel : WalkLabel;
-            if (modeDot != null) modeDot.color = flying ? flyDotColor : walkDotColor;
+            string text = flying ? FlyLabel : WalkLabel;
+            Color color = flying ? flyDotColor : walkDotColor;
+            if (modeLabel != null) modeLabel.text = text;
+            if (modeDot != null) modeDot.color = color;
+            if (palette != null) palette.ShowMode(text, color);
         }
 
         /// <summary>오른쪽 아래의 저장 표시. 자동 저장이 없으면 표시를 감춘다.</summary>

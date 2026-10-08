@@ -18,6 +18,7 @@ namespace AtelierVerse.EditorTools
     /// 기준 화면 크기는 1920×1080이고 위치와 크기는 그 기준의 값이다.
     /// VR에서는 같은 화면을 눈앞의 판으로 띄운다(XrUiPanel). 그때 늘 보이는 화면(Hud)과 메뉴 뒤의 어두운 막은 감추고,
     /// 알림 띠와 메뉴만 남긴다. 메뉴 안에서 한쪽 조작에만 맞는 안내는 DesktopOnly·VrOnly로 모아 QuickMenuView가 켜고 끈다.
+    /// VR에서 만들 때 필요한 부품 칸과 상태 표시는 왼손 위에 뜨는 작은 판(HandPalette)에 따로 둔다.
     /// </summary>
     internal static class GameUiBuilder
     {
@@ -109,10 +110,12 @@ namespace AtelierVerse.EditorTools
             QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople, out GameObject scrim);
             InputSystemUIInputModule inputModule = CreateEventSystem(root.transform, actions);
             XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim);
+            XrHandPalette palette = BuildHandPalette(root.transform, items);
 
             var serialized = new SerializedObject(ui);
             serialized.FindProperty("actions").objectReferenceValue = actions;
             serialized.FindProperty("xrPanel").objectReferenceValue = xrPanel;
+            serialized.FindProperty("palette").objectReferenceValue = palette;
             serialized.FindProperty("hotbar").objectReferenceValue = hotbar;
             serialized.FindProperty("menu").objectReferenceValue = menu;
             serialized.FindProperty("peoplePanel").objectReferenceValue = peoplePanel.gameObject;
@@ -292,38 +295,7 @@ namespace AtelierVerse.EditorTools
 
             var view = bar.gameObject.AddComponent<HotbarView>();
             var serialized = new SerializedObject(view);
-            SerializedProperty slots = serialized.FindProperty("slots");
-            slots.arraySize = SlotCount;
-
-            for (int i = 0; i < SlotCount; i++)
-            {
-                Image slot = UiFactory.Box($"Slot{i + 1}", bar, Paper, 14f);
-                UiFactory.Place(slot.rectTransform, UiFactory.BottomLeft, new Vector2(i * (SlotSize + SlotGap), 0f), new Vector2(SlotSize, SlotSize));
-
-                var shadow = slot.gameObject.AddComponent<Shadow>();
-                shadow.effectColor = Ink;
-                shadow.effectDistance = new Vector2(4f, -4f);
-                Image frame = UiFactory.Outline(slot, Line);
-
-                TMP_Text number = UiFactory.Text("Number", slot.transform, (i + 1).ToString(), 16f, Muted, true);
-                UiFactory.Place(number.rectTransform, UiFactory.TopLeft, new Vector2(10f, -4f), new Vector2(20f, 22f));
-
-                Image swatch = null;
-                string itemName = string.Empty;
-                if (i < items.Length)
-                {
-                    itemName = items[i].Name;
-                    swatch = UiFactory.Box("Swatch", slot.transform, items[i].Color, 8f);
-                    UiFactory.Place(swatch.rectTransform, UiFactory.Center, new Vector2(0f, -5f), new Vector2(38f, 38f));
-                    UiFactory.Outline(swatch, AtelierPalette.WithAlpha(Ink, 0.55f));
-                }
-
-                SerializedProperty element = slots.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("root").objectReferenceValue = slot.rectTransform;
-                element.FindPropertyRelative("frame").objectReferenceValue = frame;
-                element.FindPropertyRelative("swatch").objectReferenceValue = swatch;
-                element.FindPropertyRelative("itemName").stringValue = itemName;
-            }
+            AddSlots(serialized, bar, items, SlotSize, false);
 
             Image pill = UiFactory.Box("SelectedPill", hud, Ink, 20f);
             UiFactory.Place(pill.rectTransform, UiFactory.BottomCenter, new Vector2(0f, Margin + SlotSize + 26f), new Vector2(240f, 40f));
@@ -337,6 +309,135 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("selectedFrameColor").colorValue = Gold;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
+        }
+
+        /// <summary>
+        /// 부품 칸의 칸 아홉 개를 만든다. 화면 아래의 부품 칸과 VR의 부품 판이 함께 쓴다.
+        /// size는 칸 한 변의 길이이며 안의 숫자와 색 네모는 그 크기에 맞춘다. clickable이면 칸을 눌러 고를 수 있다(VR의 부품 판).
+        /// </summary>
+        private static void AddSlots(SerializedObject serialized, RectTransform bar, Item[] items, float size, bool clickable)
+        {
+            float scale = size / SlotSize;
+            SerializedProperty slots = serialized.FindProperty("slots");
+            slots.arraySize = SlotCount;
+
+            for (int i = 0; i < SlotCount; i++)
+            {
+                Image slot = UiFactory.Box($"Slot{i + 1}", bar, Paper, 14f);
+                UiFactory.Place(slot.rectTransform, UiFactory.BottomLeft, new Vector2(i * (size + SlotGap), 0f), new Vector2(size, size));
+
+                var shadow = slot.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = Ink;
+                shadow.effectDistance = new Vector2(4f, -4f);
+                Image frame = UiFactory.Outline(slot, Line);
+
+                TMP_Text number = UiFactory.Text("Number", slot.transform, (i + 1).ToString(), 16f, Muted, true);
+                UiFactory.Place(number.rectTransform, UiFactory.TopLeft, new Vector2(10f * scale, -4f * scale), new Vector2(20f, 22f));
+
+                Image swatch = null;
+                string itemName = string.Empty;
+                if (i < items.Length)
+                {
+                    itemName = items[i].Name;
+                    swatch = UiFactory.Box("Swatch", slot.transform, items[i].Color, 8f);
+                    UiFactory.Place(swatch.rectTransform, UiFactory.Center, new Vector2(0f, -5f * scale), new Vector2(38f * scale, 38f * scale));
+                    UiFactory.Outline(swatch, AtelierPalette.WithAlpha(Ink, 0.55f));
+                }
+
+                // 빈 칸은 눌러도 고를 것이 없으므로 단추를 두지 않는다.
+                Button button = clickable && i < items.Length ? UiFactory.Clickable(slot) : null;
+
+                SerializedProperty element = slots.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("root").objectReferenceValue = slot.rectTransform;
+                element.FindPropertyRelative("frame").objectReferenceValue = frame;
+                element.FindPropertyRelative("swatch").objectReferenceValue = swatch;
+                element.FindPropertyRelative("itemName").stringValue = itemName;
+                element.FindPropertyRelative("button").objectReferenceValue = button;
+            }
+        }
+
+        /// <summary>
+        /// VR에서 왼손 위에 뜨는 부품 판(13일차). 화가의 팔레트처럼 왼손에 들고 오른손 광선으로 가리켜 누른다.
+        /// 위에는 고른 부품의 이름과 블록 수, 가운데에는 부품 칸, 아래에는 되돌리기·다시 실행 단추와 걷기·날기 표시,
+        /// 맨 아래에는 놓기·지우기·칠하기의 단추 안내가 있다. PC에서는 보이지 않는다.
+        /// 판은 월드 공간의 작은 캔버스이며 XrHandPalette가 크기와 자리를 정한다. 꺼 둔 채로 저장한다.
+        /// </summary>
+        private static XrHandPalette BuildHandPalette(Transform parent, Item[] items)
+        {
+            const float slotSize = 64f;
+            const float pad = 40f;
+            const float width = pad * 2f + SlotCount * slotSize + (SlotCount - 1) * SlotGap;
+            const float height = 262f;
+            const float slotsTop = 70f;
+            const float buttonsTop = slotsTop + slotSize + 18f;
+            const float hintTop = buttonsTop + 46f + 14f;
+
+            var holder = new GameObject("HandPalette");
+            holder.transform.SetParent(parent, false);
+            var palette = holder.AddComponent<XrHandPalette>();
+
+            var canvasObject = new GameObject("PaletteCanvas", typeof(RectTransform));
+            canvasObject.layer = UiFactory.UiLayer;
+            canvasObject.transform.SetParent(holder.transform, false);
+
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.Normal | AdditionalCanvasShaderChannels.Tangent;
+            canvasObject.AddComponent<TrackedDeviceRaycaster>();
+
+            var rect = (RectTransform)canvasObject.transform;
+            rect.sizeDelta = new Vector2(width, height);
+            rect.localScale = Vector3.one * 0.00045f;
+
+            Image card = UiFactory.Card("PaletteCard", rect, Paper, Ink, 24f, 6f);
+            UiFactory.Fill(card.rectTransform);
+
+            TMP_Text title = UiFactory.Text("PaletteTitle", card.transform, "부품을 고르세요", 26f, Ink, true);
+            UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(pad, -18f), new Vector2(400f, 38f));
+
+            TMP_Text blockCount = UiFactory.Text("PaletteBlockCount", card.transform, "블록 0/500", 20f, Muted, true, TextAlignmentOptions.Right);
+            UiFactory.Place(blockCount.rectTransform, UiFactory.TopRight, new Vector2(-pad, -22f), new Vector2(220f, 30f));
+
+            RectTransform bar = UiFactory.Rect("PaletteHotbar", card.transform);
+            UiFactory.Place(bar, UiFactory.TopLeft, new Vector2(pad, -slotsTop), new Vector2(width - pad * 2f, slotSize));
+
+            var hotbar = bar.gameObject.AddComponent<HotbarView>();
+            var hotbarSerialized = new SerializedObject(hotbar);
+            AddSlots(hotbarSerialized, bar, items, slotSize, true);
+            hotbarSerialized.FindProperty("frameColor").colorValue = Line;
+            hotbarSerialized.FindProperty("selectedFrameColor").colorValue = Gold;
+            hotbarSerialized.FindProperty("selectedLift").floatValue = 8f;
+            hotbarSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            Button undo = BigButton("Undo", card.transform, "되돌리기", null, Paper, Ink, out _);
+            UiFactory.Place((RectTransform)undo.transform, UiFactory.TopLeft, new Vector2(pad, -buttonsTop), new Vector2(170f, 46f));
+
+            Button redo = BigButton("Redo", card.transform, "다시 실행", null, Paper, Ink, out _);
+            UiFactory.Place((RectTransform)redo.transform, UiFactory.TopLeft, new Vector2(pad + 170f + 12f, -buttonsTop), new Vector2(170f, 46f));
+
+            Image modeChip = UiFactory.Box("PaletteMode", card.transform, DarkGlass, 22f);
+            UiFactory.Place(modeChip.rectTransform, UiFactory.TopRight, new Vector2(-pad, -buttonsTop), new Vector2(130f, 46f));
+            Image modeDot = UiFactory.Box("Dot", modeChip.transform, AtelierPalette.Leaf, 6f);
+            UiFactory.Place(modeDot.rectTransform, UiFactory.MiddleLeft, new Vector2(18f, 0f), new Vector2(12f, 12f));
+            TMP_Text modeLabel = UiFactory.Text("Label", modeChip.transform, "걷기", 20f, Paper, true, TextAlignmentOptions.Center);
+            UiFactory.Fill(modeLabel.rectTransform, 32f, 0f, 12f, 0f);
+
+            TMP_Text hint = UiFactory.Text("PaletteHint", card.transform, "오른손 방아쇠 놓기 · 옆 단추 지우기 · 왼손 방아쇠 칠하기", 18f, Muted);
+            UiFactory.Place(hint.rectTransform, UiFactory.TopLeft, new Vector2(pad, -hintTop), new Vector2(width - pad * 2f, 26f));
+
+            canvasObject.SetActive(false);
+
+            var serialized = new SerializedObject(palette);
+            serialized.FindProperty("canvas").objectReferenceValue = canvas;
+            serialized.FindProperty("hotbar").objectReferenceValue = hotbar;
+            serialized.FindProperty("titleLabel").objectReferenceValue = title;
+            serialized.FindProperty("blockCountLabel").objectReferenceValue = blockCount;
+            serialized.FindProperty("modeLabel").objectReferenceValue = modeLabel;
+            serialized.FindProperty("modeDot").objectReferenceValue = modeDot;
+            serialized.FindProperty("undoButton").objectReferenceValue = undo;
+            serialized.FindProperty("redoButton").objectReferenceValue = redo;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return palette;
         }
 
         /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 칠하고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
@@ -806,7 +907,10 @@ namespace AtelierVerse.EditorTools
                 ("오른손 첫째 단추", "점프"),
                 ("오른손 둘째 단추", "날기 켜고 끄기"),
                 ("왼손 메뉴 단추", "메뉴 열고 닫기"),
-                ("오른손 방아쇠", "가리킨 것 누르기"),
+                ("왼손 위의 부품 판", "부품 고르기 · 되돌리기"),
+                ("오른손 방아쇠", "누르기 · 블록 놓기"),
+                ("오른손 옆 단추", "블록 지우기"),
+                ("왼손 방아쇠", "블록 칠하기"),
             };
 
             // 한 줄에 54px씩 여섯 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.
@@ -842,10 +946,6 @@ namespace AtelierVerse.EditorTools
                 TMP_Text text = UiFactory.Text($"VrText{i}", vrKeys, vrRows[i].text, 24f, Ink);
                 UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 232f, y), new Vector2(250f, 40f));
             }
-
-            // 아직 없는 기능을 있는 것처럼 보이지 않게, VR에서 할 수 없는 것을 적어 둔다.
-            TMP_Text vrSoon = UiFactory.Text("VrSoon", vrKeys, "VR에서 블록을 놓는 기능은 준비 중입니다.", 20f, Muted);
-            UiFactory.Place(vrSoon.rectTransform, UiFactory.TopLeft, new Vector2(492f, -4f - 3 * rowHeight), new Vector2(468f, 30f));
 
             TMP_Text note = UiFactory.Text("Note", page, "대화는 여러 사람이 함께 들어오는 기능과 같이 연결됩니다.", 20f, Muted);
             UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - rowsPerColumn * rowHeight), new Vector2(960f, 30f));

@@ -39,7 +39,7 @@ namespace AtelierVerse.Tests
         }
 
         [UnityTest]
-        public IEnumerator VR로_시작하면_VR_조작이_켜지고_PC_조작과_블록_놓기는_꺼진다()
+        public IEnumerator VR로_시작하면_VR_조작이_켜지고_PC_조작은_꺼진다()
         {
             yield return LoadVr();
 
@@ -48,7 +48,7 @@ namespace AtelierVerse.Tests
             Assert.IsTrue(rig.enabled);
             Assert.IsFalse(player.enabled, "VR에서는 PC 조작이 꺼져 있어야 합니다.");
             Assert.IsFalse(player.Rig.enabled, "VR에서는 PC용 카메라 리그가 꺼져 있어야 합니다.");
-            Assert.IsFalse(player.GetComponent<BlockBuilder>().enabled, "VR에서 블록 놓기는 아직 꺼 둡니다.");
+            Assert.IsTrue(player.GetComponent<BlockBuilder>().enabled, "블록 놓기는 VR에서도 켜져 있어야 합니다.");
             Assert.AreSame(rig.Origin, rig.Head.parent, "카메라가 추적 기준점 아래로 옮겨지지 않았습니다.");
             Assert.IsTrue(motor.Avatar.IsFirstPerson, "VR에서는 자기 몸이 시야를 가리지 않아야 합니다.");
             Assert.AreSame(motor, xrControl.Motor, "VR 조작이 PC 조작과 같은 몸을 써야 합니다.");

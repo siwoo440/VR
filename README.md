@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 12일차(VR 메뉴, 실제 헤드셋 확인 전)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 13일차(VR에서 만들기, 실제 헤드셋 확인 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -52,6 +52,7 @@
 | 10일차 | VR 조작과 추적 리그(머리·두 손, 스틱 이동, 끊어서 돌기). 기본은 키보드·마우스 | [`unity/Devlogs/Day10`](unity/Devlogs/Day10/README.md) |
 | 11일차 | OpenXR 연결. VR로 시작했을 때만 VR 화면을 켜고, 기기가 없으면 키보드·마우스로 돌아옴 | [`unity/Devlogs/Day11`](unity/Devlogs/Day11/README.md) |
 | 12일차 | VR 메뉴. VR에서 화면을 눈앞의 판으로 띄우고 오른손 광선으로 누름. 화면과 도구가 조작 방식을 직접 알지 않게 함 | [`unity/Devlogs/Day12`](unity/Devlogs/Day12/README.md) |
+| 13일차 | VR에서 만들기. 왼손 위의 부품 판에서 고르고 오른손으로 가리켜 블록을 놓고 지우고 칠함 | [`unity/Devlogs/Day13`](unity/Devlogs/Day13/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -68,7 +69,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 사람들 목록 | Tab |
 | 메뉴 | Esc |
 
-VR 조작도 들어 있습니다. 실행 파일 옆의 `AtelierVerse-VR.bat`(또는 `AtelierVerse.exe -vr`)으로 켜면 VR 화면으로 시작하고, 기기가 없으면 키보드·마우스로 돌아옵니다. PC에 Meta Quest Link나 SteamVR 같은 VR 프로그램(OpenXR 런타임)이 있어야 합니다. **실제 헤드셋으로는 아직 확인하지 못했습니다.** VR에서는 알림과 메뉴만 보이고 아직 블록을 놓을 수 없습니다.
+VR 조작도 들어 있습니다. 실행 파일 옆의 `AtelierVerse-VR.bat`(또는 `AtelierVerse.exe -vr`)으로 켜면 VR 화면으로 시작하고, 기기가 없으면 키보드·마우스로 돌아옵니다. PC에 Meta Quest Link나 SteamVR 같은 VR 프로그램(OpenXR 런타임)이 있어야 합니다. **실제 헤드셋으로는 아직 확인하지 못했습니다.** VR에서는 왼손 위에 뜨는 부품 판에서 부품을 고르고 오른손으로 가리켜 블록을 놓습니다.
 
 | VR 조작 | 입력 |
 | --- | --- |
@@ -78,6 +79,10 @@ VR 조작도 들어 있습니다. 실행 파일 옆의 `AtelierVerse-VR.bat`(또
 | 날 때 위·아래 | 오른쪽 스틱 위아래 |
 | 메뉴 열고 닫기 | 왼손의 메뉴 단추(또는 왼손의 둘째 단추) |
 | 메뉴에서 누르기 | 오른손으로 가리키고 방아쇠 |
+| 부품 고르기 | 왼손 위의 부품 판에서 칸을 오른손으로 가리키고 방아쇠 |
+| 블록 놓기, 지우기 | 부품을 고른 뒤 가리키고 오른손 방아쇠, 오른손 옆 단추 |
+| 블록 칠하기 | 블록을 가리키고 왼손 방아쇠 |
+| 되돌리기, 다시 실행 | 부품 판의 단추 |
 
 ## Windows 빌드 만들기
 
@@ -147,6 +152,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. 실제 헤드셋으로 확인하기(사용자: Quest Link나 SteamVR을 설치한 뒤 `AtelierVerse-VR.bat`), VR에서 만들기
+1. 실제 헤드셋으로 확인하기(사용자: Quest Link나 SteamVR을 설치한 뒤 `AtelierVerse-VR.bat`)
 2. Unity Hub에서 Android 빌드 구성 설치(사용자), Quest 단독 빌드와 성능 재기
 3. 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기

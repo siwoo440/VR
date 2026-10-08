@@ -10,7 +10,7 @@ namespace AtelierVerse.Tests
 {
     /// <summary>
     /// VR 테스트의 공통 바탕. 실제 헤드셋 없이, 입력 시스템에 가상의 머리 기기와 두 컨트롤러를 붙여 값을 넣는다.
-    /// 시험용 컨트롤러는 실제 컨트롤러의 공통 쓰임새(스틱, 단추, 방아쇠, 메뉴 단추)와 가리키는 자세만 가진다.
+    /// 시험용 컨트롤러는 실제 컨트롤러의 공통 쓰임새(스틱, 단추, 방아쇠, 옆 단추, 메뉴 단추)와 가리키는 자세만 가진다.
     /// 실제 기기에서의 화면과 착용감은 이 바탕으로 확인되지 않는다.
     /// </summary>
     public abstract class XrPlayTestBase : PlayTestBase
@@ -29,6 +29,7 @@ namespace AtelierVerse.Tests
                 { ""name"": ""primaryButton"", ""layout"": ""Button"", ""usage"": ""PrimaryButton"" },
                 { ""name"": ""secondaryButton"", ""layout"": ""Button"", ""usage"": ""SecondaryButton"" },
                 { ""name"": ""triggerPressed"", ""layout"": ""Button"", ""usage"": ""TriggerButton"" },
+                { ""name"": ""gripPressed"", ""layout"": ""Button"", ""usage"": ""GripButton"" },
                 { ""name"": ""menu"", ""layout"": ""Button"", ""usage"": ""MenuButton"" },
                 { ""name"": ""pointerPosition"", ""layout"": ""Vector3"" },
                 { ""name"": ""pointerRotation"", ""layout"": ""Quaternion"" }
@@ -37,6 +38,9 @@ namespace AtelierVerse.Tests
 
         // 추적 공간에서 오른손을 두는 자리. 몸의 오른쪽 앞, 가슴 높이다.
         private static readonly Vector3 RightHandRest = new Vector3(0.22f, 1.25f, 0.25f);
+
+        /// <summary>추적 공간에서 왼손을 두는 자리. 몸의 왼쪽 앞, 가슴 높이다. 부품 판이 이 손 위에 뜬다.</summary>
+        protected static readonly Vector3 LeftHandRest = new Vector3(-0.25f, 1.15f, 0.35f);
 
         protected XRHMD headset;
         protected XRController leftController;
@@ -98,6 +102,27 @@ namespace AtelierVerse.Tests
             Set(rightController.devicePosition, RightHandRest);
             Set(rightController.deviceRotation, trackedRotation);
             yield return Frames(3);
+        }
+
+        /// <summary>왼손을 가슴 앞에 든다. 그래야 왼손 위의 부품 판이 눈에 보이는 자리에 뜬다.</summary>
+        protected IEnumerator RaiseLeftHand()
+        {
+            Set(leftController.devicePosition, LeftHandRest);
+            yield return Frames(3);
+        }
+
+        /// <summary>오른손의 옆 단추를 한 번 쥐었다 놓는다.</summary>
+        protected IEnumerator SqueezeGrip()
+        {
+            yield return Tap(Button(rightController, "gripPressed"));
+            yield return Frames(2);
+        }
+
+        /// <summary>왼손의 방아쇠를 한 번 당겼다 놓는다.</summary>
+        protected IEnumerator PullLeftTrigger()
+        {
+            yield return Tap(Button(leftController, "triggerPressed"));
+            yield return Frames(2);
         }
 
         /// <summary>오른손의 방아쇠를 한 번 당겼다 놓는다.</summary>

@@ -61,7 +61,7 @@ namespace AtelierVerse.Tests
             Assert.IsFalse(Find<Transform>(ui, "Hud").gameObject.activeSelf, "VR에서는 늘 보이는 화면을 감춥니다.");
             Assert.IsTrue(Find<NoticeBar>(ui, "Notice").gameObject.activeInHierarchy, "알림 띠는 VR에서도 살아 있어야 합니다.");
             Assert.IsFalse(ui.IsMenuOpen);
-            Assert.IsFalse(rig.PointerShown, "메뉴가 닫혀 있으면 광선이 보이지 않아야 합니다.");
+            Assert.AreEqual(XrRig.IdlePointerLength, rig.PointerLength, 0.001f, "가리켜 할 일이 없으면 광선은 짧아야 합니다.");
 
             Vector3 toPanel = canvas.transform.position - rig.Head.position;
             toPanel.y = 0f;
@@ -83,6 +83,7 @@ namespace AtelierVerse.Tests
             Assert.IsTrue(ui.Player.InputBlocked);
             Assert.IsTrue(xrControl.InputBlocked, "메뉴가 열려 있으면 VR 조작이 막혀야 합니다.");
             Assert.IsTrue(rig.PointerShown, "메뉴가 열려 있으면 오른손 광선이 보여야 합니다.");
+            Assert.AreEqual(XrRig.DefaultPointerLength, rig.PointerLength, 0.001f, "메뉴가 열려 있으면 광선이 길게 나가야 합니다.");
 
             Vector3 offset = canvas.transform.position - rig.Head.position;
             Assert.That(ui.XrPanel.Distance, Is.InRange(0.7f - 0.001f, ui.XrPanel.MenuDistance + 0.001f));
@@ -110,7 +111,8 @@ namespace AtelierVerse.Tests
             yield return Tap(Button(leftController, "secondaryButton"));
             Assert.IsFalse(ui.IsMenuOpen);
             Assert.IsFalse(xrControl.InputBlocked);
-            Assert.IsFalse(rig.PointerShown);
+            yield return Frames(2);
+            Assert.AreEqual(XrRig.IdlePointerLength, rig.PointerLength, 0.001f, "메뉴를 닫으면 광선은 다시 짧아져야 합니다.");
         }
 
         [UnityTest]

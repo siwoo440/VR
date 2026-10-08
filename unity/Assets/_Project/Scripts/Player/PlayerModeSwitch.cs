@@ -15,14 +15,14 @@ namespace AtelierVerse.Player
     /// <summary>
     /// 이 기기의 캐릭터를 키보드·마우스로 조작할지 VR 기기로 조작할지 고른다. 기본은 키보드·마우스다.
     /// VR 화면이 켜져 있으면(XR 표시 장치가 돌고 있으면) VR 조작으로 시작한다. 두 조작은 같은 몸(CharacterMotor)을 쓴다.
-    /// VR에서는 PC용 카메라 리그와 블록 놓기를 끈다. 다른 스크립트보다 먼저 실행해 조작이 켜지기 전에 고른다.
+    /// VR에서는 PC용 카메라 리그를 끈다. 블록 놓기는 두 조작에서 모두 켜 두며, 어느 쪽 입력을 읽을지는 블록 놓기가 LocalPlayer에게 묻는다.
+    /// 다른 스크립트보다 먼저 실행해 조작이 켜지기 전에 고른다.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public class PlayerModeSwitch : MonoBehaviour
     {
         [SerializeField] private DesktopPlayerController desktopControl;
         [SerializeField] private ViewRig viewRig;
-        [SerializeField] private BlockBuilder builder;
         [SerializeField] private XrPlayerController xrControl;
         [SerializeField] private XrRig xrRig;
 
@@ -73,7 +73,6 @@ namespace AtelierVerse.Player
             if (mode == ControlMode.Vr)
             {
                 Enable(desktopControl, false);
-                Enable(builder, false);
                 Enable(viewRig, false);
                 Enable(xrRig, true);
                 Enable(xrControl, true);
@@ -84,7 +83,6 @@ namespace AtelierVerse.Player
                 Enable(xrRig, false);
                 Enable(viewRig, true);
                 Enable(desktopControl, true);
-                Enable(builder, true);
             }
         }
 

@@ -679,6 +679,33 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Place",
+                    "type": "Button",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a310e",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Remove",
+                    "type": "Button",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a310f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Paint",
+                    "type": "Button",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a3110",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -822,6 +849,39 @@
                     "processors": "",
                     "groups": "XR",
                     "action": "RightPointerRotation",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a320e",
+                    "path": "<XRController>{RightHand}/{TriggerButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Place",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a320f",
+                    "path": "<XRController>{RightHand}/{GripButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Remove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a3210",
+                    "path": "<XRController>{LeftHand}/{TriggerButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR",
+                    "action": "Paint",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

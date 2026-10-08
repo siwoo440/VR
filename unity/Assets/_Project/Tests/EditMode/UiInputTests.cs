@@ -49,6 +49,26 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void VR에서는_오른손_방아쇠로_놓고_옆_단추로_지우고_왼손_방아쇠로_칠한다()
+        {
+            CollectionAssert.AreEqual(new[] { "<XRController>{RightHand}/{TriggerButton}" }, Paths("XR/Place"));
+            CollectionAssert.AreEqual(new[] { "<XRController>{RightHand}/{GripButton}" }, Paths("XR/Remove"));
+            CollectionAssert.AreEqual(new[] { "<XRController>{LeftHand}/{TriggerButton}" }, Paths("XR/Paint"));
+        }
+
+        [Test]
+        public void 만들기_동작은_PC와_VR의_묶음에_같은_이름으로_있다()
+        {
+            // 블록 놓기는 조작 방식에 맞는 묶음에서 같은 이름의 동작을 찾는다. 한쪽에만 있으면 그 조작에서 만들 수 없다.
+            InputActionAsset actions = LoadActions();
+            foreach (string name in new[] { "Place", "Remove", "Paint" })
+            {
+                Assert.IsNotNull(actions.FindAction("Player/" + name), $"PC의 묶음에 {name}이 없습니다.");
+                Assert.IsNotNull(actions.FindAction("XR/" + name), $"VR의 묶음에 {name}이 없습니다.");
+            }
+        }
+
+        [Test]
         public void 게임_화면은_이_프로젝트의_입력_자산으로_누르고_손_광선_부품은_꺼_둔다()
         {
             InputActionAsset actions = LoadActions();
@@ -64,7 +84,7 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(actions.FindAction("UI/TrackedDeviceOrientation", true).id, module.trackedDeviceOrientation.action.id);
             Assert.IsNull(module.move, "키보드로 옮겨 다니는 선택은 쓰지 않습니다.");
 
-            TrackedDeviceRaycaster raycaster = prefab.GetComponentInChildren<TrackedDeviceRaycaster>(true);
+            TrackedDeviceRaycaster raycaster = prefab.transform.Find("Canvas").GetComponent<TrackedDeviceRaycaster>();
             Assert.IsNotNull(raycaster, "캔버스에 손 광선 부품이 없습니다.");
             Assert.IsFalse(raycaster.enabled, "손 광선 부품은 VR일 때만 켭니다.");
             Assert.AreEqual(RenderMode.ScreenSpaceOverlay, raycaster.GetComponent<Canvas>().renderMode, "프리팹은 PC의 방식(화면에 겹쳐 그리기)으로 저장합니다.");

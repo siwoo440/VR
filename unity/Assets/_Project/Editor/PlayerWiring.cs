@@ -20,7 +20,7 @@ namespace AtelierVerse.EditorTools
         public const string RightHandName = "RightHand";
         public const string RightPointerName = "RightPointer";
 
-        private const float PointerWidth = 0.004f;
+        private const float PointerWidth = 0.003f;
         private const float PointerDotSize = 0.014f;
 
         private static readonly Vector3 HandSize = new Vector3(0.09f, 0.06f, 0.14f);
@@ -64,7 +64,6 @@ namespace AtelierVerse.EditorTools
             Set(control, "rig", rig);
             Set(modeSwitch, "desktopControl", root.GetComponent<DesktopPlayerController>());
             Set(modeSwitch, "viewRig", root.GetComponent<ViewRig>());
-            Set(modeSwitch, "builder", root.GetComponent<BlockBuilder>());
             Set(modeSwitch, "xrControl", control);
             Set(modeSwitch, "xrRig", rig);
 

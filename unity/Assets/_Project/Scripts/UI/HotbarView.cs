@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace AtelierVerse.UI
 {
     /// <summary>
-    /// 화면 아래 가운데의 부품 칸. 숫자 키로 고르며, 고른 칸은 위로 올라오고 이름이 칸 위에 나타난다.
-    /// 지금은 고르기만 되고, 고른 부품을 놓는 동작은 뒤 일차에서 연결한다.
+    /// 부품 칸. 화면 아래 가운데의 것은 숫자 키로 고르고, VR의 부품 판에 든 것은 칸을 가리켜 눌러 고른다.
+    /// 고른 칸은 위로 올라오고 이름이 칸 위에 나타난다. 두 부품 칸은 Bind로 같은 선택 상태(HotbarModel)를 함께 쓴다.
     /// </summary>
     public class HotbarView : MonoBehaviour
     {
@@ -18,6 +18,7 @@ namespace AtelierVerse.UI
             public Image frame;
             public Image swatch;
             public string itemName;
+            public Button button;
         }
 
         [SerializeField] private Slot[] slots;
@@ -47,6 +48,12 @@ namespace AtelierVerse.UI
 
         private void Awake()
         {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                int index = i;
+                if (slots[i].button != null) slots[i].button.onClick.AddListener(() => Select(index));
+            }
+
             Refresh();
         }
 
@@ -61,6 +68,19 @@ namespace AtelierVerse.UI
             Model.Select(index);
         }
 
+        /// <summary>
+        /// 다른 부품 칸의 선택 상태를 함께 쓴다. 그 뒤로는 어느 쪽에서 골라도 두 곳이 같이 바뀐다.
+        /// </summary>
+        public void Bind(HotbarModel shared)
+        {
+            if (shared == null || shared == model) return;
+
+            if (model != null) model.SelectionChanged -= OnSelectionChanged;
+            model = shared;
+            model.SelectionChanged += OnSelectionChanged;
+            Refresh();
+        }
+
         private void CreateModel()
         {
             model = new HotbarModel(slots.Length);
@@ -69,7 +89,12 @@ namespace AtelierVerse.UI
                 model.SetFilled(i, !string.IsNullOrEmpty(slots[i].itemName));
             }
 
-            model.SelectionChanged += _ => Refresh();
+            model.SelectionChanged += OnSelectionChanged;
+        }
+
+        private void OnSelectionChanged(int index)
+        {
+            Refresh();
         }
 
         private void Refresh()

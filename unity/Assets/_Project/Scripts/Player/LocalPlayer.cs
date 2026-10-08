@@ -10,6 +10,9 @@ namespace AtelierVerse.Player
     /// </summary>
     public class LocalPlayer : MonoBehaviour
     {
+        private const string DesktopMapName = "Player";
+        private const string XrMapName = "XR";
+
         private CharacterMotor motor;
         private PlayerModeSwitch modeSwitch;
         private DesktopPlayerController desktop;
@@ -33,6 +36,12 @@ namespace AtelierVerse.Player
         }
 
         public bool IsVr => Mode == ControlMode.Vr;
+
+        /// <summary>
+        /// 지금 조작이 쓰는 입력 묶음의 이름. 도구는 이 묶음에서 놓기·지우기·칠하기 같은 동작을 찾는다.
+        /// 두 묶음에 같은 이름의 동작을 두므로 도구는 조작 방식을 몰라도 된다.
+        /// </summary>
+        public string InputMapName => IsVr ? XrMapName : DesktopMapName;
 
         /// <summary>이 캐릭터의 몸. 두 조작이 같은 몸을 쓴다.</summary>
         public CharacterMotor Motor
@@ -88,7 +97,7 @@ namespace AtelierVerse.Player
         public bool InputBlocked { get; private set; }
 
         /// <summary>
-        /// 조준하고 있는지. PC에서는 마우스를 잡았을 때, VR에서는 조작이 막혀 있지 않을 때다.
+        /// 조준하고 있는지. PC에서는 마우스를 잡았을 때, VR에서는 조작이 막혀 있지 않고 오른손이 화면을 가리키고 있지 않을 때다.
         /// 조준점을 보일지와 도구를 쓸 수 있는지를 정한다.
         /// </summary>
         public bool IsAiming
@@ -96,8 +105,21 @@ namespace AtelierVerse.Player
             get
             {
                 Find();
-                if (IsVr) return !InputBlocked && xrRig != null && xrRig.isActiveAndEnabled;
+                if (IsVr) return !InputBlocked && xrRig != null && xrRig.isActiveAndEnabled && !xrRig.IsPointerOverUi;
                 return desktop != null && desktop.LookCaptured;
+            }
+        }
+
+        /// <summary>
+        /// 가리키고 있는 것이 화면(메뉴, 부품 판)인지. VR에서 오른손 광선이 화면에 닿아 있으면 true다.
+        /// PC에서는 마우스를 잡은 동안 화면을 가리킬 수 없으므로 늘 false다.
+        /// </summary>
+        public bool IsPointingAtUi
+        {
+            get
+            {
+                Find();
+                return IsVr && xrRig != null && xrRig.IsPointerOverUi;
             }
         }
 

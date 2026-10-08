@@ -1,5 +1,6 @@
 using AtelierVerse.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace AtelierVerse.Player
@@ -9,7 +10,7 @@ namespace AtelierVerse.Player
     /// 켜지면 PC용 카메라를 가져와 머리로 쓰고 몸을 숨기며, 꺼지면 카메라를 제자리로 돌려준다.
     /// 기기의 값은 입력 자산의 XR 묶음에서 읽으므로, 실제 기기와 테스트의 가상 기기를 같은 길로 받는다.
     /// 조작 스크립트가 머리 방향을 읽기 전에 자세를 먼저 옮기도록 다른 스크립트보다 일찍 실행한다.
-    /// 오른손이 가리키는 쪽으로 나가는 광선(메뉴의 단추를 가리킬 때 보임)도 이 리그가 놓는다.
+    /// 오른손이 가리키는 쪽으로 나가는 광선도 이 리그가 놓는다. 광선은 메뉴와 부품 판을 누르고 블록을 놓을 자리를 가리키는 데 쓴다.
     /// </summary>
     [DefaultExecutionOrder(-10)]
     public class XrRig : MonoBehaviour
@@ -20,7 +21,15 @@ namespace AtelierVerse.Player
         /// <summary>가리킨 곳에 아무것도 없을 때의 광선 길이.</summary>
         public const float DefaultPointerLength = 2.5f;
 
+        /// <summary>가리켜 할 일이 없을 때(메뉴가 닫혀 있고 부품을 고르지 않았을 때)의 짧은 광선 길이. 가리키는 방향만 알려 준다.</summary>
+        public const float IdlePointerLength = 0.3f;
+
         private const string MapName = "XR";
+
+        // 광선 끝의 블록은 멀수록 크게 해, 가까운 부품 판에서도 먼 메뉴에서도 비슷한 크기로 보이게 한다.
+        private const float DotSizePerMeter = 0.009f;
+        private const float MinDotSize = 0.003f;
+        private const float MaxDotSize = 0.03f;
 
         [SerializeField] private InputActionAsset actions;
         [SerializeField] private Transform origin;
@@ -64,6 +73,21 @@ namespace AtelierVerse.Player
         public bool PointerShown => rightPointer != null && rightPointer.gameObject.activeSelf;
 
         public float PointerLength => pointerLength;
+
+        /// <summary>
+        /// 오른손 광선이 화면(메뉴, 부품 판)의 무엇인가를 가리키고 있는지. 그동안에는 방아쇠가 화면을 누르므로 블록을 놓지 않는다.
+        /// 화면 입력이 앞 프레임에 계산해 둔 값을 읽는다.
+        /// </summary>
+        public bool IsPointerOverUi
+        {
+            get
+            {
+                if (!isActiveAndEnabled || !PointerConnected()) return false;
+
+                EventSystem eventSystem = EventSystem.current;
+                return eventSystem != null && eventSystem.IsPointerOverGameObject(pointerPosition.controls[0].device.deviceId);
+            }
+        }
 
         /// <summary>머리가 보는 수평 방향. 위나 아래를 똑바로 보고 있으면 몸의 앞쪽을 쓴다.</summary>
         public Vector3 HeadForwardOnPlane
@@ -140,7 +164,7 @@ namespace AtelierVerse.Player
             if (origin != null) origin.position += worldDelta;
         }
 
-        /// <summary>오른손의 광선을 보이거나 감춘다. 메뉴처럼 가리켜 누를 것이 있을 때만 보인다.</summary>
+        /// <summary>오른손의 광선을 보이거나 감춘다. 컨트롤러가 가리키는 자세를 주지 않으면 보이라고 해도 보이지 않는다.</summary>
         public void ShowPointer(bool show)
         {
             pointerRequested = show;
@@ -152,7 +176,11 @@ namespace AtelierVerse.Player
         {
             pointerLength = Mathf.Max(0.05f, length);
             if (pointerLine != null) pointerLine.SetPosition(1, new Vector3(0f, 0f, pointerLength));
-            if (pointerDot != null) pointerDot.localPosition = new Vector3(0f, 0f, pointerLength);
+            if (pointerDot != null)
+            {
+                pointerDot.localPosition = new Vector3(0f, 0f, pointerLength);
+                pointerDot.localScale = Vector3.one * Mathf.Clamp(pointerLength * DotSizePerMeter, MinDotSize, MaxDotSize);
+            }
         }
 
         /// <summary>오른손이 가리키는 광선. 리그가 꺼져 있거나 컨트롤러가 가리키는 자세를 주지 않으면 false다.</summary>

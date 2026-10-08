@@ -879,7 +879,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.Player.PlayerModeSwitch
   desktopControl: {fileID: 2396162414930155537}
   viewRig: {fileID: 4347437398090784965}
-  builder: {fileID: 8944452744979851213}
   xrControl: {fileID: 3369843703940587227}
   xrRig: {fileID: 3173660433783104447}
 --- !u!114 &3604955318864638075
@@ -1227,7 +1226,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 2.5}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.004
+    widthMultiplier: 0.003
     widthCurve:
       serializedVersion: 2
       m_Curve:

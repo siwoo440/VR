@@ -19,7 +19,8 @@ namespace AtelierVerse.Player
     /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠한다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
     /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
     /// 놓기·지우기·칠하기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
-    /// 조준 광선과 조작이 막혔는지는 이 기기의 캐릭터(LocalPlayer)에게 물으므로 조작 방식을 직접 알지 않는다.
+    /// 조준 광선, 조작이 막혔는지, 어느 입력 묶음을 읽을지는 이 기기의 캐릭터(LocalPlayer)에게 물으므로 조작 방식을 직접 알지 않는다.
+    /// 그래서 PC의 마우스와 VR의 컨트롤러가 같은 길로 블록을 놓는다.
     /// </summary>
     [RequireComponent(typeof(LocalPlayer))]
     public class BlockBuilder : MonoBehaviour
@@ -28,7 +29,6 @@ namespace AtelierVerse.Player
         public const string PaintTargetMessage = "칠할 블록을 가리키세요";
         public const string SamePartMessage = "이미 같은 부품입니다";
 
-        private const string MapName = "Player";
         private const float OverlapMargin = 0.49f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -67,6 +67,12 @@ namespace AtelierVerse.Player
         /// <summary>조준한 곳에 지우거나 칠할 블록이 있는지.</summary>
         public bool HasBlockTarget => hasRemoveTarget;
 
+        /// <summary>조준 광선이 닿는 거리 안의 무엇인가에 닿았는지.</summary>
+        public bool HasAimHit { get; private set; }
+
+        /// <summary>조준 광선의 출발점에서 닿은 곳까지의 거리. HasAimHit일 때만 뜻이 있다. VR의 손 광선이 이 자리에서 끝난다.</summary>
+        public float AimDistance { get; private set; }
+
         public BlockWorld World => world;
 
         private bool IsActive => world != null
@@ -98,17 +104,36 @@ namespace AtelierVerse.Player
                 return;
             }
 
-            InputActionMap map = actions.FindActionMap(MapName, true);
-            placeAction = map.FindAction("Place", true);
-            removeAction = map.FindAction("Remove", true);
-            paintAction = map.FindAction("Paint", true);
-            map.Enable();
+            player.ModeChanged += OnModeChanged;
+            ResolveActions();
         }
 
         private void OnDisable()
         {
+            if (player != null) player.ModeChanged -= OnModeChanged;
+
             wasActive = false;
+            HasAimHit = false;
             if (ghost != null) ghost.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 지금 조작의 입력 묶음에서 놓기·지우기·칠하기를 찾는다. 조작 방식이 바뀌면 다시 찾는다.
+        /// 바뀐 바로 그 프레임의 누름으로 블록이 놓이지 않게 한 프레임을 다시 기다린다.
+        /// </summary>
+        private void ResolveActions()
+        {
+            InputActionMap map = actions.FindActionMap(player.InputMapName, true);
+            placeAction = map.FindAction("Place", true);
+            removeAction = map.FindAction("Remove", true);
+            paintAction = map.FindAction("Paint", true);
+            map.Enable();
+            wasActive = false;
+        }
+
+        private void OnModeChanged(ControlMode mode)
+        {
+            ResolveActions();
         }
 
         private void OnDestroy()
@@ -189,9 +214,13 @@ namespace AtelierVerse.Player
             CanPlaceAtTarget = false;
             Blocked = BlockedReason.None;
             hasRemoveTarget = false;
+            HasAimHit = false;
             if (!active || !player.TryGetAim(out Ray aim, out float extraReach)) return;
 
             if (!Physics.Raycast(aim, out RaycastHit hit, reach + extraReach, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
+
+            HasAimHit = true;
+            AimDistance = hit.distance;
 
             float cellSize = GridMath.DefaultCellSize;
             TargetCell = GridMath.WorldToCell(hit.point + hit.normal * (cellSize * 0.5f));
