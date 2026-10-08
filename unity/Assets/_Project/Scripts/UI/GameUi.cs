@@ -18,6 +18,10 @@ namespace AtelierVerse.UI
     {
         public const string NothingToUndoMessage = "되돌릴 것이 없습니다";
         public const string NothingToRedoMessage = "다시 실행할 것이 없습니다";
+        public const string FlyOnMessage = "날기 · Space로 오르고 Shift로 내려옵니다";
+        public const string FlyOffMessage = "걷기로 돌아왔습니다";
+        public const string WalkLabel = "걷기";
+        public const string FlyLabel = "날기";
 
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
@@ -45,6 +49,10 @@ namespace AtelierVerse.UI
         [SerializeField] private TMP_Text saveLabel;
         [SerializeField] private Color saveTextColor = Color.white;
         [SerializeField] private Color saveFailedColor = Color.yellow;
+        [SerializeField] private TMP_Text modeLabel;
+        [SerializeField] private Image modeDot;
+        [SerializeField] private Color walkDotColor = Color.white;
+        [SerializeField] private Color flyDotColor = Color.yellow;
         [SerializeField] private string roomName = "시험 작업실";
         [SerializeField] private string localDisplayName = "손님";
 
@@ -106,6 +114,7 @@ namespace AtelierVerse.UI
             }
 
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
+            if (player != null) player.FlyModeChanged += OnFlyModeChanged;
             if (hotbar != null) hotbar.Model.SelectionChanged += ShowSelectedPart;
             if (world != null) world.Changed += ShowBlockCount;
             if (autoSave != null) autoSave.Changed += ShowSaveState;
@@ -118,6 +127,7 @@ namespace AtelierVerse.UI
             if (autoSave != null) autoSave.Changed -= ShowSaveState;
             if (world != null) world.Changed -= ShowBlockCount;
             if (hotbar != null) hotbar.Model.SelectionChanged -= ShowSelectedPart;
+            if (player != null) player.FlyModeChanged -= OnFlyModeChanged;
             if (menuButton != null) menuButton.onClick.RemoveListener(ToggleMenu);
 
             if (menu != null)
@@ -138,6 +148,7 @@ namespace AtelierVerse.UI
             ShowSelectedPart(hotbar != null ? hotbar.SelectedIndex : HotbarModel.None);
             ShowBlockCount();
             ShowSaveState();
+            ShowFlyMode(player != null && player.IsFlying);
             RefreshHud();
         }
 
@@ -267,6 +278,20 @@ namespace AtelierVerse.UI
         private void ShowBlockCount()
         {
             if (blockCountLabel != null && world != null) blockCountLabel.text = $"블록 {world.Count}/{world.MaxBlocks}";
+        }
+
+        /// <summary>날기를 켜고 끌 때 표시를 바꾸고 조작법을 알린다.</summary>
+        private void OnFlyModeChanged(bool flying)
+        {
+            ShowFlyMode(flying);
+            Notice.Post(flying ? FlyOnMessage : FlyOffMessage);
+        }
+
+        /// <summary>오른쪽 아래의 걷기·날기 표시.</summary>
+        private void ShowFlyMode(bool flying)
+        {
+            if (modeLabel != null) modeLabel.text = flying ? FlyLabel : WalkLabel;
+            if (modeDot != null) modeDot.color = flying ? flyDotColor : walkDotColor;
         }
 
         /// <summary>오른쪽 아래의 저장 표시. 자동 저장이 없으면 표시를 감춘다.</summary>

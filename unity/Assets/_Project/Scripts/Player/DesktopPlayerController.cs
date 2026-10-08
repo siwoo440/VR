@@ -9,6 +9,7 @@ namespace AtelierVerse.Player
     /// <summary>
     /// PC에서 키보드와 마우스로 걷고 둘러보는 조작.
     /// 마우스 휠로 1인칭과 3인칭 사이를 오간다. 시점은 화면을 눌러 마우스를 잡았을 때만 돌아간다.
+    /// V로 날기(만들기 시점)를 켜고 끈다. 날 때는 중력이 없고 Space로 오르고 Shift로 내려오며, 블록과는 여전히 부딪힌다.
     /// 메뉴가 열려 있는 동안에는 SetInputBlocked로 조작을 막는다. VR 조작은 별도 리그에서 처리한다.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
@@ -27,6 +28,7 @@ namespace AtelierVerse.Player
         [SerializeField] private float sprintSpeed = 6f;
         [SerializeField] private float jumpHeight = 1.1f;
         [SerializeField] private float gravity = -20f;
+        [SerializeField] private float flySpeed = 7f;
         [SerializeField] private float pitchLimit = 80f;
         [SerializeField] private float nearViewDistance = 2.5f;
         [SerializeField] private float farViewDistance = 8f;
@@ -41,6 +43,7 @@ namespace AtelierVerse.Player
         private InputAction jumpAction;
         private InputAction sprintAction;
         private InputAction zoomAction;
+        private InputAction flyAction;
         private Vector3 startPosition;
         private Quaternion startRotation;
         private float lookSensitivity;
@@ -53,8 +56,17 @@ namespace AtelierVerse.Player
         /// <summary>1인칭과 3인칭이 바뀔 때 알린다. 값이 true이면 1인칭이다.</summary>
         public event Action<bool> ViewModeChanged;
 
+        /// <summary>날기를 켜거나 끌 때 알린다. 값이 true이면 날고 있다.</summary>
+        public event Action<bool> FlyModeChanged;
+
         /// <summary>메뉴처럼 조작을 막아야 하는 화면이 열려 있는지.</summary>
         public bool InputBlocked { get; private set; }
+
+        /// <summary>날고 있는지(만들기 시점). 시작할 때와 시작 위치로 돌아갈 때는 걷기다.</summary>
+        public bool IsFlying { get; private set; }
+
+        /// <summary>날 때의 속도(m/s).</summary>
+        public float FlySpeed => flySpeed;
 
         /// <summary>마우스를 잡고 시점을 돌리는 중인지.</summary>
         public bool LookCaptured { get; private set; }
@@ -97,6 +109,7 @@ namespace AtelierVerse.Player
             jumpAction = map.FindAction("Jump", true);
             sprintAction = map.FindAction("Sprint", true);
             zoomAction = map.FindAction("Zoom");
+            flyAction = map.FindAction("Fly");
             map.Enable();
 
             GameSettings.Changed += ApplySettings;
@@ -117,9 +130,12 @@ namespace AtelierVerse.Player
                 TryCaptureLook();
                 if (LookCaptured) Look();
                 Zoom();
+                if (flyAction != null && flyAction.WasPressedThisFrame()) SetFlying(!IsFlying);
             }
 
-            Move();
+            if (IsFlying) Fly();
+            else Move();
+
             if (transform.position.y < FallLimit) Respawn();
         }
 
@@ -143,13 +159,35 @@ namespace AtelierVerse.Player
             Cursor.visible = !captured;
         }
 
-        /// <summary>시작 위치로 되돌린다. 바닥 밖으로 떨어졌을 때와 메뉴의 단추가 부른다.</summary>
+        /// <summary>시작 위치로 되돌린다. 바닥 밖으로 떨어졌을 때와 메뉴의 단추가 부른다. 날고 있었으면 걷기로 돌아온다.</summary>
         public void Respawn()
         {
             controller.enabled = false;
             transform.SetPositionAndRotation(startPosition, startRotation);
             verticalVelocity = 0f;
             controller.enabled = true;
+            SetFlying(false);
+        }
+
+        /// <summary>날기를 켜거나 끈다. 끄면 그 자리에서 떨어지기 시작한다.</summary>
+        public void SetFlying(bool flying)
+        {
+            if (IsFlying == flying) return;
+
+            IsFlying = flying;
+            verticalVelocity = 0f;
+            FlyModeChanged?.Invoke(flying);
+        }
+
+        /// <summary>
+        /// 날 때의 속도 벡터. planar는 바라보는 좌우 방향의 이동(길이 1 이하), up·down은 Space·Shift다.
+        /// 위아래와 앞뒤를 함께 누르면 대각선이 더 빠르지 않도록 길이를 1로 맞춘다.
+        /// </summary>
+        public static Vector3 ComposeFlyMove(Vector3 planar, bool up, bool down, float speed)
+        {
+            Vector3 direction = new Vector3(planar.x, (up ? 1f : 0f) - (down ? 1f : 0f), planar.z);
+            if (direction.sqrMagnitude > 1f) direction.Normalize();
+            return direction * speed;
         }
 
         /// <summary>바라보는 방향을 정한다. yaw는 좌우 각도, lookPitch는 위아래 각도이며 아래쪽이 양수다.</summary>
@@ -238,6 +276,20 @@ namespace AtelierVerse.Player
             controller.Move((planar + Vector3.up * verticalVelocity) * Time.deltaTime);
 
             if (avatar != null) avatar.Animate(planar.magnitude, Time.deltaTime);
+        }
+
+        /// <summary>날기. 중력 없이 바라보는 좌우 방향으로 움직이고 Space로 오르고 Shift로 내려온다. 팔다리는 흔들지 않는다.</summary>
+        private void Fly()
+        {
+            Vector2 input = InputBlocked ? Vector2.zero : moveAction.ReadValue<Vector2>();
+            Vector3 planar = transform.right * input.x + transform.forward * input.y;
+            if (planar.sqrMagnitude > 1f) planar.Normalize();
+
+            bool up = !InputBlocked && jumpAction.IsPressed();
+            bool down = !InputBlocked && sprintAction.IsPressed();
+            controller.Move(ComposeFlyMove(planar, up, down, flySpeed) * Time.deltaTime);
+
+            if (avatar != null) avatar.Animate(0f, Time.deltaTime);
         }
 
         /// <summary>카메라를 목표 거리로 옮긴다. 뒤에 벽이 있으면 벽 앞까지만 물러난다.</summary>

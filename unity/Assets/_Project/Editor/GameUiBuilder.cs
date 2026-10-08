@@ -89,6 +89,7 @@ namespace AtelierVerse.EditorTools
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
             TMP_Text saveLabel = BuildSaveChip(hud);
+            TMP_Text modeLabel = BuildModeChip(hud, out Image modeDot);
             BuildNoticeBar(hud);
             GameObject crosshair = BuildCrosshair(hud);
             GameObject focusHint = BuildFocusHint(hud);
@@ -113,6 +114,10 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("saveLabel").objectReferenceValue = saveLabel;
             serialized.FindProperty("saveTextColor").colorValue = Paper;
             serialized.FindProperty("saveFailedColor").colorValue = Gold;
+            serialized.FindProperty("modeLabel").objectReferenceValue = modeLabel;
+            serialized.FindProperty("modeDot").objectReferenceValue = modeDot;
+            serialized.FindProperty("walkDotColor").colorValue = AtelierPalette.Leaf;
+            serialized.FindProperty("flyDotColor").colorValue = Gold;
             SetObjects(serialized.FindProperty("peopleLists"), peoplePanel, menuPeople);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -308,6 +313,7 @@ namespace AtelierVerse.EditorTools
                 ("Esc", "메뉴"),
                 ("Tab", "사람들"),
                 ("휠", "시점"),
+                ("V", "날기"),
                 ("1~9", "부품"),
             };
 
@@ -353,6 +359,24 @@ namespace AtelierVerse.EditorTools
 
             TMP_Text label = UiFactory.Text("Label", glass.transform, "저장 준비 중", 18f, Paper, true, TextAlignmentOptions.Center);
             UiFactory.Fill(label.rectTransform, 34f, 0f, 12f, 0f);
+            return label;
+        }
+
+        /// <summary>저장 표시 왼쪽의 걷기·날기 표시(7일차). 점은 걷기일 때 잎색, 날 때 골드다.</summary>
+        private static TMP_Text BuildModeChip(RectTransform hud, out Image dot)
+        {
+            const float viewChipWidth = 110f;
+            const float saveChipWidth = 280f;
+            const float width = 110f;
+
+            Image glass = UiFactory.Box("ModeChip", hud, DarkGlass, 22f);
+            UiFactory.Place(glass.rectTransform, UiFactory.BottomRight, new Vector2(-Margin - viewChipWidth - 10f - saveChipWidth - 10f, Margin), new Vector2(width, 44f));
+
+            dot = UiFactory.Box("Dot", glass.transform, AtelierPalette.Leaf, 6f);
+            UiFactory.Place(dot.rectTransform, UiFactory.MiddleLeft, new Vector2(16f, 0f), new Vector2(12f, 12f));
+
+            TMP_Text label = UiFactory.Text("Label", glass.transform, "걷기", 18f, Paper, true, TextAlignmentOptions.Center);
+            UiFactory.Fill(label.rectTransform, 30f, 0f, 12f, 0f);
             return label;
         }
 
@@ -669,7 +693,8 @@ namespace AtelierVerse.EditorTools
             {
                 ("W A S D", "걷기"),
                 ("마우스", "둘러보기"),
-                ("Space · Shift", "점프 · 달리기"),
+                ("Space · Shift", "점프 · 달리기 (날 때 위 · 아래)"),
+                ("V", "날기 켜고 끄기"),
                 ("휠", "1인칭·3인칭 바꾸기"),
                 ("1~9", "부품 고르기"),
                 ("왼쪽 누르기", "블록 놓기"),
@@ -677,8 +702,7 @@ namespace AtelierVerse.EditorTools
                 ("가운데 · F", "블록 칠하기"),
                 ("Ctrl+Z", "되돌리기"),
                 ("Ctrl+Y", "다시 실행"),
-                ("Tab", "사람들 목록"),
-                ("Esc", "메뉴 열기·닫기"),
+                ("Tab · Esc", "사람들 목록 · 메뉴"),
             };
 
             // 한 줄에 54px씩 여섯 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.

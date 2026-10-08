@@ -25,6 +25,7 @@ namespace AtelierVerse.EditorTools
             ("Day04", Day4Setup.Apply),
             ("Day05", Day5Setup.Apply),
             ("Day06", Day6Setup.Apply),
+            ("Day07", Day7Setup.Apply),
         };
 
         static ProjectSetupRunner()
