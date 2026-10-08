@@ -1,0 +1,111 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>에디터 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="full"> <!-- 전체 화면 에디터 -->
+    <div class="av-editor"> <!-- 에디터 전체 틀 -->
+        <header class="av-editor-top"> <!-- 에디터 상단 띠 -->
+            <a class="av-button av-button-quiet av-button-icon" href="studio.html" aria-label="내 작업실로 돌아가기"><span class="av-icon" data-i="left"></span></a> <!-- 돌아가기 -->
+            <h1 class="av-sr">맵 에디터</h1> <!-- 화면 제목 -->
+            <label class="av-editor-name"><span class="av-sr">맵 이름</span><input class="av-input" value="햇살 다락방"></label> <!-- 맵 이름 입력 -->
+            <span class="av-chip" data-color="leaf">저장됨 · 방금</span> <!-- 저장 상태 -->
+            <span class="av-editor-spacer"></span> <!-- 남은 자리 채움 -->
+            <button class="av-button av-button-quiet av-button-icon" type="button" aria-label="실행 취소"><span class="av-icon" data-i="undo"></span></button> <!-- 실행 취소 -->
+            <button class="av-button av-button-quiet av-button-icon" type="button" aria-label="다시 실행"><span class="av-icon" data-i="redo"></span></button> <!-- 다시 실행 -->
+            <span class="av-avatar-stack" aria-label="함께 만드는 사람 2명"><span class="av-avatar" data-size="small" data-av-avatar="1" data-av-color="gold"></span><span class="av-avatar" data-size="small" data-av-avatar="2" data-av-color="blue"></span></span> <!-- 함께 만드는 사람 -->
+            <a class="av-button" href="room.html"><span class="av-icon" data-i="play"></span>걸어 보기</a> <!-- 방에서 확인 -->
+            <button class="av-button av-button-primary" type="button" data-av-open="publish"><span class="av-icon" data-i="link"></span>공유</button> <!-- 공유 대화상자 열기 -->
+            <button class="av-button av-button-quiet av-button-icon" type="button" data-av-mode></button> <!-- 화면 모드 버튼 -->
+        </header> <!-- 에디터 상단 띠 끝 -->
+
+        <aside class="av-editor-palette" aria-label="부품 고르기"> <!-- 부품 고르기 영역 -->
+            <div class="av-tabs" role="tablist"> <!-- 부품 묶음 탭 -->
+                <button class="av-tab" type="button" role="tab" data-av-set="palette" data-av-value="parts" aria-selected="true">부품</button> <!-- 기본 부품 탭 -->
+                <button class="av-tab" type="button" role="tab" data-av-set="palette" data-av-value="kits" aria-selected="false">조립품</button> <!-- 조립품 탭 -->
+            </div> <!-- 부품 묶음 탭 끝 -->
+            <label class="av-search"><span class="av-sr">부품 검색</span><span class="av-icon" data-i="search"></span><input class="av-input" type="search" placeholder="부품 이름 검색"></label> <!-- 부품 검색 -->
+            <div class="av-part-grid" data-av-when="palette=parts"> <!-- 기본 부품 격자 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="true"><span class="av-part-icon" data-av-block="cube" data-av-color="gold"></span>블록</button> <!-- 블록 부품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="slab" data-av-color="blue"></span>판</button> <!-- 판 부품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="pillar" data-av-color="paper"></span>기둥</button> <!-- 기둥 부품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="wall" data-av-color="clay"></span>벽</button> <!-- 벽 부품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="stairs" data-av-color="paper"></span>계단</button> <!-- 계단 부품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="tree"></span>나무</button> <!-- 나무 부품 -->
+            </div> <!-- 기본 부품 격자 끝 -->
+            <div class="av-part-grid" data-av-when="palette=kits" hidden> <!-- 조립품 격자 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span>접이식 의자</button> <!-- 의자 조립품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="table" data-av-color="gold"></span>둥근 탁자</button> <!-- 탁자 조립품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="house" data-av-color="clay"></span>작은 집</button> <!-- 집 조립품 -->
+                <button class="av-part-tile" type="button" data-av-set="part" aria-pressed="false"><span class="av-part-icon" data-av-block="lamp" data-av-color="gold"></span>종이 등불</button> <!-- 등불 조립품 -->
+            </div> <!-- 조립품 격자 끝 -->
+            <p class="av-note" data-av-when="palette=kits" hidden>조립품은 부품 여러 개를 묶어 저장한 것입니다. <span class="av-stage">2단계</span></p> <!-- 조립품 안내 -->
+        </aside> <!-- 부품 고르기 영역 끝 -->
+
+        <section class="av-editor-view av-grid-paper" aria-label="맵 편집 화면"> <!-- 편집 화면 -->
+            <div class="av-scene" data-av-scene="햇살 다락방" data-av-size="9" data-av-editing data-av-label="햇살 다락방 편집 화면. 골드 블록 하나를 고른 상태"></div> <!-- 편집 중인 맵 -->
+            <div class="av-tool-strip" role="toolbar" aria-label="편집 도구"> <!-- 편집 도구 띠 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="선택" title="선택"><span class="av-icon" data-i="cursor"></span></button> <!-- 선택 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="놓기" title="놓기"><span class="av-icon" data-i="cube"></span></button> <!-- 놓기 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="true" aria-label="이동" title="이동"><span class="av-icon" data-i="move"></span></button> <!-- 이동 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="회전" title="회전"><span class="av-icon" data-i="rotate"></span></button> <!-- 회전 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="크기" title="크기"><span class="av-icon" data-i="scale"></span></button> <!-- 크기 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="칠하기" title="칠하기"><span class="av-icon" data-i="brush"></span></button> <!-- 칠하기 도구 -->
+                <button class="av-button av-button-icon" type="button" data-av-set="tool" aria-pressed="false" aria-label="지우기" title="지우기"><span class="av-icon" data-i="eraser"></span></button> <!-- 지우기 도구 -->
+            </div> <!-- 편집 도구 띠 끝 -->
+            <div class="av-view-foot"> <!-- 편집 화면 아래 안내 -->
+                <span class="av-chip" data-color="none">X 4 · Y 6 · Z 0</span> <!-- 고른 부품 좌표 -->
+                <label class="av-switch av-view-snap">모눈에 맞추기<input type="checkbox" checked></label> <!-- 모눈 맞춤 -->
+                <span class="av-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 시점 이동 <kbd>R</kbd> 회전 <kbd>Del</kbd> 지우기</span> <!-- 조작 키 안내 -->
+            </div> <!-- 편집 화면 아래 안내 끝 -->
+        </section> <!-- 편집 화면 끝 -->
+
+        <aside class="av-editor-inspector" aria-label="고른 부품 속성"> <!-- 속성 영역 -->
+            <section class="av-stack"> <!-- 속성 묶음 -->
+                <div class="av-section-head"><h2 class="av-card-title av-section-title">블록</h2><span class="av-tape">고른 부품</span></div> <!-- 고른 부품 이름 -->
+                <div class="av-triple"> <!-- 위치 입력 -->
+                    <label class="av-field"><span class="av-label">X</span><input class="av-input" type="number" value="4"></label> <!-- 가로 위치 -->
+                    <label class="av-field"><span class="av-label">Y</span><input class="av-input" type="number" value="6"></label> <!-- 세로 위치 -->
+                    <label class="av-field"><span class="av-label">Z</span><input class="av-input" type="number" value="0"></label> <!-- 높이 위치 -->
+                </div> <!-- 위치 입력 끝 -->
+                <div class="av-field"><span class="av-label">회전</span><div class="av-segment"><button type="button" data-av-set="turn" aria-pressed="true">0°</button><button type="button" data-av-set="turn" aria-pressed="false">90°</button><button type="button" data-av-set="turn" aria-pressed="false">180°</button><button type="button" data-av-set="turn" aria-pressed="false">270°</button></div></div> <!-- 회전 고르기 -->
+                <div class="av-field"><span class="av-label">색</span><div class="av-swatches"><button class="av-swatch" type="button" data-av-set="paint" aria-pressed="true" aria-label="골드" style="--av-swatch: var(--av-gold)"></button><button class="av-swatch" type="button" data-av-set="paint" aria-pressed="false" aria-label="블루" style="--av-swatch: var(--av-blue)"></button><button class="av-swatch" type="button" data-av-set="paint" aria-pressed="false" aria-label="테라코타" style="--av-swatch: var(--av-clay)"></button><button class="av-swatch" type="button" data-av-set="paint" aria-pressed="false" aria-label="초록" style="--av-swatch: var(--av-leaf)"></button><button class="av-swatch" type="button" data-av-set="paint" aria-pressed="false" aria-label="흰색" style="--av-swatch: var(--av-block)"></button></div></div> <!-- 색 고르기 -->
+                <label class="av-switch">통과하지 못하게 막기<input type="checkbox" checked></label> <!-- 충돌 설정 -->
+            </section> <!-- 속성 묶음 끝 -->
+            <section class="av-card av-card-flat"> <!-- 동작 규칙 카드 -->
+                <div class="av-section-head"><h2 class="av-card-title av-section-title"><span class="av-icon" data-i="bolt"></span> 동작 규칙</h2><span class="av-stage">3단계</span></div> <!-- 카드 제목과 도입 단계 -->
+                <div class="av-rule"><span class="av-chip" data-color="blue">닿으면</span><span class="av-icon" data-i="right"></span><span class="av-chip" data-color="clay">튀어 오르기</span></div> <!-- 조건과 행동 한 줄 -->
+                <button class="av-button av-button-small" type="button" disabled><span class="av-icon" data-i="plus"></span>규칙 추가</button> <!-- 규칙 추가(이후 단계) -->
+                <p class="av-help">코드를 쓰지 않고 조건과 행동을 골라 만듭니다.</p> <!-- 규칙 안내 -->
+            </section> <!-- 동작 규칙 카드 끝 -->
+        </aside> <!-- 속성 영역 끝 -->
+
+        <footer class="av-editor-status"> <!-- 에디터 아래 상태 띠 -->
+            <div class="av-meter" style="--av-meter: 16%"><div class="av-meter-head"><span>부품</span><span>312 / 2,000</span></div><div class="av-meter-track"><div class="av-meter-fill"></div></div></div> <!-- 부품 수 게이지 -->
+            <div class="av-meter" style="--av-meter: 22%; --av-meter-color: var(--av-leaf)"><div class="av-meter-head"><span>그리기 부담</span><span>VR 권장 범위 안</span></div><div class="av-meter-track"><div class="av-meter-fill"></div></div></div> <!-- 성능 상한 게이지 -->
+            <p class="av-note">부품이 많아지면 VR 기기에서 느려질 수 있어 상한을 둡니다.</p> <!-- 상한 안내 -->
+        </footer> <!-- 에디터 아래 상태 띠 끝 -->
+    </div> <!-- 에디터 전체 틀 끝 -->
+
+    <dialog class="av-dialog" id="publish" aria-labelledby="publish-title"> <!-- 공유 대화상자 -->
+        <div class="av-dialog-body"> <!-- 대화상자 내용 -->
+            <h2 class="av-card-title" id="publish-title">햇살 다락방 공유하기</h2> <!-- 대화상자 제목 -->
+            <div class="av-field"><span class="av-label">공개 범위</span><div class="av-segment"><button type="button" data-av-set="scope" aria-pressed="false">비공개</button><button type="button" data-av-set="scope" aria-pressed="true">링크 공개</button><button type="button" data-av-set="scope" aria-pressed="false">공개</button></div><p class="av-help">링크 공개는 링크를 받은 사람만 들어옵니다. 공개는 둘러보기에 올라갑니다.</p></div> <!-- 공개 범위 고르기 -->
+            <div class="av-field"><label class="av-label" for="publish-link">초대 링크</label><div class="av-copy"><input class="av-input" id="publish-link" value="atelier.example/r/sun-attic" readonly><button class="av-button av-button-primary" type="button" data-av-toast="초대 링크를 복사했습니다.">복사</button></div></div> <!-- 초대 링크 복사 -->
+            <label class="av-switch">다른 사람의 리믹스 허용<input type="checkbox" checked></label> <!-- 리믹스 허용 -->
+            <div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div> <!-- 닫기 버튼 -->
+        </div> <!-- 대화상자 내용 끝 -->
+    </dialog> <!-- 공유 대화상자 끝 -->
+</body> <!-- 전체 화면 에디터 끝 -->
+</html> <!-- 문서 끝 -->

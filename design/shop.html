@@ -1,0 +1,66 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>상점 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="shop" data-av-title="상점"> <!-- 상점 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <a class="av-card av-grid-paper av-shop-banner" href="plans.html"> <!-- 구독 안내 띠 -->
+            <span class="av-tape">구독</span> <!-- 이름표 -->
+            <strong class="av-card-title">구독하면 맵을 더 많이 저장하고 매달 꾸미기 아이템을 받습니다.</strong> <!-- 안내 문구 -->
+            <span class="av-button av-button-small">요금제 보기<span class="av-icon" data-i="right"></span></span> <!-- 요금제 이동 -->
+        </a> <!-- 구독 안내 띠 끝 -->
+
+        <div class="av-tabs" role="tablist" aria-label="상점 분류"> <!-- 상점 분류 탭 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="shop" data-av-value="items" aria-selected="true">꾸미기 아이템</button> <!-- 운영자 판매 아이템 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="shop" data-av-value="market" aria-selected="false">제작자 마켓</button> <!-- 이용자 판매 조립품 -->
+            <button class="av-tab" type="button" role="tab" data-av-set="shop" data-av-value="mine" aria-selected="false">내 보관함</button> <!-- 가진 아이템 -->
+        </div> <!-- 상점 분류 탭 끝 -->
+
+        <section class="av-section" data-av-when="shop=items"> <!-- 꾸미기 아이템 구역 -->
+            <p class="av-note">운영자가 만든 캐릭터·공간 꾸미기 아이템입니다. <span class="av-stage">4단계</span></p> <!-- 구역 안내와 도입 단계 -->
+            <div class="av-card-grid av-item-grid"> <!-- 아이템 격자 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-avatar="4" data-av-color="blue"></span><h2 class="av-card-title">왕관 장식</h2><span class="av-chip" data-color="blue">머리 장식</span><div class="av-item-foot"><span class="av-price">1,500원</span><button class="av-button av-button-primary av-button-small" type="button">구매</button></div></article> <!-- 아이템 1 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-avatar="5" data-av-color="clay"></span><h2 class="av-card-title">털모자</h2><span class="av-chip" data-color="blue">머리 장식</span><div class="av-item-foot"><span class="av-price">1,200원</span><button class="av-button av-button-primary av-button-small" type="button">구매</button></div></article> <!-- 아이템 2 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-block="lamp" data-av-color="gold"></span><h2 class="av-card-title">종이 등불 묶음</h2><span class="av-chip" data-color="clay">공간 장식</span><div class="av-item-foot"><span class="av-price">2,000원</span><button class="av-button av-button-primary av-button-small" type="button">구매</button></div></article> <!-- 아이템 3 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-block="tree"></span><h2 class="av-card-title">사계절 나무</h2><span class="av-chip" data-color="clay">공간 장식</span><div class="av-item-foot"><span class="av-price">보유 중</span><button class="av-button av-button-small" type="button" disabled>구매함</button></div></article> <!-- 가진 아이템 -->
+            </div> <!-- 아이템 격자 끝 -->
+        </section> <!-- 꾸미기 아이템 구역 끝 -->
+
+        <section class="av-section" data-av-when="shop=market" hidden> <!-- 제작자 마켓 구역 -->
+            <p class="av-note">이용자가 만든 조립품을 사고팝니다. 판매 금액에서 수수료를 뺀 금액이 제작자에게 돌아갑니다(수수료율 미확정). <span class="av-stage">5단계</span></p> <!-- 구역 안내와 도입 단계 -->
+            <div class="av-card-grid av-item-grid"> <!-- 조립품 격자 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-block="house" data-av-color="clay"></span><h2 class="av-card-title">오두막 세트</h2><p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="4" data-av-color="clay"></span><span>하늘담</span></p><div class="av-item-foot"><span class="av-price">900원</span><button class="av-button av-button-primary av-button-small" type="button">구매</button></div></article> <!-- 조립품 1 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-block="chair" data-av-color="blue"></span><h2 class="av-card-title">카페 의자 6종</h2><p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span><span>도토리</span></p><div class="av-item-foot"><span class="av-price">600원</span><button class="av-button av-button-primary av-button-small" type="button">구매</button></div></article> <!-- 조립품 2 -->
+                <article class="av-card av-item"><span class="av-item-art av-grid-paper" data-av-block="stairs" data-av-color="gold"></span><h2 class="av-card-title">장애물 계단 묶음</h2><p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="5" data-av-color="blue"></span><span>새벽달</span></p><div class="av-item-foot"><span class="av-price">무료</span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></div></article> <!-- 무료 조립품 -->
+            </div> <!-- 조립품 격자 끝 -->
+            <div class="av-card av-card-flat av-sell"> <!-- 판매 안내 카드 -->
+                <h2 class="av-card-title">내 조립품 판매하기</h2> <!-- 카드 제목 -->
+                <p class="av-note">판매하려면 심사를 거칩니다. 다른 사람의 제작물을 그대로 올린 조립품은 판매할 수 없습니다.</p> <!-- 판매 조건 -->
+                <button class="av-button av-button-small" type="button" disabled>판매 신청 · 준비 중</button> <!-- 판매 신청(이후 단계) -->
+            </div> <!-- 판매 안내 카드 끝 -->
+        </section> <!-- 제작자 마켓 구역 끝 -->
+
+        <section class="av-section" data-av-when="shop=mine" hidden> <!-- 내 보관함 구역 -->
+            <ul class="av-part-list"> <!-- 가진 아이템 목록 -->
+                <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="tree"></span><span class="av-row-text"><span class="av-row-title">사계절 나무</span><span class="av-row-sub">공간 장식 · 구매</span></span><a class="av-button av-button-small" href="editor.html">맵에 놓기</a></li> <!-- 가진 아이템 1 -->
+                <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span><span class="av-row-text"><span class="av-row-title">접이식 의자</span><span class="av-row-sub">조립품 · 가져다 씀</span></span><a class="av-button av-button-small" href="editor.html">맵에 놓기</a></li> <!-- 가진 아이템 2 -->
+            </ul> <!-- 가진 아이템 목록 끝 -->
+            <div class="av-empty"><span class="av-part-icon" data-av-block="cube" data-av-color="paper"></span><p class="av-note">머리 장식은 아직 없습니다.</p><a class="av-button av-button-small" href="shop.html">꾸미기 아이템 보기</a></div> <!-- 빈 보관함 안내 -->
+        </section> <!-- 내 보관함 구역 끝 -->
+
+        <p class="av-help">금액은 예시입니다. 결제 수단, 환불 기준, 미성년자 결제 한도는 아직 정하지 않았습니다.</p> <!-- 결제 미확정 안내 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 상점 화면 끝 -->
+</html> <!-- 문서 끝 -->

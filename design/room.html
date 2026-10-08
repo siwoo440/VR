@@ -1,0 +1,89 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>방 안 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="full"> <!-- 전체 화면 방 -->
+    <div class="av-room av-grid-paper"> <!-- 방 전체 틀 -->
+        <div class="av-scene av-room-view" data-av-scene="모과의 보드게임 카페" data-av-size="9" data-av-people="모과,도토리,나" data-av-label="모과의 보드게임 카페 방 안. 모과, 도토리, 나 세 명이 있음"></div> <!-- 방 안 모습 -->
+
+        <header class="av-room-top"> <!-- 방 상단 띠 -->
+            <div class="av-card av-room-title"> <!-- 방 정보 카드 -->
+                <h1 class="av-card-title">모과의 보드게임 카페</h1> <!-- 방 이름 -->
+                <span class="av-seats" aria-label="8명 중 3명"><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">3 / 8</span></span> <!-- 방 자리 -->
+            </div> <!-- 방 정보 카드 끝 -->
+            <span class="av-stage av-room-draft">시안 · 예시 화면</span> <!-- 시안 표시 -->
+            <div class="av-cluster"> <!-- 방 상단 버튼 -->
+                <button class="av-button" type="button" data-av-open="room-invite"><span class="av-icon" data-i="link"></span>초대</button> <!-- 초대 대화상자 열기 -->
+                <button class="av-button av-button-icon" type="button" data-av-mode></button> <!-- 화면 모드 버튼 -->
+                <a class="av-button av-button-danger" href="studio.html"><span class="av-icon" data-i="exit"></span>나가기</a> <!-- 방 나가기 -->
+            </div> <!-- 방 상단 버튼 끝 -->
+        </header> <!-- 방 상단 띠 끝 -->
+
+        <aside class="av-card av-room-people" aria-label="참여자"> <!-- 참여자 영역 -->
+            <h2 class="av-card-title">참여자 3 / 8</h2> <!-- 참여자 수 -->
+            <ul> <!-- 참여자 목록 -->
+                <li class="av-row"><span class="av-avatar" data-size="small" data-av-avatar="2" data-av-color="blue"></span><span class="av-row-text"><span class="av-row-title">모과</span><span class="av-row-sub">방장 · PC</span></span><button class="av-button av-button-quiet av-button-icon av-button-small" type="button" aria-label="모과 더 보기"><span class="av-icon" data-i="more"></span></button></li> <!-- 방장 -->
+                <li class="av-row"><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span><span class="av-row-text"><span class="av-row-title">도토리</span><span class="av-row-sub">VR 헤드셋</span></span><button class="av-button av-button-quiet av-button-icon av-button-small" type="button" aria-label="도토리 더 보기"><span class="av-icon" data-i="more"></span></button></li> <!-- VR 참여자 -->
+                <li class="av-row"><span class="av-avatar" data-size="small" data-av-avatar="1" data-av-color="gold"></span><span class="av-row-text"><span class="av-row-title">나</span><span class="av-row-sub">PC</span></span></li> <!-- 나 -->
+            </ul> <!-- 참여자 목록 끝 -->
+            <div class="av-room-menu" aria-label="참여자 메뉴 예시"> <!-- 참여자 메뉴 예시 -->
+                <button class="av-button av-button-quiet av-button-small" type="button">소리 끄기</button> <!-- 내게만 소리 끄기 -->
+                <button class="av-button av-button-quiet av-button-small" type="button">차단</button> <!-- 차단 -->
+                <button class="av-button av-button-quiet av-button-small" type="button"><span class="av-icon" data-i="flag"></span>신고</button> <!-- 신고 -->
+            </div> <!-- 참여자 메뉴 예시 끝 -->
+        </aside> <!-- 참여자 영역 끝 -->
+
+        <section class="av-card av-room-chat" aria-label="방 채팅"> <!-- 채팅 영역 -->
+            <div class="av-chat-log"> <!-- 채팅 기록 -->
+                <p class="av-bubble"><span class="av-bubble-name">모과</span>어서 와! 탁자에 보드게임 올려 뒀어.</p> <!-- 받은 말 1 -->
+                <p class="av-bubble"><span class="av-bubble-name">도토리</span>헤드셋으로 들어왔는데 잘 보여요.</p> <!-- 받은 말 2 -->
+                <p class="av-bubble" data-mine>의자 색 바꾼 거 예쁘다.</p> <!-- 보낸 말 -->
+            </div> <!-- 채팅 기록 끝 -->
+            <form class="av-composer"> <!-- 채팅 입력 -->
+                <label class="av-sr" for="room-message">방 채팅 입력</label> <!-- 입력 이름 -->
+                <input class="av-input" id="room-message" placeholder="메시지 입력"> <!-- 채팅 입력칸 -->
+                <button class="av-button av-button-primary av-button-icon" type="button" aria-label="보내기"><span class="av-icon" data-i="send"></span></button> <!-- 보내기 -->
+            </form> <!-- 채팅 입력 끝 -->
+        </section> <!-- 채팅 영역 끝 -->
+
+        <footer class="av-room-bar"> <!-- 방 아래 행동 띠 -->
+            <button class="av-button av-button-icon" type="button" disabled aria-label="마이크 (4단계에서 제공)" title="음성 대화는 4단계에서 제공"><span class="av-icon" data-i="mic"></span></button> <!-- 음성 대화(이후 단계) -->
+            <button class="av-button av-button-icon" type="button" aria-label="감정 표현"><span class="av-icon" data-i="smile"></span></button> <!-- 감정 표현 -->
+            <button class="av-button av-button-icon" type="button" aria-label="사진 찍기"><span class="av-icon" data-i="camera"></span></button> <!-- 사진 찍기 -->
+            <button class="av-button av-button-blue" type="button" data-av-open="vr"><span class="av-icon" data-i="vr"></span>VR로 입장</button> <!-- VR 입장 안내 열기 -->
+            <span class="av-keys av-room-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 <kbd>Space</kbd> 점프 <kbd>Enter</kbd> 채팅</span> <!-- 조작 키 안내 -->
+        </footer> <!-- 방 아래 행동 띠 끝 -->
+    </div> <!-- 방 전체 틀 끝 -->
+
+    <dialog class="av-dialog" id="vr" aria-labelledby="vr-title"> <!-- VR 입장 대화상자 -->
+        <div class="av-dialog-body"> <!-- 대화상자 내용 -->
+            <h2 class="av-card-title" id="vr-title">VR로 입장하기</h2> <!-- 대화상자 제목 -->
+            <p>이 기기에서 VR 헤드셋을 찾지 못했습니다. 헤드셋의 브라우저에서 아래 링크를 열면 같은 방에 VR로 들어옵니다.</p> <!-- 입장 방법 안내 -->
+            <div class="av-copy"><input class="av-input" value="atelier.example/r/board-cafe" readonly aria-label="방 링크"><button class="av-button av-button-primary" type="button" data-av-toast="방 링크를 복사했습니다.">복사</button></div> <!-- 방 링크 복사 -->
+            <p class="av-help">헤드셋으로 이 화면을 보고 있다면 "VR로 입장"을 누르는 즉시 VR 화면으로 바뀝니다.</p> <!-- 헤드셋 안내 -->
+            <div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div> <!-- 닫기 버튼 -->
+        </div> <!-- 대화상자 내용 끝 -->
+    </dialog> <!-- VR 입장 대화상자 끝 -->
+
+    <dialog class="av-dialog" id="room-invite" aria-labelledby="room-invite-title"> <!-- 방 초대 대화상자 -->
+        <div class="av-dialog-body"> <!-- 대화상자 내용 -->
+            <h2 class="av-card-title" id="room-invite-title">이 방에 초대하기</h2> <!-- 대화상자 제목 -->
+            <div class="av-copy"><input class="av-input" value="atelier.example/r/board-cafe" readonly aria-label="방 링크"><button class="av-button av-button-primary" type="button" data-av-toast="방 링크를 복사했습니다.">복사</button></div> <!-- 방 링크 복사 -->
+            <p class="av-help">빈자리가 5개 남았습니다.</p> <!-- 남은 자리 안내 -->
+            <div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div> <!-- 닫기 버튼 -->
+        </div> <!-- 대화상자 내용 끝 -->
+    </dialog> <!-- 방 초대 대화상자 끝 -->
+</body> <!-- 전체 화면 방 끝 -->
+</html> <!-- 문서 끝 -->

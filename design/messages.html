@@ -1,0 +1,77 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>메시지 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="messages" data-av-title="메시지"> <!-- 메시지 화면 -->
+    <main class="av-messages"> <!-- 화면 본문 시작 -->
+        <aside class="av-card av-msg-list" aria-label="대화 목록"> <!-- 대화 목록 영역 -->
+            <div class="av-segment" role="tablist" aria-label="대화 종류"> <!-- 대화 종류 고르기 -->
+                <button type="button" role="tab" data-av-set="msg" data-av-value="dm" aria-selected="true">1:1</button> <!-- 1:1 대화 -->
+                <button type="button" role="tab" data-av-set="msg" data-av-value="group" aria-selected="false">그룹</button> <!-- 그룹 대화 -->
+                <button type="button" role="tab" data-av-set="msg" data-av-value="notice" aria-selected="false">공지 채널</button> <!-- 공지 채널 -->
+            </div> <!-- 대화 종류 고르기 끝 -->
+            <ul data-av-when="msg=dm"> <!-- 1:1 대화 목록 -->
+                <li><button class="av-row" type="button" aria-current="true"><span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="room"></span><span class="av-row-text"><span class="av-row-title">모과</span><span class="av-row-sub">지금 들어와! 자리 남았어</span></span><span class="av-badge">2</span></button></li> <!-- 고른 대화 -->
+                <li><button class="av-row" type="button"><span class="av-avatar" data-av-avatar="3" data-av-color="leaf" data-status="online"></span><span class="av-row-text"><span class="av-row-title">도토리</span><span class="av-row-sub">의자 조립품 새로 올렸어요</span></span></button></li> <!-- 대화 2 -->
+                <li><button class="av-row" type="button"><span class="av-avatar" data-av-avatar="5" data-av-color="clay" data-status="offline"></span><span class="av-row-text"><span class="av-row-title">새벽달</span><span class="av-row-sub">내일 호수 맵 같이 고쳐요</span></span></button></li> <!-- 대화 3 -->
+            </ul> <!-- 1:1 대화 목록 끝 -->
+            <ul data-av-when="msg=group" hidden> <!-- 그룹 대화 목록 -->
+                <li><button class="av-row" type="button"><span class="av-avatar-stack"><span class="av-avatar" data-size="small" data-av-avatar="2" data-av-color="blue"></span><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span></span><span class="av-row-text"><span class="av-row-title">주말 맵 만들기 모임</span><span class="av-row-sub">도토리: 토요일 저녁 어때요</span></span></button></li> <!-- 그룹 1 -->
+                <li><button class="av-row" type="button"><span class="av-avatar-stack"><span class="av-avatar" data-size="small" data-av-avatar="4" data-av-color="clay"></span><span class="av-avatar" data-size="small" data-av-avatar="5" data-av-color="blue"></span></span><span class="av-row-text"><span class="av-row-title">불꽃놀이 준비</span><span class="av-row-sub">하늘담: 전망대 완성했어요</span></span></button></li> <!-- 그룹 2 -->
+            </ul> <!-- 그룹 대화 목록 끝 -->
+            <ul data-av-when="msg=notice" hidden> <!-- 공지 채널 목록 -->
+                <li><button class="av-row" type="button"><span class="av-avatar"><span class="av-icon" data-i="megaphone"></span></span><span class="av-row-text"><span class="av-row-title">하늘담의 새 맵 소식</span><span class="av-row-sub">제작자만 글을 쓸 수 있습니다</span></span></button></li> <!-- 제작자 공지 채널 -->
+                <li><button class="av-row" type="button"><span class="av-avatar"><span class="av-icon" data-i="megaphone"></span></span><span class="av-row-text"><span class="av-row-title">운영 공지</span><span class="av-row-sub">점검과 새 기능 안내</span></span></button></li> <!-- 운영 공지 채널 -->
+            </ul> <!-- 공지 채널 목록 끝 -->
+            <p class="av-help">1:1 대화 <span class="av-stage">3단계</span> 그룹·공지 채널 <span class="av-stage">4단계</span></p> <!-- 도입 단계 안내 -->
+        </aside> <!-- 대화 목록 영역 끝 -->
+
+        <section class="av-card av-msg-thread" aria-label="모과와의 대화"> <!-- 대화 내용 영역 -->
+            <header class="av-msg-head"> <!-- 대화 머리 -->
+                <span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="room"></span> <!-- 상대 아바타 -->
+                <span class="av-row-text"><span class="av-row-title">모과</span><span class="av-row-sub">보드게임 카페에 있음</span></span> <!-- 상대 이름과 상태 -->
+                <a class="av-button av-button-small" href="room.html">따라가기</a> <!-- 상대 방 따라가기 -->
+                <button class="av-button av-button-quiet av-button-icon av-button-small" type="button" aria-label="대화 더 보기"><span class="av-icon" data-i="more"></span></button> <!-- 더 보기 -->
+            </header> <!-- 대화 머리 끝 -->
+            <div class="av-msg-log"> <!-- 대화 기록 -->
+                <p class="av-msg-day">오늘</p> <!-- 날짜 구분 -->
+                <p class="av-bubble">보드게임 카페 맵 다 만들었어!</p> <!-- 받은 말 1 -->
+                <p class="av-bubble" data-mine>오, 탁자도 새로 만든 거야?</p> <!-- 보낸 말 1 -->
+                <p class="av-bubble">응, 둥근 탁자 조립품으로 저장해 뒀어.</p> <!-- 받은 말 2 -->
+                <div class="av-card av-card-flat av-msg-invite"> <!-- 방 초대 카드 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="모과의 보드게임 카페"></div> <!-- 초대한 방 그림 -->
+                    <div class="av-map-body"><span class="av-tape">방 초대</span><h2 class="av-card-title">모과의 보드게임 카페</h2><span class="av-seats" aria-label="8명 중 3명"><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">3 / 8</span></span><a class="av-button av-button-primary av-button-small" href="room.html">입장</a></div> <!-- 방 이름·자리·입장 -->
+                </div> <!-- 방 초대 카드 끝 -->
+                <p class="av-bubble">지금 들어와! 자리 남았어</p> <!-- 받은 말 3 -->
+            </div> <!-- 대화 기록 끝 -->
+            <form class="av-composer"> <!-- 메시지 입력 -->
+                <button class="av-button av-button-quiet av-button-icon" type="button" aria-label="방 초대 보내기"><span class="av-icon" data-i="link"></span></button> <!-- 방 초대 붙이기 -->
+                <label class="av-sr" for="dm-message">모과에게 보낼 메시지</label> <!-- 입력 이름 -->
+                <input class="av-input" id="dm-message" placeholder="메시지 입력"> <!-- 메시지 입력칸 -->
+                <button class="av-button av-button-primary av-button-icon" type="button" aria-label="보내기"><span class="av-icon" data-i="send"></span></button> <!-- 보내기 -->
+            </form> <!-- 메시지 입력 끝 -->
+        </section> <!-- 대화 내용 영역 끝 -->
+
+        <aside class="av-card av-card-flat av-msg-info" aria-label="대화 정보"> <!-- 대화 정보 영역 -->
+            <span class="av-avatar" data-size="large" data-av-avatar="2" data-av-color="blue"></span> <!-- 상대 큰 아바타 -->
+            <h2 class="av-card-title">모과</h2> <!-- 상대 이름 -->
+            <p class="av-note">친구가 된 지 3개월 · 맵 5개</p> <!-- 상대 정보 -->
+            <label class="av-switch">이 대화 알림<input type="checkbox" checked></label> <!-- 대화 알림 -->
+            <div class="av-cluster"><button class="av-button av-button-quiet av-button-small" type="button">차단</button><button class="av-button av-button-quiet av-button-small" type="button"><span class="av-icon" data-i="flag"></span>신고</button></div> <!-- 차단과 신고 -->
+            <p class="av-help">차단하면 메시지·초대·소식이 서로 전달되지 않습니다.</p> <!-- 차단 안내 -->
+        </aside> <!-- 대화 정보 영역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 메시지 화면 끝 -->
+</html> <!-- 문서 끝 -->

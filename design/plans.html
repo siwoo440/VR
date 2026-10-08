@@ -1,0 +1,55 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>구독 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="plans" data-av-title="구독"> <!-- 구독 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <p class="av-note">만들고 초대하는 기본 기능은 무료입니다. 구독은 더 많이 만들고 싶은 사람을 위한 선택입니다. 이름·금액·혜택은 모두 예시입니다. <span class="av-stage">4단계</span></p> <!-- 구독 안내와 도입 단계 -->
+        <div class="av-plans"> <!-- 요금제 비교 -->
+            <section class="av-card av-card-flat av-plan"> <!-- 무료 요금제 -->
+                <h2 class="av-map-title">무료</h2> <!-- 요금제 이름 -->
+                <p class="av-plan-price"><span class="av-price">0원</span></p> <!-- 요금 -->
+                <ul class="av-plan-list"> <!-- 혜택 목록 -->
+                    <li><span class="av-icon" data-i="check"></span>맵 3개 저장</li> <!-- 혜택 1 -->
+                    <li><span class="av-icon" data-i="check"></span>방 열기와 초대 (방당 8명)</li> <!-- 혜택 2 -->
+                    <li><span class="av-icon" data-i="check"></span>공유된 조립품 가져다 쓰기</li> <!-- 혜택 3 -->
+                    <li><span class="av-icon" data-i="check"></span>기본 캐릭터 6종</li> <!-- 혜택 4 -->
+                </ul> <!-- 혜택 목록 끝 -->
+                <button class="av-button av-button-wide" type="button" disabled>이용 중</button> <!-- 현재 요금제 -->
+            </section> <!-- 무료 요금제 끝 -->
+            <section class="av-card av-plan av-grid-paper"> <!-- 구독 요금제 -->
+                <span class="av-tape">가칭</span> <!-- 이름표 -->
+                <h2 class="av-map-title">작업실 플러스</h2> <!-- 요금제 이름 -->
+                <p class="av-plan-price"><span class="av-price">월 4,900원</span></p> <!-- 요금 -->
+                <ul class="av-plan-list"> <!-- 혜택 목록 -->
+                    <li><span class="av-icon" data-i="check"></span>맵 30개 저장</li> <!-- 혜택 1 -->
+                    <li><span class="av-icon" data-i="check"></span>업로드 저장 공간 확대</li> <!-- 혜택 2 -->
+                    <li><span class="av-icon" data-i="check"></span>매달 꾸미기 아이템 1개</li> <!-- 혜택 3 -->
+                    <li><span class="av-icon" data-i="check"></span>프로필 구독 표시</li> <!-- 혜택 4 -->
+                </ul> <!-- 혜택 목록 끝 -->
+                <button class="av-button av-button-primary av-button-wide" type="button" disabled>구독하기 · 준비 중</button> <!-- 구독 시작(이후 단계) -->
+            </section> <!-- 구독 요금제 끝 -->
+        </div> <!-- 요금제 비교 끝 -->
+        <p class="av-help">방 인원(8명)과 맵의 부품 상한은 VR 기기 성능 때문에 두는 것이어서 구독해도 같습니다.</p> <!-- 구독과 상한의 관계 -->
+
+        <section class="av-section"> <!-- 자주 묻는 질문 구역 -->
+            <h2 class="av-section-title"><mark>자주 묻는 질문</mark></h2> <!-- 구역 제목 -->
+            <details class="av-card av-card-flat av-faq"><summary>구독을 끊으면 만든 맵은 어떻게 되나요?</summary><p class="av-note">맵은 지워지지 않습니다. 무료 한도를 넘는 맵은 열어 볼 수 있지만 새로 저장하려면 한도 안으로 줄여야 합니다(예시 기준).</p></details> <!-- 질문 1 -->
+            <details class="av-card av-card-flat av-faq"><summary>꾸미기 아이템과 구독은 어떻게 다른가요?</summary><p class="av-note">꾸미기 아이템은 한 번 사면 계속 쓰는 것이고, 구독은 매달 내는 동안 저장 한도가 늘어나는 것입니다.</p></details> <!-- 질문 2 -->
+            <details class="av-card av-card-flat av-faq"><summary>청소년도 결제할 수 있나요?</summary><p class="av-note">만 14세 이상이면 가입할 수 있습니다. 미성년자 결제에 필요한 보호자 동의 절차와 한도는 아직 정하지 않았습니다.</p></details> <!-- 질문 3 -->
+        </section> <!-- 자주 묻는 질문 구역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 구독 화면 끝 -->
+</html> <!-- 문서 끝 -->

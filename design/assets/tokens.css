@@ -1,0 +1,54 @@
+:root /* 햇살 작업실 밝은 화면 토큰 */
+{ /* 토큰 시작 */
+    --av-canvas: #FBF6EC; /* 캔버스 아이보리 바탕 */
+    --av-surface: #F3EBDB; /* 작업대 보조 바탕 */
+    --av-paper: #FFFDF8; /* 종이 카드 */
+    --av-ink: #1D2740; /* 잉크 네이비 글자 */
+    --av-muted: #566078; /* 연필 회색 보조 글자 */
+    --av-line: #C2B49A; /* 종이 가장자리 경계선 */
+    --av-line-strong: #8E7F63; /* 연필 선 강한 경계선 */
+    --av-gold: #F7A71D; /* 골드 주 강조 */
+    --av-blue: #025EE7; /* 블루 구조 강조 */
+    --av-clay: #B8440F; /* 테라코타 재료 강조 */
+    --av-leaf: #2B7A4B; /* 접속 상태 초록 */
+    --av-block: #FFFDF8; /* 흰 블록 색 */
+    --av-on-gold: #1D2740; /* 골드 위 글자 */
+    --av-on-blue: #FFFDF8; /* 블루 위 글자 */
+    --av-on-clay: #FFFDF8; /* 테라코타 위 글자 */
+    --av-on-leaf: #FFFDF8; /* 초록 위 글자 */
+    --av-shadow: #1D2740; /* 어긋난 그림자 색 */
+    --av-grid: color-mix(in srgb, var(--av-blue) 16%, transparent); /* 모눈 선 색 */
+    --av-marker: color-mix(in srgb, var(--av-gold) 62%, transparent); /* 형광펜 색 */
+    --av-scrim: color-mix(in srgb, var(--av-ink) 46%, transparent); /* 대화상자 뒤 가림막 */
+    --av-font: "Pretendard Variable", Pretendard, Inter, "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif; /* 본문 글꼴 */
+    --av-mono: Consolas, "D2Coding", monospace; /* 고정폭 글꼴 */
+    --av-radius-small: 0.5rem; /* 작은 모서리 */
+    --av-radius: 0.875rem; /* 기본 모서리 */
+    --av-radius-large: 1.25rem; /* 큰 모서리 */
+    --av-lift: 0.22rem; /* 어긋난 그림자 거리 */
+    --av-duration: 200ms; /* 기본 전환 시간 */
+    --av-rail: 15rem; /* 옆 메뉴 너비 */
+    --av-topbar: 4rem; /* 상단 띠 높이 */
+} /* 토큰 끝 */
+
+[data-color-mode="dark"] /* 밤의 작업실 어두운 화면 토큰 */
+{ /* 다크 토큰 시작 */
+    --av-canvas: #101728; /* 다크 바탕 */
+    --av-surface: #162036; /* 다크 보조 바탕 */
+    --av-paper: #1C2842; /* 다크 카드 */
+    --av-ink: #F4EEE1; /* 다크 글자 */
+    --av-muted: #B3B9C8; /* 다크 보조 글자 */
+    --av-line: #33415E; /* 다크 경계선 */
+    --av-line-strong: #6F82AB; /* 다크 강한 경계선 */
+    --av-blue: #8FB0FF; /* 다크 블루 강조 */
+    --av-clay: #F0907A; /* 다크 테라코타 강조 */
+    --av-leaf: #7BD3A0; /* 다크 접속 상태 초록 */
+    --av-block: #E4DCCB; /* 다크 흰 블록 색 */
+    --av-on-blue: #101728; /* 다크 블루 위 글자 */
+    --av-on-clay: #101728; /* 다크 테라코타 위 글자 */
+    --av-on-leaf: #101728; /* 다크 초록 위 글자 */
+    --av-shadow: #05080F; /* 다크 어긋난 그림자 색 */
+    --av-grid: color-mix(in srgb, var(--av-blue) 20%, transparent); /* 다크 모눈 선 색 */
+    --av-marker: color-mix(in srgb, var(--av-gold) 34%, transparent); /* 다크 형광펜 색 */
+    --av-scrim: color-mix(in srgb, #05080F 68%, transparent); /* 다크 가림막 */
+} /* 다크 토큰 끝 */

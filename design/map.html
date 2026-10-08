@@ -1,0 +1,77 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>맵 상세 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="explore" data-av-title="맵 상세"> <!-- 맵 상세 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <div class="av-columns"> <!-- 맵 소개와 행동 -->
+            <article class="av-stack"> <!-- 맵 소개 -->
+                <figure class="av-card av-map-hero"> <!-- 맵 큰 그림 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="옥상 불꽃놀이" data-av-size="9" data-av-label="옥상 불꽃놀이 맵 미리보기"></div> <!-- 맵 미리보기 -->
+                </figure> <!-- 맵 큰 그림 끝 -->
+                <section class="av-section"> <!-- 맵 설명 구역 -->
+                    <div class="av-cluster"><span class="av-chip" data-color="leaf">공개</span><span class="av-chip" data-color="blue">카페·모임</span><span class="av-chip">놀이</span></div> <!-- 공개 범위와 분류 -->
+                    <p>옥상에 모여 앉아 불꽃놀이를 구경하는 작은 맵입니다. 계단을 올라가면 전망대가 있고, 탁자와 의자는 자유롭게 옮길 수 있습니다.</p> <!-- 맵 설명 -->
+                    <p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>방문 3,420</span><span><span class="av-icon" data-i="heart"></span>좋아요 512</span><span><span class="av-icon" data-i="copy"></span>리믹스 38</span><span>부품 1,148개</span><span>3일 전 갱신</span></p> <!-- 맵 통계 -->
+                </section> <!-- 맵 설명 구역 끝 -->
+                <section class="av-section"> <!-- 쓰인 조립품 구역 -->
+                    <div class="av-section-head"><h2 class="av-section-title"><mark>쓰인 조립품</mark></h2><span class="av-stage">2단계</span></div> <!-- 구역 제목과 도입 단계 -->
+                    <ul class="av-part-list"> <!-- 조립품 목록 -->
+                        <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span><span class="av-row-text"><span class="av-row-title">접이식 의자</span><span class="av-row-sub">도토리 제작</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 1 -->
+                        <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="table" data-av-color="gold"></span><span class="av-row-text"><span class="av-row-title">둥근 탁자</span><span class="av-row-sub">하늘담 제작</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 2 -->
+                        <li class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="lamp" data-av-color="gold"></span><span class="av-row-text"><span class="av-row-title">종이 등불</span><span class="av-row-sub">새벽달 제작</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></li> <!-- 조립품 3 -->
+                    </ul> <!-- 조립품 목록 끝 -->
+                </section> <!-- 쓰인 조립품 구역 끝 -->
+            </article> <!-- 맵 소개 끝 -->
+
+            <aside class="av-stack" aria-label="입장과 제작자"> <!-- 행동 영역 -->
+                <section class="av-card"> <!-- 입장 카드 -->
+                    <h2 class="av-map-title">옥상 불꽃놀이</h2> <!-- 맵 이름 -->
+                    <div class="av-row av-row-plain"> <!-- 제작자 줄 -->
+                        <span class="av-avatar" data-av-avatar="4" data-av-color="clay" data-status="room"></span> <!-- 제작자 아바타 -->
+                        <span class="av-row-text"><span class="av-row-title">하늘담</span><span class="av-row-sub">맵 12개 · 팔로워 1,031</span></span> <!-- 제작자 이름과 통계 -->
+                        <button class="av-button av-button-small" type="button" data-av-toggle aria-pressed="false"><span class="av-icon" data-i="star"></span>팔로우</button> <!-- 팔로우 버튼 -->
+                    </div> <!-- 제작자 줄 끝 -->
+                    <a class="av-button av-button-primary av-button-wide" href="room.html"><span class="av-icon" data-i="play"></span>새 방 열고 입장</a> <!-- 방 열기 -->
+                    <button class="av-button av-button-wide" type="button" data-av-toast="초대 링크를 복사했습니다."><span class="av-icon" data-i="link"></span>초대 링크 복사</button> <!-- 초대 링크 -->
+                    <p class="av-help"><span class="av-icon" data-i="vr"></span> VR 헤드셋의 브라우저에서 같은 링크를 열면 VR로 입장합니다. 헤드셋이 없는 사람과 같은 방에서 만납니다.</p> <!-- VR 안내 -->
+                    <div class="av-cluster"> <!-- 보조 행동 -->
+                        <button class="av-button av-button-quiet av-button-small" type="button" data-av-toggle aria-pressed="false"><span class="av-icon" data-i="heart"></span>좋아요</button> <!-- 좋아요 -->
+                        <a class="av-button av-button-quiet av-button-small" href="editor.html"><span class="av-icon" data-i="copy"></span>리믹스</a> <!-- 복사 후 수정 -->
+                        <button class="av-button av-button-quiet av-button-small" type="button" data-av-open="report"><span class="av-icon" data-i="flag"></span>신고</button> <!-- 신고 -->
+                    </div> <!-- 보조 행동 끝 -->
+                </section> <!-- 입장 카드 끝 -->
+                <section class="av-card av-card-flat"> <!-- 열린 방 카드 -->
+                    <h2 class="av-card-title">이 맵으로 열린 방</h2> <!-- 카드 제목 -->
+                    <ul> <!-- 방 목록 -->
+                        <li class="av-row"><span class="av-row-text"><span class="av-row-title">하늘담 님의 방</span><span class="av-seats" aria-label="8명 중 6명"><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><span class="av-seats-text">6 / 8</span></span></span><a class="av-button av-button-small" href="room.html">입장</a></li> <!-- 열린 방 1 -->
+                        <li class="av-row"><span class="av-row-text"><span class="av-row-title">모과 님의 방</span><span class="av-seats" aria-label="8명 중 3명"><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">3 / 8</span></span></span><a class="av-button av-button-small" href="room.html">입장</a></li> <!-- 열린 방 2 -->
+                    </ul> <!-- 방 목록 끝 -->
+                </section> <!-- 열린 방 카드 끝 -->
+            </aside> <!-- 행동 영역 끝 -->
+        </div> <!-- 맵 소개와 행동 끝 -->
+
+        <dialog class="av-dialog" id="report" aria-labelledby="report-title"> <!-- 신고 대화상자 -->
+            <form class="av-dialog-body" method="dialog"> <!-- 신고 양식 -->
+                <h2 class="av-card-title" id="report-title">이 맵 신고하기</h2> <!-- 대화상자 제목 -->
+                <div class="av-field"><label class="av-label" for="report-reason">신고 이유</label><select class="av-select" id="report-reason"><option>부적절한 내용</option><option>다른 사람의 제작물 도용</option><option>괴롭힘·혐오 표현</option><option>기타</option></select></div> <!-- 신고 이유 고르기 -->
+                <div class="av-field"><label class="av-label" for="report-detail">자세한 내용</label><textarea class="av-textarea" id="report-detail" placeholder="어느 부분이 문제인지 적어 주세요."></textarea></div> <!-- 신고 내용 입력 -->
+                <p class="av-help">신고한 사람의 정보는 제작자에게 알려지지 않습니다.</p> <!-- 신고 안내 -->
+                <div class="av-cluster"><button class="av-button av-button-danger" type="submit" data-av-toast="신고를 접수했습니다.">신고 보내기</button><button class="av-button" type="button" data-av-close>취소</button></div> <!-- 보내기와 취소 -->
+            </form> <!-- 신고 양식 끝 -->
+        </dialog> <!-- 신고 대화상자 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 맵 상세 화면 끝 -->
+</html> <!-- 문서 끝 -->

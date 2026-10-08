@@ -1,0 +1,67 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>화면 시안 목록 · Atelier | Verse</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="index" data-av-title="화면 시안 목록"> <!-- 시안 목록 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <section class="av-card av-grid-paper av-index-intro"> <!-- 시안 소개 -->
+            <span class="av-tape">2026-10-08 기준</span> <!-- 작성 기준일 -->
+            <p class="av-new-map-title"><span translate="no">Atelier | Verse</span> 화면 시안</p> <!-- 소개 제목 -->
+            <p>기획 질문지의 답을 바탕으로 만든 서비스 화면 시안입니다. 실제로 동작하는 서비스가 아니며, 화면의 이름·숫자·금액은 모두 예시입니다.</p> <!-- 소개 설명 -->
+            <div class="av-cluster"><a class="av-button av-button-primary" href="studio.html">내 작업실부터 보기</a><a class="av-button" href="components.html">구성요소 모음</a></div> <!-- 시작 버튼 -->
+        </section> <!-- 시안 소개 끝 -->
+
+        <section class="av-section"> <!-- 화면 목록 구역 -->
+            <h2 class="av-section-title"><mark>화면</mark></h2> <!-- 구역 제목 -->
+            <div class="av-card-grid"> <!-- 화면 카드 격자 -->
+                <a class="av-card av-index-card" href="signin.html"><span class="av-stage">1단계</span><h3 class="av-card-title">시작하기</h3><p class="av-note">통합 계정 로그인과 만 14세 이상 확인</p></a> <!-- 시작하기 화면 -->
+                <a class="av-card av-index-card" href="studio.html"><span class="av-stage">1단계</span><h3 class="av-card-title">내 작업실</h3><p class="av-note">로그인 뒤 첫 화면. 새 맵 만들기와 내 맵, 초대받은 방</p></a> <!-- 내 작업실 화면 -->
+                <a class="av-card av-index-card" href="editor.html"><span class="av-stage">1단계</span><h3 class="av-card-title">에디터</h3><p class="av-note">부품을 골라 놓고 옮기고 칠하는 맵 편집 화면</p></a> <!-- 에디터 화면 -->
+                <a class="av-card av-index-card" href="room.html"><span class="av-stage">1단계</span><h3 class="av-card-title">방 안</h3><p class="av-note">최대 8명이 함께 있는 방. 채팅, 참여자, VR 입장</p></a> <!-- 방 안 화면 -->
+                <a class="av-card av-index-card" href="profile.html"><span class="av-stage">1단계</span><h3 class="av-card-title">프로필</h3><p class="av-note">기본 캐릭터 고르기, 공개 범위, 연결된 계정</p></a> <!-- 프로필 화면 -->
+                <a class="av-card av-index-card" href="explore.html"><span class="av-stage">2단계</span><h3 class="av-card-title">둘러보기</h3><p class="av-note">공개 맵 검색과 지금 열린 방</p></a> <!-- 둘러보기 화면 -->
+                <a class="av-card av-index-card" href="map.html"><span class="av-stage">2단계</span><h3 class="av-card-title">맵 상세</h3><p class="av-note">맵 소개, 방 열기, 초대 링크, 리믹스, 신고</p></a> <!-- 맵 상세 화면 -->
+                <a class="av-card av-index-card" href="feed.html"><span class="av-stage">2단계</span><h3 class="av-card-title">소식</h3><p class="av-note">친구와 팔로우한 제작자의 소식, 알림 설정</p></a> <!-- 소식 화면 -->
+                <a class="av-card av-index-card" href="messages.html"><span class="av-stage">3~4단계</span><h3 class="av-card-title">메시지</h3><p class="av-note">1:1 대화, 그룹, 공지 채널</p></a> <!-- 메시지 화면 -->
+                <a class="av-card av-index-card" href="shop.html"><span class="av-stage">4~5단계</span><h3 class="av-card-title">상점</h3><p class="av-note">꾸미기 아이템, 제작자 마켓, 내 보관함</p></a> <!-- 상점 화면 -->
+                <a class="av-card av-index-card" href="plans.html"><span class="av-stage">4단계</span><h3 class="av-card-title">구독</h3><p class="av-note">무료와 구독 요금제 비교</p></a> <!-- 구독 화면 -->
+                <a class="av-card av-index-card" href="components.html"><span class="av-stage">공통</span><h3 class="av-card-title">구성요소</h3><p class="av-note">색, 버튼, 입력, 카드, 캐릭터, 부품 그림</p></a> <!-- 구성요소 화면 -->
+            </div> <!-- 화면 카드 격자 끝 -->
+            <p class="av-help">단계 표시는 기획 문서의 개발 단계(가안)이며 확정된 일정이 아닙니다.</p> <!-- 단계 표시 안내 -->
+        </section> <!-- 화면 목록 구역 끝 -->
+
+        <section class="av-section"> <!-- 반영한 결정 구역 -->
+            <h2 class="av-section-title"><mark>시안에 반영한 결정</mark></h2> <!-- 구역 제목 -->
+            <div class="av-card av-card-flat av-decisions"> <!-- 결정 표 카드 -->
+                <table> <!-- 결정 표 -->
+                    <thead><tr><th scope="col">항목</th><th scope="col">결정</th><th scope="col">시안에서 볼 곳</th></tr></thead> <!-- 표 머리 -->
+                    <tbody> <!-- 표 내용 -->
+                        <tr><th scope="row">VR 입장</th><td>웹(WebXR)으로 VR 헤드셋과 PC가 같은 방에 입장</td><td>방 안, 맵 상세, 초대 대화상자</td></tr> <!-- VR 입장 방식 -->
+                        <tr><th scope="row">방 인원</th><td>방당 최대 8명</td><td>자리 표시(8칸), 방 안 참여자</td></tr> <!-- 방 인원 -->
+                        <tr><th scope="row">첫 화면</th><td>내 작업실</td><td>내 작업실</td></tr> <!-- 첫 화면 -->
+                        <tr><th scope="row">그래픽</th><td>블록·로우폴리</td><td>맵 그림, 부품 그림</td></tr> <!-- 그래픽 방향 -->
+                        <tr><th scope="row">아바타</th><td>기본 캐릭터 선택</td><td>프로필</td></tr> <!-- 아바타 방식 -->
+                        <tr><th scope="row">대상 연령</th><td>청소년 이상(만 14세 이상)</td><td>시작하기</td></tr> <!-- 대상 연령 -->
+                        <tr><th scope="row">계정</th><td>홈페이지·Mate | Verse와 통합 계정</td><td>시작하기, 프로필</td></tr> <!-- 계정 연동 -->
+                        <tr><th scope="row">메시지</th><td>1:1 대화와 그룹·공지 채널</td><td>메시지</td></tr> <!-- 메시지 범위 -->
+                        <tr><th scope="row">수익 모델</th><td>꾸미기 아이템 판매, 구독, 제작자 마켓 수수료</td><td>상점, 구독</td></tr> <!-- 수익 모델 -->
+                        <tr><th scope="row">모바일</th><td>설치형 웹앱(PWA)</td><td>좁은 화면의 아래 메뉴</td></tr> <!-- 모바일 앱 형태 -->
+                    </tbody> <!-- 표 내용 끝 -->
+                </table> <!-- 결정 표 끝 -->
+            </div> <!-- 결정 표 카드 끝 -->
+        </section> <!-- 반영한 결정 구역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 시안 목록 화면 끝 -->
+</html> <!-- 문서 끝 -->

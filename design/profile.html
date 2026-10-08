@@ -1,0 +1,61 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>프로필 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="profile" data-av-title="프로필"> <!-- 프로필 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <div class="av-columns"> <!-- 프로필과 설정 -->
+            <div class="av-stack"> <!-- 프로필 쪽 -->
+                <section class="av-card av-profile"> <!-- 프로필 카드 -->
+                    <span class="av-avatar" data-size="large" data-av-avatar="1" data-av-color="gold" data-status="online"></span> <!-- 내 아바타 -->
+                    <div class="av-stack av-profile-form"> <!-- 프로필 입력 -->
+                        <div class="av-field"><label class="av-label" for="nickname">닉네임</label><input class="av-input" id="nickname" value="단풍"></div> <!-- 닉네임 입력 -->
+                        <div class="av-field"><label class="av-label" for="bio">소개</label><textarea class="av-textarea" id="bio">작은 방을 만들고 꾸미는 걸 좋아합니다.</textarea><p class="av-help">다른 사람에게 보이는 글입니다.</p></div> <!-- 소개 입력 -->
+                        <p class="av-map-meta"><span>맵 3개</span><span>팔로워 42</span><span>팔로우 18</span></p> <!-- 내 통계 -->
+                        <div class="av-cluster"><button class="av-button av-button-primary" type="button" data-av-toast="프로필을 저장했습니다.">저장</button></div> <!-- 저장 버튼 -->
+                    </div> <!-- 프로필 입력 끝 -->
+                </section> <!-- 프로필 카드 끝 -->
+                <section class="av-card"> <!-- 캐릭터 고르기 카드 -->
+                    <div class="av-section-head"><h2 class="av-card-title av-section-title">기본 캐릭터 고르기</h2><span class="av-stage">1단계</span></div> <!-- 카드 제목과 도입 단계 -->
+                    <div class="av-character-grid" role="group" aria-label="캐릭터 종류"> <!-- 캐릭터 종류 격자 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="false"><span class="av-character-art" data-av-avatar="0" data-av-color="gold"></span>기본</button> <!-- 캐릭터 0 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="true"><span class="av-character-art" data-av-avatar="1" data-av-color="gold"></span>납작 모자</button> <!-- 캐릭터 1 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="false"><span class="av-character-art" data-av-avatar="2" data-av-color="gold"></span>두 귀</button> <!-- 캐릭터 2 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="false"><span class="av-character-art" data-av-avatar="3" data-av-color="gold"></span>더듬이</button> <!-- 캐릭터 3 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="false"><span class="av-character-art" data-av-avatar="4" data-av-color="gold"></span>왕관</button> <!-- 캐릭터 4 -->
+                        <button class="av-character" type="button" data-av-set="character" aria-pressed="false"><span class="av-character-art" data-av-avatar="5" data-av-color="gold"></span>털모자</button> <!-- 캐릭터 5 -->
+                    </div> <!-- 캐릭터 종류 격자 끝 -->
+                    <div class="av-field"><span class="av-label">몸 색</span><div class="av-swatches"><button class="av-swatch" type="button" data-av-set="body" aria-pressed="true" aria-label="골드" style="--av-swatch: var(--av-gold)"></button><button class="av-swatch" type="button" data-av-set="body" aria-pressed="false" aria-label="블루" style="--av-swatch: var(--av-blue)"></button><button class="av-swatch" type="button" data-av-set="body" aria-pressed="false" aria-label="테라코타" style="--av-swatch: var(--av-clay)"></button><button class="av-swatch" type="button" data-av-set="body" aria-pressed="false" aria-label="초록" style="--av-swatch: var(--av-leaf)"></button></div></div> <!-- 몸 색 고르기 -->
+                    <p class="av-help">첫 버전은 준비된 캐릭터에서 고릅니다. 직접 만든 아바타 올리기는 지원하지 않습니다.</p> <!-- 아바타 방식 안내 -->
+                </section> <!-- 캐릭터 고르기 카드 끝 -->
+            </div> <!-- 프로필 쪽 끝 -->
+
+            <aside class="av-stack" aria-label="공개 범위와 계정"> <!-- 설정 쪽 -->
+                <section class="av-card av-card-flat"> <!-- 공개 범위 카드 -->
+                    <h2 class="av-card-title">공개 범위</h2> <!-- 카드 제목 -->
+                    <div class="av-field"><span class="av-label">접속 상태를 볼 수 있는 사람</span><div class="av-segment"><button type="button" data-av-set="presence" aria-pressed="false">전체</button><button type="button" data-av-set="presence" aria-pressed="true">친구</button><button type="button" data-av-set="presence" aria-pressed="false">비공개</button></div></div> <!-- 접속 상태 공개 범위 -->
+                    <label class="av-switch">내가 있는 방을 친구에게 보이기<input type="checkbox" checked></label> <!-- 현재 방 공개 -->
+                    <label class="av-switch">친구가 아닌 사람의 메시지 받기<input type="checkbox"></label> <!-- 메시지 수신 범위 -->
+                </section> <!-- 공개 범위 카드 끝 -->
+                <section class="av-card av-card-flat"> <!-- 연결된 계정 카드 -->
+                    <h2 class="av-card-title">연결된 계정</h2> <!-- 카드 제목 -->
+                    <div class="av-row av-row-plain"><span class="av-avatar"><span class="av-icon" data-i="lock"></span></span><span class="av-row-text"><span class="av-row-title">Palettra 통합 계정</span><span class="av-row-sub">홈페이지·Mate | Verse와 같은 계정</span></span></div> <!-- 통합 계정 정보 -->
+                    <div class="av-cluster"><a class="av-button av-button-quiet av-button-small" href="signin.html">로그아웃</a><button class="av-button av-button-quiet av-button-small" type="button">차단 목록</button></div> <!-- 로그아웃과 차단 목록 -->
+                </section> <!-- 연결된 계정 카드 끝 -->
+            </aside> <!-- 설정 쪽 끝 -->
+        </div> <!-- 프로필과 설정 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 프로필 화면 끝 -->
+</html> <!-- 문서 끝 -->

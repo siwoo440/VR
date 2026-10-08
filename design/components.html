@@ -1,0 +1,99 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>구성요소 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="index" data-av-title="구성요소"> <!-- 구성요소 모음 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <p class="av-note">화면 시안에 쓰인 구성요소를 한곳에 모았습니다. 이름은 <code>assets/components.css</code>의 클래스 이름입니다.</p> <!-- 화면 안내 -->
+
+        <section class="av-section"> <!-- 색 구역 -->
+            <h2 class="av-section-title"><mark>색</mark></h2> <!-- 구역 제목 -->
+            <div class="av-token-grid"> <!-- 색 토큰 격자 -->
+                <div class="av-token" style="--av-token: var(--av-canvas)"><span></span>캔버스 <code>--av-canvas</code></div> <!-- 바탕색 -->
+                <div class="av-token" style="--av-token: var(--av-surface)"><span></span>작업대 <code>--av-surface</code></div> <!-- 보조 바탕색 -->
+                <div class="av-token" style="--av-token: var(--av-paper)"><span></span>종이 <code>--av-paper</code></div> <!-- 카드색 -->
+                <div class="av-token" style="--av-token: var(--av-ink)"><span></span>잉크 <code>--av-ink</code></div> <!-- 글자색 -->
+                <div class="av-token" style="--av-token: var(--av-muted)"><span></span>연필 회색 <code>--av-muted</code></div> <!-- 보조 글자색 -->
+                <div class="av-token" style="--av-token: var(--av-gold)"><span></span>골드 <code>--av-gold</code></div> <!-- 주 강조색 -->
+                <div class="av-token" style="--av-token: var(--av-blue)"><span></span>블루 <code>--av-blue</code></div> <!-- 구조 강조색 -->
+                <div class="av-token" style="--av-token: var(--av-clay)"><span></span>테라코타 <code>--av-clay</code></div> <!-- 재료 강조색 -->
+                <div class="av-token" style="--av-token: var(--av-leaf)"><span></span>초록 <code>--av-leaf</code></div> <!-- 접속 상태색 -->
+            </div> <!-- 색 토큰 격자 끝 -->
+        </section> <!-- 색 구역 끝 -->
+
+        <section class="av-section"> <!-- 버튼 구역 -->
+            <h2 class="av-section-title"><mark>버튼</mark> <code>.av-button</code></h2> <!-- 구역 제목 -->
+            <div class="av-cluster"> <!-- 버튼 종류 -->
+                <button class="av-button av-button-primary" type="button"><span class="av-icon" data-i="plus"></span>핵심</button> <!-- 핵심 버튼 -->
+                <button class="av-button" type="button">기본</button> <!-- 기본 버튼 -->
+                <button class="av-button av-button-blue" type="button"><span class="av-icon" data-i="vr"></span>구조</button> <!-- 구조 버튼 -->
+                <button class="av-button av-button-danger" type="button">위험</button> <!-- 위험 버튼 -->
+                <button class="av-button av-button-quiet" type="button">조용한</button> <!-- 조용한 버튼 -->
+                <button class="av-button" type="button" disabled>비활성</button> <!-- 비활성 버튼 -->
+                <button class="av-button av-button-small" type="button">작은</button> <!-- 작은 버튼 -->
+                <button class="av-button av-button-icon" type="button" aria-label="설정"><span class="av-icon" data-i="gear"></span></button> <!-- 아이콘 버튼 -->
+            </div> <!-- 버튼 종류 끝 -->
+        </section> <!-- 버튼 구역 끝 -->
+
+        <section class="av-section"> <!-- 표시 구역 -->
+            <h2 class="av-section-title"><mark>칩·이름표·배지</mark></h2> <!-- 구역 제목 -->
+            <div class="av-cluster"> <!-- 표시 종류 -->
+                <span class="av-chip">골드 칩</span><span class="av-chip" data-color="blue">블루 칩</span><span class="av-chip" data-color="clay">테라코타 칩</span><span class="av-chip" data-color="leaf">초록 칩</span> <!-- 색 칩 -->
+                <button class="av-chip" type="button" data-av-toggle aria-pressed="true">고른 칩</button> <!-- 고른 칩 -->
+                <span class="av-tape">이름표</span><span class="av-tape av-tape-blue">블루 이름표</span><span class="av-tape av-tape-clay">테라코타 이름표</span> <!-- 이름표 -->
+                <span class="av-badge">3</span><span class="av-stage">2단계</span> <!-- 배지와 도입 단계 표시 -->
+            </div> <!-- 표시 종류 끝 -->
+        </section> <!-- 표시 구역 끝 -->
+
+        <section class="av-section"> <!-- 입력 구역 -->
+            <h2 class="av-section-title"><mark>입력</mark></h2> <!-- 구역 제목 -->
+            <div class="av-kit-grid"> <!-- 입력 종류 격자 -->
+                <div class="av-field"><label class="av-label" for="kit-text">글 입력</label><input class="av-input" id="kit-text" placeholder="맵 이름"><p class="av-help">도움말은 입력칸 아래에 둡니다.</p></div> <!-- 글 입력칸 -->
+                <div class="av-field"><label class="av-label" for="kit-select">고르기</label><select class="av-select" id="kit-select"><option>링크 공개</option><option>비공개</option></select></div> <!-- 고르기 상자 -->
+                <label class="av-search"><span class="av-sr">검색</span><span class="av-icon" data-i="search"></span><input class="av-input" type="search" placeholder="검색"></label> <!-- 검색칸 -->
+                <div class="av-stack"><label class="av-switch">켜고 끄기<input type="checkbox" checked></label><label class="av-check"><input type="checkbox" checked><span>체크 항목</span></label></div> <!-- 스위치와 체크 -->
+                <div class="av-segment"><button type="button" data-av-set="kit-seg" aria-pressed="true">전체</button><button type="button" data-av-set="kit-seg" aria-pressed="false">친구</button><button type="button" data-av-set="kit-seg" aria-pressed="false">비공개</button></div> <!-- 구분 선택 -->
+                <div class="av-swatches"><button class="av-swatch" type="button" data-av-set="kit-color" aria-pressed="true" aria-label="골드" style="--av-swatch: var(--av-gold)"></button><button class="av-swatch" type="button" data-av-set="kit-color" aria-pressed="false" aria-label="블루" style="--av-swatch: var(--av-blue)"></button><button class="av-swatch" type="button" data-av-set="kit-color" aria-pressed="false" aria-label="테라코타" style="--av-swatch: var(--av-clay)"></button></div> <!-- 색 고르기 -->
+            </div> <!-- 입력 종류 격자 끝 -->
+            <div class="av-tabs" role="tablist"><button class="av-tab" type="button" role="tab" data-av-set="kit-tab" aria-selected="true">고른 탭</button><button class="av-tab" type="button" role="tab" data-av-set="kit-tab" aria-selected="false">다른 탭</button></div> <!-- 탭 -->
+        </section> <!-- 입력 구역 끝 -->
+
+        <section class="av-section"> <!-- 아바타와 부품 구역 -->
+            <h2 class="av-section-title"><mark>기본 캐릭터와 부품 그림</mark></h2> <!-- 구역 제목 -->
+            <div class="av-cluster"> <!-- 아바타 종류 -->
+                <span class="av-avatar" data-size="large" data-av-avatar="0" data-av-color="gold"></span><span class="av-avatar" data-size="large" data-av-avatar="1" data-av-color="blue"></span><span class="av-avatar" data-size="large" data-av-avatar="2" data-av-color="clay"></span><span class="av-avatar" data-size="large" data-av-avatar="3" data-av-color="leaf"></span><span class="av-avatar" data-size="large" data-av-avatar="4" data-av-color="blue"></span><span class="av-avatar" data-size="large" data-av-avatar="5" data-av-color="clay"></span> <!-- 캐릭터 6종 -->
+                <span class="av-avatar" data-av-avatar="1" data-av-color="gold" data-status="online"></span><span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="room"></span><span class="av-avatar" data-av-avatar="3" data-av-color="leaf" data-status="offline"></span> <!-- 접속 상태 3종 -->
+            </div> <!-- 아바타 종류 끝 -->
+            <div class="av-cluster"> <!-- 부품 그림 종류 -->
+                <span class="av-part-icon" data-av-block="cube" data-av-color="gold"></span><span class="av-part-icon" data-av-block="slab" data-av-color="blue"></span><span class="av-part-icon" data-av-block="pillar" data-av-color="paper"></span><span class="av-part-icon" data-av-block="wall" data-av-color="clay"></span><span class="av-part-icon" data-av-block="stairs" data-av-color="paper"></span><span class="av-part-icon" data-av-block="tree"></span><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span><span class="av-part-icon" data-av-block="table" data-av-color="gold"></span><span class="av-part-icon" data-av-block="house" data-av-color="clay"></span><span class="av-part-icon" data-av-block="lamp" data-av-color="gold"></span> <!-- 부품 10종 -->
+            </div> <!-- 부품 그림 종류 끝 -->
+        </section> <!-- 아바타와 부품 구역 끝 -->
+
+        <section class="av-section"> <!-- 카드와 목록 구역 -->
+            <h2 class="av-section-title"><mark>카드와 목록</mark></h2> <!-- 구역 제목 -->
+            <div class="av-kit-grid"> <!-- 카드 종류 격자 -->
+                <a class="av-card av-map-card" href="map.html"><div class="av-scene av-grid-paper" data-av-scene="구성요소 견본"></div><div class="av-map-body"><h3 class="av-card-title">맵 카드</h3><span class="av-chip" data-color="blue">링크 공개</span><p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>128</span><span><span class="av-icon" data-i="heart"></span>24</span></p></div></a> <!-- 맵 카드 -->
+                <div class="av-card"><h3 class="av-card-title">종이 카드</h3><p class="av-note">잉크색 얇은 외곽선과 어긋난 단색 그림자를 씁니다.</p><div class="av-meter" style="--av-meter: 40%"><div class="av-meter-head"><span>게이지</span><span>40%</span></div><div class="av-meter-track"><div class="av-meter-fill"></div></div></div><span class="av-seats" aria-label="8명 중 3명"><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">3 / 8</span></span></div> <!-- 종이 카드와 게이지 -->
+                <div class="av-card av-card-flat"><h3 class="av-card-title">평평한 카드와 목록 줄</h3><div class="av-row"><span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="online"></span><span class="av-row-text"><span class="av-row-title">줄 제목</span><span class="av-row-sub">줄 보조 글</span></span><button class="av-button av-button-small" type="button">행동</button></div><p class="av-bubble">받은 말풍선</p><p class="av-bubble" data-mine>보낸 말풍선</p></div> <!-- 평평한 카드·목록 줄·말풍선 -->
+                <div class="av-stack"><div class="av-empty"><p class="av-note">빈 화면 안내</p><button class="av-button av-button-small" type="button">첫 행동</button></div><p class="av-toast"><span class="av-icon" data-i="check"></span>알림 띠</p><span class="av-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 조작 키</span><button class="av-button" type="button" data-av-open="kit-dialog">대화상자 열기</button></div> <!-- 빈 화면·알림 띠·조작 키·대화상자 -->
+            </div> <!-- 카드 종류 격자 끝 -->
+        </section> <!-- 카드와 목록 구역 끝 -->
+
+        <dialog class="av-dialog" id="kit-dialog" aria-labelledby="kit-dialog-title"> <!-- 대화상자 견본 -->
+            <div class="av-dialog-body"><h2 class="av-card-title" id="kit-dialog-title">대화상자</h2><p class="av-note">확인이 필요한 일이나 링크 복사처럼 짧은 작업에 씁니다.</p><div class="av-copy"><input class="av-input" value="atelier.example/r/sample" readonly aria-label="견본 링크"><button class="av-button av-button-primary" type="button" data-av-toast="복사했습니다.">복사</button></div><div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div></div> <!-- 대화상자 내용 -->
+        </dialog> <!-- 대화상자 견본 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 구성요소 모음 화면 끝 -->
+</html> <!-- 문서 끝 -->

@@ -1,0 +1,403 @@
+*, *::before, *::after /* 모든 요소 */
+{ /* 상자 계산 시작 */
+    box-sizing: border-box; /* 테두리 포함 크기 계산 */
+} /* 상자 계산 끝 */
+
+html /* 문서 뿌리 */
+{ /* 뿌리 시작 */
+    color-scheme: light; /* 밝은 화면 기본 */
+    scroll-behavior: smooth; /* 부드러운 이동 */
+} /* 뿌리 끝 */
+
+html[data-color-mode="dark"] /* 어두운 화면 뿌리 */
+{ /* 다크 뿌리 시작 */
+    color-scheme: dark; /* 어두운 화면 기본 요소 */
+} /* 다크 뿌리 끝 */
+
+body /* 본문 */
+{ /* 본문 시작 */
+    margin: 0; /* 기본 여백 제거 */
+    min-height: 100dvh; /* 화면 높이 채움 */
+    background: var(--av-canvas); /* 캔버스 바탕 */
+    color: var(--av-ink); /* 기본 글자색 */
+    font-family: var(--av-font); /* 본문 글꼴 */
+    font-size: 1rem; /* 기본 글자 크기 */
+    line-height: 1.55; /* 기본 줄 간격 */
+    word-break: keep-all; /* 한글 단어 단위 줄바꿈 */
+    -webkit-font-smoothing: antialiased; /* 글자 다듬기 */
+} /* 본문 끝 */
+
+h1, h2, h3, h4, p, ul, ol, figure, dl, dd /* 여백 초기화 대상 */
+{ /* 여백 초기화 시작 */
+    margin: 0; /* 기본 여백 제거 */
+} /* 여백 초기화 끝 */
+
+ul, ol /* 목록 */
+{ /* 목록 시작 */
+    padding: 0; /* 들여쓰기 제거 */
+    list-style: none; /* 목록 기호 제거 */
+} /* 목록 끝 */
+
+a /* 링크 */
+{ /* 링크 시작 */
+    color: inherit; /* 부모 글자색 */
+    text-decoration: none; /* 밑줄 제거 */
+} /* 링크 끝 */
+
+button, input, select, textarea /* 입력 요소 */
+{ /* 입력 시작 */
+    color: inherit; /* 부모 글자색 */
+    font: inherit; /* 부모 글꼴 */
+} /* 입력 끝 */
+
+img, svg /* 그림 */
+{ /* 그림 시작 */
+    display: block; /* 줄 간격 틈 제거 */
+    max-width: 100%; /* 넘침 방지 */
+} /* 그림 끝 */
+
+[hidden] /* 숨김 속성 */
+{ /* 숨김 시작 */
+    display: none !important; /* 화면에서 제거 */
+} /* 숨김 끝 */
+
+:focus-visible /* 키보드 초점 */
+{ /* 초점 시작 */
+    outline: 0.18rem solid var(--av-blue); /* 초점 외곽선 */
+    outline-offset: 0.15rem; /* 초점 간격 */
+} /* 초점 끝 */
+
+.av-sr /* 화면 낭독기 전용 글자 */
+{ /* 낭독 전용 시작 */
+    position: absolute; /* 흐름에서 제외 */
+    width: 1px; /* 최소 너비 */
+    height: 1px; /* 최소 높이 */
+    overflow: hidden; /* 넘침 숨김 */
+    clip-path: inset(50%); /* 보이는 영역 제거 */
+    white-space: nowrap; /* 줄바꿈 방지 */
+} /* 낭독 전용 끝 */
+
+.av-app /* 앱 전체 틀 */
+{ /* 틀 시작 */
+    display: grid; /* 격자 배치 */
+    grid-template-columns: var(--av-rail) minmax(0, 1fr); /* 옆 메뉴와 본문 */
+    min-height: 100dvh; /* 화면 높이 채움 */
+} /* 틀 끝 */
+
+.av-rail /* 옆 메뉴 */
+{ /* 옆 메뉴 시작 */
+    position: sticky; /* 스크롤 고정 */
+    top: 0; /* 위쪽 고정 */
+    display: flex; /* 세로 나열 */
+    flex-direction: column; /* 세로 방향 */
+    gap: 0.3rem; /* 메뉴 간격 */
+    height: 100dvh; /* 화면 높이 */
+    padding: 1rem 0.75rem; /* 안쪽 여백 */
+    border-right: 1px solid var(--av-line); /* 본문 경계선 */
+    background: var(--av-surface); /* 작업대 바탕 */
+    overflow-y: auto; /* 세로 넘침 스크롤 */
+} /* 옆 메뉴 끝 */
+
+.av-brand /* 서비스 이름 */
+{ /* 이름 시작 */
+    display: flex; /* 가로 나열 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.6rem; /* 표식과 글자 간격 */
+    min-height: 2.75rem; /* 누르기 높이 */
+    margin-bottom: 0.75rem; /* 메뉴와 간격 */
+    padding: 0 0.6rem; /* 좌우 여백 */
+    font-size: 1.08rem; /* 이름 글자 크기 */
+    font-weight: 800; /* 이름 굵기 */
+    letter-spacing: -0.01em; /* 이름 글자 간격 */
+    white-space: nowrap; /* 줄바꿈 방지 */
+} /* 이름 끝 */
+
+.av-brand-mark /* 이름 앞 물감 표식 */
+{ /* 표식 시작 */
+    flex: none; /* 크기 고정 */
+    width: 1.5rem; /* 표식 너비 */
+    height: 1.5rem; /* 표식 높이 */
+    border: 0.09rem solid var(--av-ink); /* 잉크 외곽선 */
+    border-radius: 0.35rem; /* 표식 모서리 */
+    background: linear-gradient(90deg, var(--av-gold) 0 34%, var(--av-blue) 34% 67%, var(--av-clay) 67%); /* 강조 3색 띠 */
+    transform: rotate(-6deg); /* 살짝 기울임 */
+} /* 표식 끝 */
+
+.av-nav /* 메뉴 목록 */
+{ /* 메뉴 목록 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 0.3rem; /* 항목 간격 */
+} /* 메뉴 목록 끝 */
+
+.av-nav-link /* 메뉴 항목 */
+{ /* 메뉴 항목 시작 */
+    display: flex; /* 가로 나열 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.75rem; /* 아이콘과 글자 간격 */
+    min-height: 2.75rem; /* 누르기 높이 */
+    padding: 0 0.75rem; /* 좌우 여백 */
+    border: 0.09rem solid transparent; /* 선택 테두리 자리 */
+    border-radius: var(--av-radius-small); /* 항목 모서리 */
+    color: var(--av-muted); /* 기본 글자색 */
+    font-weight: 600; /* 항목 굵기 */
+    transition: background var(--av-duration), color var(--av-duration); /* 색 전환 */
+} /* 메뉴 항목 끝 */
+
+.av-nav-link:hover /* 메뉴 항목 올림 */
+{ /* 올림 시작 */
+    background: color-mix(in srgb, var(--av-paper) 70%, transparent); /* 옅은 종이 바탕 */
+    color: var(--av-ink); /* 진한 글자색 */
+} /* 올림 끝 */
+
+.av-nav-link[aria-current="page"] /* 현재 화면 메뉴 */
+{ /* 현재 메뉴 시작 */
+    border-color: var(--av-ink); /* 잉크 테두리 */
+    background: var(--av-paper); /* 종이 바탕 */
+    box-shadow: var(--av-lift) var(--av-lift) 0 var(--av-shadow); /* 어긋난 그림자 */
+    color: var(--av-ink); /* 진한 글자색 */
+} /* 현재 메뉴 끝 */
+
+.av-nav-count /* 메뉴 새 소식 수 */
+{ /* 소식 수 시작 */
+    margin-left: auto; /* 오른쪽 밀기 */
+} /* 소식 수 끝 */
+
+.av-rail-foot /* 옆 메뉴 아래 묶음 */
+{ /* 아래 묶음 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 0.3rem; /* 항목 간격 */
+    margin-top: auto; /* 아래로 밀기 */
+    padding-top: 0.75rem; /* 위 여백 */
+    border-top: 1px dashed var(--av-line); /* 점선 구분 */
+} /* 아래 묶음 끝 */
+
+.av-body /* 본문 열 */
+{ /* 본문 열 시작 */
+    display: flex; /* 세로 나열 */
+    flex-direction: column; /* 세로 방향 */
+    min-width: 0; /* 넘침 방지 */
+} /* 본문 열 끝 */
+
+.av-topbar /* 상단 띠 */
+{ /* 상단 띠 시작 */
+    position: sticky; /* 스크롤 고정 */
+    top: 0; /* 위쪽 고정 */
+    z-index: 5; /* 본문 위 표시 */
+    display: flex; /* 가로 나열 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.6rem; /* 요소 간격 */
+    min-height: var(--av-topbar); /* 띠 높이 */
+    padding: 0.6rem clamp(1rem, 3vw, 2rem); /* 안쪽 여백 */
+    border-bottom: 1px solid var(--av-line); /* 본문 경계선 */
+    background: color-mix(in srgb, var(--av-canvas) 90%, transparent); /* 반투명 바탕 */
+    backdrop-filter: blur(8px); /* 뒤 흐림 */
+} /* 상단 띠 끝 */
+
+.av-topbar-title /* 화면 이름 */
+{ /* 화면 이름 시작 */
+    margin-right: auto; /* 나머지 오른쪽 밀기 */
+    font-size: 1.2rem; /* 이름 글자 크기 */
+    font-weight: 800; /* 이름 굵기 */
+    letter-spacing: -0.02em; /* 이름 글자 간격 */
+} /* 화면 이름 끝 */
+
+.av-topbar .av-search /* 상단 검색 */
+{ /* 상단 검색 시작 */
+    width: min(22rem, 34vw); /* 검색 너비 */
+} /* 상단 검색 끝 */
+
+.av-main /* 본문 영역 */
+{ /* 본문 영역 시작 */
+    display: grid; /* 세로 격자 */
+    flex: 1; /* 남은 높이 채움 */
+    gap: clamp(1.25rem, 3vw, 2rem); /* 구역 간격 */
+    align-content: start; /* 위쪽 정렬 */
+    width: 100%; /* 가로 채움 */
+    max-width: 78rem; /* 최대 너비 */
+    margin: 0 auto; /* 가운데 정렬 */
+    padding: clamp(1rem, 3vw, 2rem); /* 안쪽 여백 */
+} /* 본문 영역 끝 */
+
+.av-draft /* 시안 안내 띠 */
+{ /* 안내 띠 시작 */
+    display: flex; /* 가로 나열 */
+    flex-wrap: wrap; /* 좁은 화면 줄바꿈 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.5rem 0.75rem; /* 요소 간격 */
+    padding: 0.5rem clamp(1rem, 3vw, 2rem); /* 안쪽 여백 */
+    border-bottom: 1px dashed var(--av-line-strong); /* 점선 경계 */
+    background: color-mix(in srgb, var(--av-gold) 14%, var(--av-canvas)); /* 옅은 골드 바탕 */
+    color: var(--av-ink); /* 안내 글자색 */
+    font-size: 0.86rem; /* 안내 글자 크기 */
+} /* 안내 띠 끝 */
+
+.av-tabbar /* 휴대폰 아래 메뉴 */
+{ /* 아래 메뉴 시작 */
+    display: none; /* 넓은 화면 숨김 */
+} /* 아래 메뉴 끝 */
+
+.av-section /* 본문 구역 */
+{ /* 구역 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 0.9rem; /* 제목과 내용 간격 */
+    min-width: 0; /* 넘침 방지 */
+} /* 구역 끝 */
+
+.av-section-head /* 구역 머리 */
+{ /* 구역 머리 시작 */
+    display: flex; /* 가로 나열 */
+    flex-wrap: wrap; /* 좁은 화면 줄바꿈 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.5rem 0.75rem; /* 요소 간격 */
+} /* 구역 머리 끝 */
+
+.av-section-title /* 구역 제목 */
+{ /* 구역 제목 시작 */
+    margin-right: auto; /* 나머지 오른쪽 밀기 */
+    font-size: 1.15rem; /* 제목 글자 크기 */
+    font-weight: 800; /* 제목 굵기 */
+    letter-spacing: -0.02em; /* 제목 글자 간격 */
+} /* 구역 제목 끝 */
+
+.av-section-title mark /* 제목 형광펜 */
+{ /* 형광펜 시작 */
+    background: linear-gradient(transparent 58%, var(--av-marker) 58%); /* 아래쪽 형광펜 */
+    color: inherit; /* 제목 글자색 */
+} /* 형광펜 끝 */
+
+.av-note /* 보조 설명 */
+{ /* 보조 설명 시작 */
+    color: var(--av-muted); /* 보조 글자색 */
+    font-size: 0.9rem; /* 설명 글자 크기 */
+} /* 보조 설명 끝 */
+
+.av-grid-paper /* 모눈 종이 바탕 */
+{ /* 모눈 시작 */
+    background-color: var(--av-paper); /* 종이 바탕색 */
+    background-image: linear-gradient(var(--av-grid) 1px, transparent 1px), linear-gradient(90deg, var(--av-grid) 1px, transparent 1px); /* 가로세로 모눈 선 */
+    background-size: 1.5rem 1.5rem; /* 모눈 한 칸 크기 */
+} /* 모눈 끝 */
+
+.av-columns /* 본문과 옆 정보 두 열 */
+{ /* 두 열 시작 */
+    display: grid; /* 격자 배치 */
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); /* 본문과 옆 정보 */
+    gap: clamp(1.25rem, 3vw, 2rem); /* 열 간격 */
+    align-items: start; /* 위쪽 정렬 */
+} /* 두 열 끝 */
+
+.av-stack /* 세로 묶음 */
+{ /* 세로 묶음 시작 */
+    display: grid; /* 세로 격자 */
+    gap: 1.25rem; /* 묶음 간격 */
+    min-width: 0; /* 넘침 방지 */
+} /* 세로 묶음 끝 */
+
+.av-cluster /* 가로 묶음 */
+{ /* 가로 묶음 시작 */
+    display: flex; /* 가로 나열 */
+    flex-wrap: wrap; /* 좁은 화면 줄바꿈 */
+    align-items: center; /* 세로 가운데 */
+    gap: 0.5rem; /* 요소 간격 */
+} /* 가로 묶음 끝 */
+
+.av-card-grid /* 카드 격자 */
+{ /* 카드 격자 시작 */
+    display: grid; /* 격자 배치 */
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); /* 화면에 맞춘 열 수 */
+    gap: 1.1rem; /* 카드 간격 */
+} /* 카드 격자 끝 */
+
+@media (max-width: 64rem) /* 좁은 노트북·태블릿 */
+{ /* 태블릿 시작 */
+    :root /* 토큰 조정 */
+    { /* 조정 시작 */
+        --av-rail: 4.6rem; /* 아이콘만 남긴 옆 메뉴 */
+    } /* 조정 끝 */
+
+    .av-nav-label, .av-brand-name /* 메뉴 글자와 이름 */
+    { /* 글자 숨김 시작 */
+        display: none; /* 아이콘만 표시 */
+    } /* 글자 숨김 끝 */
+
+    .av-nav-link, .av-brand /* 메뉴 항목과 이름 */
+    { /* 가운데 정렬 시작 */
+        justify-content: center; /* 아이콘 가운데 */
+        padding: 0; /* 좌우 여백 제거 */
+    } /* 가운데 정렬 끝 */
+
+    .av-nav-count /* 메뉴 새 소식 수 */
+    { /* 위치 조정 시작 */
+        position: absolute; /* 아이콘 위 배치 */
+        margin: -1.4rem 0 0 1.6rem; /* 오른쪽 위로 이동 */
+    } /* 위치 조정 끝 */
+
+    .av-columns /* 두 열 */
+    { /* 한 열 시작 */
+        grid-template-columns: minmax(0, 1fr); /* 한 열 배치 */
+    } /* 한 열 끝 */
+} /* 태블릿 끝 */
+
+@media (max-width: 45rem) /* 휴대폰 */
+{ /* 휴대폰 시작 */
+    .av-app /* 앱 전체 틀 */
+    { /* 한 열 시작 */
+        grid-template-columns: minmax(0, 1fr); /* 본문만 표시 */
+    } /* 한 열 끝 */
+
+    .av-rail /* 옆 메뉴 */
+    { /* 숨김 시작 */
+        display: none; /* 아래 메뉴로 대체 */
+    } /* 숨김 끝 */
+
+    .av-topbar .av-search /* 상단 검색 */
+    { /* 검색 숨김 시작 */
+        display: none; /* 좁은 화면 숨김 */
+    } /* 검색 숨김 끝 */
+
+    .av-main /* 본문 영역 */
+    { /* 아래 여백 시작 */
+        padding-bottom: 6rem; /* 아래 메뉴 자리 */
+    } /* 아래 여백 끝 */
+
+    .av-tabbar /* 휴대폰 아래 메뉴 */
+    { /* 아래 메뉴 시작 */
+        position: fixed; /* 화면 아래 고정 */
+        inset: auto 0 0 0; /* 아래쪽 붙임 */
+        z-index: 6; /* 본문 위 표시 */
+        display: grid; /* 격자 배치 */
+        grid-template-columns: repeat(5, minmax(0, 1fr)); /* 다섯 칸 */
+        padding: 0.35rem 0.35rem calc(0.35rem + env(safe-area-inset-bottom)); /* 안전 영역 포함 여백 */
+        border-top: 0.09rem solid var(--av-ink); /* 잉크 경계선 */
+        background: var(--av-paper); /* 종이 바탕 */
+    } /* 아래 메뉴 끝 */
+
+    .av-tabbar-link /* 아래 메뉴 항목 */
+    { /* 항목 시작 */
+        display: grid; /* 세로 격자 */
+        justify-items: center; /* 가로 가운데 */
+        gap: 0.1rem; /* 아이콘과 글자 간격 */
+        min-height: 3rem; /* 누르기 높이 */
+        padding: 0.3rem 0; /* 위아래 여백 */
+        border-radius: var(--av-radius-small); /* 항목 모서리 */
+        color: var(--av-muted); /* 기본 글자색 */
+        font-size: 0.72rem; /* 항목 글자 크기 */
+        font-weight: 700; /* 항목 굵기 */
+    } /* 항목 끝 */
+
+    .av-tabbar-link[aria-current="page"] /* 현재 화면 항목 */
+    { /* 현재 항목 시작 */
+        background: color-mix(in srgb, var(--av-gold) 30%, var(--av-paper)); /* 골드 바탕 */
+        color: var(--av-ink); /* 진한 글자색 */
+    } /* 현재 항목 끝 */
+} /* 휴대폰 끝 */
+
+@media (prefers-reduced-motion: reduce) /* 움직임 줄이기 */
+{ /* 줄이기 시작 */
+    *, *::before, *::after /* 모든 요소 */
+    { /* 전환 끄기 시작 */
+        transition-duration: 0.01ms !important; /* 전환 끄기 */
+        animation-duration: 0.01ms !important; /* 움직임 끄기 */
+        scroll-behavior: auto !important; /* 즉시 이동 */
+    } /* 전환 끄기 끝 */
+} /* 줄이기 끝 */

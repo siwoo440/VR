@@ -1,0 +1,101 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>둘러보기 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="explore" data-av-title="둘러보기"> <!-- 둘러보기 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <section class="av-section" aria-label="맵 찾기"> <!-- 찾기 구역 -->
+            <div class="av-section-head"> <!-- 찾기 머리 -->
+                <p class="av-note av-section-title">제작자가 공개한 맵만 보입니다. <span class="av-stage">2단계</span></p> <!-- 화면 안내와 도입 단계 -->
+                <div class="av-segment" aria-label="맵 정렬"> <!-- 정렬 고르기 -->
+                    <button type="button" data-av-set="explore-sort" aria-pressed="true">인기</button> <!-- 인기 순 -->
+                    <button type="button" data-av-set="explore-sort" aria-pressed="false">최신</button> <!-- 최신 순 -->
+                    <button type="button" data-av-set="explore-sort" aria-pressed="false">친구가 다녀간 곳</button> <!-- 친구 방문 순 -->
+                </div> <!-- 정렬 고르기 끝 -->
+            </div> <!-- 찾기 머리 끝 -->
+            <div class="av-cluster" role="group" aria-label="분류"> <!-- 분류 칩 -->
+                <button class="av-chip" type="button" data-color="none" data-av-set="explore-tag" aria-pressed="true">전체</button> <!-- 전체 분류 -->
+                <button class="av-chip" type="button" data-av-set="explore-tag" aria-pressed="false">놀이</button> <!-- 놀이 분류 -->
+                <button class="av-chip" type="button" data-color="blue" data-av-set="explore-tag" aria-pressed="false">카페·모임</button> <!-- 모임 분류 -->
+                <button class="av-chip" type="button" data-color="leaf" data-av-set="explore-tag" aria-pressed="false">정원</button> <!-- 정원 분류 -->
+                <button class="av-chip" type="button" data-color="clay" data-av-set="explore-tag" aria-pressed="false">장애물 달리기</button> <!-- 장애물 분류 -->
+                <button class="av-chip" type="button" data-color="blue" data-av-set="explore-tag" aria-pressed="false">전시</button> <!-- 전시 분류 -->
+            </div> <!-- 분류 칩 끝 -->
+        </section> <!-- 찾기 구역 끝 -->
+
+        <section class="av-section"> <!-- 지금 열린 방 구역 -->
+            <div class="av-section-head"><h2 class="av-section-title"><mark>지금 열린 방</mark></h2><p class="av-note">누구나 들어올 수 있게 연 방입니다.</p></div> <!-- 구역 제목과 안내 -->
+            <ul class="av-open-rooms"> <!-- 열린 방 목록 -->
+                <li class="av-card av-card-flat av-open-room"> <!-- 열린 방 1 -->
+                    <span class="av-avatar" data-av-avatar="4" data-av-color="clay" data-status="room"></span> <!-- 방장 아바타 -->
+                    <span class="av-row-text"><span class="av-row-title">옥상 불꽃놀이</span><span class="av-row-sub">하늘담 님의 방</span></span> <!-- 방 이름과 방장 -->
+                    <span class="av-seats" aria-label="8명 중 6명"><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><span class="av-seats-text">6 / 8</span></span> <!-- 방 자리 -->
+                    <a class="av-button av-button-small" href="room.html">입장</a> <!-- 방 입장 -->
+                </li> <!-- 열린 방 1 끝 -->
+                <li class="av-card av-card-flat av-open-room"> <!-- 열린 방 2 -->
+                    <span class="av-avatar" data-av-avatar="3" data-av-color="leaf" data-status="room"></span> <!-- 방장 아바타 -->
+                    <span class="av-row-text"><span class="av-row-title">점프 연습장</span><span class="av-row-sub">도토리 님의 방</span></span> <!-- 방 이름과 방장 -->
+                    <span class="av-seats" aria-label="8명 중 2명"><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">2 / 8</span></span> <!-- 방 자리 -->
+                    <a class="av-button av-button-small" href="room.html">입장</a> <!-- 방 입장 -->
+                </li> <!-- 열린 방 2 끝 -->
+                <li class="av-card av-card-flat av-open-room"> <!-- 열린 방 3 -->
+                    <span class="av-avatar" data-av-avatar="5" data-av-color="blue" data-status="room"></span> <!-- 방장 아바타 -->
+                    <span class="av-row-text"><span class="av-row-title">종이배 호수</span><span class="av-row-sub">새벽달 님의 방</span></span> <!-- 방 이름과 방장 -->
+                    <span class="av-seats" aria-label="8명 모두 참"><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><i data-on></i><span class="av-seats-text">8 / 8</span></span> <!-- 방 자리 -->
+                    <button class="av-button av-button-small" type="button" disabled>가득 참</button> <!-- 입장 불가 -->
+                </li> <!-- 열린 방 3 끝 -->
+            </ul> <!-- 열린 방 목록 끝 -->
+        </section> <!-- 지금 열린 방 구역 끝 -->
+
+        <section class="av-section"> <!-- 공개 맵 구역 -->
+            <div class="av-section-head"><h2 class="av-section-title"><mark>공개 맵</mark></h2></div> <!-- 구역 제목 -->
+            <div class="av-card-grid"> <!-- 맵 카드 격자 -->
+                <a class="av-card av-map-card" href="map.html"> <!-- 공개 맵 1 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="옥상 불꽃놀이"></div> <!-- 맵 그림 -->
+                    <div class="av-map-body"> <!-- 맵 정보 -->
+                        <h3 class="av-card-title">옥상 불꽃놀이</h3> <!-- 맵 이름 -->
+                        <p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="4" data-av-color="clay"></span><span>하늘담</span></p> <!-- 제작자 -->
+                        <p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>3,420</span><span><span class="av-icon" data-i="heart"></span>512</span><span><span class="av-icon" data-i="copy"></span>리믹스 38</span></p> <!-- 방문·좋아요·리믹스 -->
+                    </div> <!-- 맵 정보 끝 -->
+                </a> <!-- 공개 맵 1 끝 -->
+                <a class="av-card av-map-card" href="map.html"> <!-- 공개 맵 2 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="점프 연습장"></div> <!-- 맵 그림 -->
+                    <div class="av-map-body"> <!-- 맵 정보 -->
+                        <h3 class="av-card-title">점프 연습장</h3> <!-- 맵 이름 -->
+                        <p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="1" data-av-color="gold"></span><span>나</span></p> <!-- 제작자 -->
+                        <p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>1,204</span><span><span class="av-icon" data-i="heart"></span>187</span><span><span class="av-icon" data-i="copy"></span>리믹스 9</span></p> <!-- 방문·좋아요·리믹스 -->
+                    </div> <!-- 맵 정보 끝 -->
+                </a> <!-- 공개 맵 2 끝 -->
+                <a class="av-card av-map-card" href="map.html"> <!-- 공개 맵 3 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="종이배 호수"></div> <!-- 맵 그림 -->
+                    <div class="av-map-body"> <!-- 맵 정보 -->
+                        <h3 class="av-card-title">종이배 호수</h3> <!-- 맵 이름 -->
+                        <p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="5" data-av-color="blue"></span><span>새벽달</span></p> <!-- 제작자 -->
+                        <p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>986</span><span><span class="av-icon" data-i="heart"></span>143</span><span><span class="av-icon" data-i="copy"></span>리믹스 4</span></p> <!-- 방문·좋아요·리믹스 -->
+                    </div> <!-- 맵 정보 끝 -->
+                </a> <!-- 공개 맵 3 끝 -->
+                <a class="av-card av-map-card" href="map.html"> <!-- 공개 맵 4 -->
+                    <div class="av-scene av-grid-paper" data-av-scene="도토리 미술관"></div> <!-- 맵 그림 -->
+                    <div class="av-map-body"> <!-- 맵 정보 -->
+                        <h3 class="av-card-title">도토리 미술관</h3> <!-- 맵 이름 -->
+                        <p class="av-map-meta"><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span><span>도토리</span></p> <!-- 제작자 -->
+                        <p class="av-map-meta"><span><span class="av-icon" data-i="eye"></span>742</span><span><span class="av-icon" data-i="heart"></span>98</span><span><span class="av-icon" data-i="copy"></span>리믹스 2</span></p> <!-- 방문·좋아요·리믹스 -->
+                    </div> <!-- 맵 정보 끝 -->
+                </a> <!-- 공개 맵 4 끝 -->
+            </div> <!-- 맵 카드 격자 끝 -->
+        </section> <!-- 공개 맵 구역 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 둘러보기 화면 끝 -->
+</html> <!-- 문서 끝 -->

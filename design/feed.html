@@ -1,0 +1,84 @@
+<!DOCTYPE html> <!-- HTML5 문서 -->
+<html lang="ko"> <!-- 한국어 문서 -->
+<head> <!-- 문서 정보 시작 -->
+    <meta charset="UTF-8"> <!-- 한글 인코딩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 화면 -->
+    <meta name="robots" content="noindex"> <!-- 검색 제외 -->
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"> <!-- 파비콘 -->
+    <title>소식 · Atelier | Verse 시안</title> <!-- 브라우저 제목 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"> <!-- 본문 글꼴 -->
+    <link rel="stylesheet" href="assets/tokens.css"> <!-- 테마 토큰 -->
+    <link rel="stylesheet" href="assets/base.css"> <!-- 기본 틀 -->
+    <link rel="stylesheet" href="assets/components.css"> <!-- 구성요소 -->
+    <link rel="stylesheet" href="assets/screens.css"> <!-- 화면별 배치 -->
+    <script src="assets/shell.js"></script> <!-- 공통 틀과 화면 모드 -->
+    <script src="assets/scene.js" defer></script> <!-- 블록 장면 그림 -->
+</head> <!-- 문서 정보 끝 -->
+<body data-av-shell="app" data-av-page="feed" data-av-title="소식"> <!-- 소식 화면 -->
+    <main> <!-- 화면 본문 시작 -->
+        <div class="av-columns"> <!-- 소식과 옆 정보 -->
+            <section class="av-section"> <!-- 소식 구역 -->
+                <div class="av-section-head"> <!-- 구역 머리 -->
+                    <p class="av-note av-section-title">친구와 팔로우한 제작자의 소식이 시간순으로 모입니다. <span class="av-stage">2단계</span></p> <!-- 화면 안내와 도입 단계 -->
+                    <div class="av-segment" aria-label="소식 종류"> <!-- 소식 종류 고르기 -->
+                        <button type="button" data-av-set="feed-kind" aria-pressed="true">전체</button> <!-- 전체 소식 -->
+                        <button type="button" data-av-set="feed-kind" aria-pressed="false">제작자</button> <!-- 제작자 소식 -->
+                        <button type="button" data-av-set="feed-kind" aria-pressed="false">친구</button> <!-- 친구 소식 -->
+                    </div> <!-- 소식 종류 고르기 끝 -->
+                </div> <!-- 구역 머리 끝 -->
+                <article class="av-card av-post"> <!-- 소식 1: 친구가 방을 엶 -->
+                    <span class="av-avatar" data-av-avatar="2" data-av-color="blue" data-status="room"></span> <!-- 친구 아바타 -->
+                    <div class="av-post-body"> <!-- 소식 내용 -->
+                        <p><strong>모과</strong> 님이 방을 열었습니다. <span class="av-post-time">방금</span></p> <!-- 소식 문장 -->
+                        <div class="av-cluster"><span class="av-chip" data-color="gold">모과의 보드게임 카페</span><span class="av-seats" aria-label="8명 중 3명"><i data-on></i><i data-on></i><i data-on></i><i></i><i></i><i></i><i></i><i></i><span class="av-seats-text">3 / 8</span></span></div> <!-- 방 이름과 자리 -->
+                        <div class="av-cluster"><a class="av-button av-button-primary av-button-small" href="room.html">따라가기</a></div> <!-- 방 따라가기 -->
+                    </div> <!-- 소식 내용 끝 -->
+                </article> <!-- 소식 1 끝 -->
+                <article class="av-card av-post"> <!-- 소식 2: 제작자의 새 맵 -->
+                    <span class="av-avatar" data-av-avatar="4" data-av-color="clay"></span> <!-- 제작자 아바타 -->
+                    <div class="av-post-body"> <!-- 소식 내용 -->
+                        <p><strong>하늘담</strong> 님이 새 맵을 공개했습니다. <span class="av-post-time">2시간 전</span></p> <!-- 소식 문장 -->
+                        <a class="av-card av-card-flat av-post-map" href="map.html"> <!-- 새 맵 미리보기 -->
+                            <div class="av-scene av-grid-paper" data-av-scene="옥상 불꽃놀이"></div> <!-- 맵 그림 -->
+                            <div class="av-map-body"><h2 class="av-card-title">옥상 불꽃놀이</h2><p class="av-note">옥상에 모여 앉아 불꽃놀이를 구경하는 작은 맵입니다.</p></div> <!-- 맵 이름과 설명 -->
+                        </a> <!-- 새 맵 미리보기 끝 -->
+                        <div class="av-cluster"><button class="av-button av-button-quiet av-button-small" type="button" data-av-toggle aria-pressed="false"><span class="av-icon" data-i="heart"></span>좋아요</button><a class="av-button av-button-small" href="map.html">구경하기</a></div> <!-- 좋아요와 구경하기 -->
+                    </div> <!-- 소식 내용 끝 -->
+                </article> <!-- 소식 2 끝 -->
+                <article class="av-card av-post"> <!-- 소식 3: 조립품 갱신 -->
+                    <span class="av-avatar" data-av-avatar="3" data-av-color="leaf"></span> <!-- 제작자 아바타 -->
+                    <div class="av-post-body"> <!-- 소식 내용 -->
+                        <p><strong>도토리</strong> 님이 조립품을 갱신했습니다. <span class="av-post-time">어제</span></p> <!-- 소식 문장 -->
+                        <div class="av-card av-card-flat av-part"><span class="av-part-icon" data-av-block="chair" data-av-color="blue"></span><span class="av-row-text"><span class="av-row-title">접이식 의자</span><span class="av-row-sub">앉는 자세가 추가되었습니다.</span></span><button class="av-button av-button-small" type="button" data-av-toast="내 보관함에 담았습니다.">가져다 쓰기</button></div> <!-- 갱신된 조립품 -->
+                    </div> <!-- 소식 내용 끝 -->
+                </article> <!-- 소식 3 끝 -->
+                <article class="av-card av-card-flat av-post"> <!-- 소식 4: 운영 공지 -->
+                    <span class="av-avatar"><span class="av-icon" data-i="megaphone"></span></span> <!-- 공지 표시 -->
+                    <div class="av-post-body"> <!-- 소식 내용 -->
+                        <p><strong>운영 공지</strong> <span class="av-post-time">3일 전</span></p> <!-- 공지 머리 -->
+                        <p>다음 주 화요일 새벽에 점검이 있습니다. 점검 중에는 방에 들어올 수 없습니다.</p> <!-- 공지 내용 -->
+                    </div> <!-- 소식 내용 끝 -->
+                </article> <!-- 소식 4 끝 -->
+            </section> <!-- 소식 구역 끝 -->
+
+            <aside class="av-stack" aria-label="팔로우와 알림 설정"> <!-- 옆 정보 -->
+                <section class="av-card"> <!-- 팔로우한 제작자 카드 -->
+                    <h2 class="av-card-title">팔로우한 제작자</h2> <!-- 카드 제목 -->
+                    <ul> <!-- 제작자 목록 -->
+                        <li class="av-row"><span class="av-avatar" data-size="small" data-av-avatar="4" data-av-color="clay"></span><span class="av-row-text"><span class="av-row-title">하늘담</span><span class="av-row-sub">맵 12개</span></span><button class="av-button av-button-quiet av-button-small" type="button" data-av-toggle aria-pressed="true">팔로우 중</button></li> <!-- 제작자 1 -->
+                        <li class="av-row"><span class="av-avatar" data-size="small" data-av-avatar="3" data-av-color="leaf"></span><span class="av-row-text"><span class="av-row-title">도토리</span><span class="av-row-sub">조립품 31개</span></span><button class="av-button av-button-quiet av-button-small" type="button" data-av-toggle aria-pressed="true">팔로우 중</button></li> <!-- 제작자 2 -->
+                    </ul> <!-- 제작자 목록 끝 -->
+                </section> <!-- 팔로우한 제작자 카드 끝 -->
+                <section class="av-card av-card-flat"> <!-- 알림 설정 카드 -->
+                    <h2 class="av-card-title">알림 받기</h2> <!-- 카드 제목 -->
+                    <label class="av-switch">친구의 방 초대<input type="checkbox" checked></label> <!-- 초대 알림 -->
+                    <label class="av-switch">팔로우한 제작자의 새 맵·조립품<input type="checkbox" checked></label> <!-- 제작자 알림 -->
+                    <label class="av-switch">내 맵의 좋아요·리믹스<input type="checkbox"></label> <!-- 반응 알림 -->
+                    <label class="av-switch">운영 공지<input type="checkbox" checked></label> <!-- 공지 알림 -->
+                    <p class="av-help">처음에는 친구와 팔로우한 제작자의 소식만 켜져 있습니다. 차단한 사람의 소식과 초대는 오지 않습니다.</p> <!-- 알림 기준 안내 -->
+                </section> <!-- 알림 설정 카드 끝 -->
+            </aside> <!-- 옆 정보 끝 -->
+        </div> <!-- 소식과 옆 정보 끝 -->
+    </main> <!-- 화면 본문 끝 -->
+</body> <!-- 소식 화면 끝 -->
+</html> <!-- 문서 끝 -->
