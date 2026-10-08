@@ -17,7 +17,7 @@ namespace AtelierVerse.World
     /// 맵에 놓인 블록의 기록. 칸마다 어떤 부품이 있는지만 다루고, 화면에 보이는 블록은 BlockWorld가 맡는다.
     /// 놓을 수 있는 범위와 개수 상한을 여기서 지킨다.
     /// </summary>
-    public class BlockMap
+    public class BlockMap : IBlockStore
     {
         private readonly Dictionary<Vector3Int, int> blocks = new Dictionary<Vector3Int, int>();
         private readonly Vector3Int min;
@@ -59,6 +59,11 @@ namespace AtelierVerse.World
         public bool TryGet(Vector3Int cell, out int partIndex)
         {
             return blocks.TryGetValue(cell, out partIndex);
+        }
+
+        bool IBlockStore.TryGetPart(Vector3Int cell, out int partIndex)
+        {
+            return TryGet(cell, out partIndex);
         }
 
         /// <summary>이 칸에 놓을 수 있는지 미리 확인한다. 기록은 바뀌지 않는다.</summary>

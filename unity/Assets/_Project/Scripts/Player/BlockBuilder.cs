@@ -7,6 +7,7 @@ namespace AtelierVerse.Player
     /// <summary>
     /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지운다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
     /// 부품을 고르고 마우스를 잡은 상태에서만 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
+    /// 놓기와 지우기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다.
     /// </summary>
     [RequireComponent(typeof(DesktopPlayerController))]
     public class BlockBuilder : MonoBehaviour
@@ -111,12 +112,12 @@ namespace AtelierVerse.Player
         private bool PlaceAtTarget()
         {
             if (!HasTarget || !CanPlaceAtTarget) return false;
-            return world.Place(TargetCell, SelectedPart) == PlaceResult.Ok;
+            return world.History.Place(TargetCell, SelectedPart) == PlaceResult.Ok;
         }
 
         private bool RemoveAtTarget()
         {
-            return hasRemoveTarget && world.Remove(removeCell);
+            return hasRemoveTarget && world.History.Remove(removeCell);
         }
 
         /// <summary>

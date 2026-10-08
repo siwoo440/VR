@@ -50,6 +50,8 @@ namespace AtelierVerse.UI
         private InputAction peopleAction;
         private InputAction slotNextAction;
         private InputAction slotPreviousAction;
+        private InputAction undoAction;
+        private InputAction redoAction;
         private BlockBuilder builder;
         private BlockWorld world;
         private MapAutoSave autoSave;
@@ -88,6 +90,8 @@ namespace AtelierVerse.UI
             peopleAction = map.FindAction("People", true);
             slotNextAction = map.FindAction("SlotNext", true);
             slotPreviousAction = map.FindAction("SlotPrevious", true);
+            undoAction = map.FindAction("Undo", true);
+            redoAction = map.FindAction("Redo", true);
             map.Enable();
 
             if (menu != null)
@@ -207,6 +211,14 @@ namespace AtelierVerse.UI
         private void ReadPlayKeys()
         {
             if (peopleAction.WasPressedThisFrame()) GameSettings.ShowPeopleList = !GameSettings.ShowPeopleList;
+
+            // 되돌리기는 부품을 고르지 않았거나 마우스를 잡지 않았어도 되지만, 메뉴가 열려 있으면 이 메서드까지 오지 않는다.
+            if (world != null)
+            {
+                if (undoAction.WasPressedThisFrame()) world.History.Undo();
+                else if (redoAction.WasPressedThisFrame()) world.History.Redo();
+            }
+
             if (hotbar == null) return;
 
             if (slotNextAction.WasPressedThisFrame()) hotbar.Model.SelectNext();

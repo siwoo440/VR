@@ -8,8 +8,9 @@ namespace AtelierVerse.World
     /// 맵의 블록을 놓고 지우는 곳. 기록(BlockMap)과 화면에 보이는 블록을 함께 맞춘다.
     /// 씬에 미리 놓인 블록(자식의 PlacedBlock)은 시작할 때 기록에 올린다.
     /// 맵 문서로 내보내고(Export) 문서에서 통째로 바꿔 넣는(Import) 일도 맡는다.
+    /// 이용자의 편집은 History(기록 층)를 거쳐야 되돌릴 수 있다. Place·Remove는 기록하지 않는 바탕 동작이다.
     /// </summary>
-    public class BlockWorld : MonoBehaviour
+    public class BlockWorld : MonoBehaviour, IBlockStore
     {
         [SerializeField] private PartCatalog catalog;
         [SerializeField] private PlacedBlock blockPrefab;
@@ -19,11 +20,15 @@ namespace AtelierVerse.World
 
         private readonly Dictionary<Vector3Int, PlacedBlock> views = new Dictionary<Vector3Int, PlacedBlock>();
         private BlockMap map;
+        private EditHistory history;
 
         /// <summary>블록을 놓거나 지워 개수가 바뀌면 알린다.</summary>
         public event Action Changed;
 
         public PartCatalog Catalog => catalog;
+
+        /// <summary>되돌리기 기록 층. 이용자가 놓고 지우는 편집은 이곳을 거친다.</summary>
+        public EditHistory History => history ??= new EditHistory(this);
 
         public int Count => Map.Count;
 
@@ -139,6 +144,7 @@ namespace AtelierVerse.World
 
         private void ClearAll()
         {
+            History.Clear();
             var cells = new List<Vector3Int>(views.Keys);
             foreach (Vector3Int cell in cells)
             {

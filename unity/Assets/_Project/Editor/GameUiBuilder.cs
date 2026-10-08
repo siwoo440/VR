@@ -263,13 +263,15 @@ namespace AtelierVerse.EditorTools
             return view;
         }
 
-        /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
+        /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
         private static GameObject BuildBuildHint(RectTransform hud, out TMP_Text countLabel)
         {
             (string key, string label)[] hints =
             {
                 ("왼쪽 누르기", "놓기"),
                 ("오른쪽 누르기", "지우기"),
+                ("Ctrl+Z", "되돌리기"),
+                ("Ctrl+Y", "다시 실행"),
             };
 
             Image glass = UiFactory.Box("BuildHint", hud, DarkGlass, 22f);
@@ -637,15 +639,19 @@ namespace AtelierVerse.EditorTools
                 ("1~9", "부품 고르기"),
                 ("왼쪽 누르기", "블록 놓기"),
                 ("오른쪽 누르기", "블록 지우기"),
+                ("Ctrl+Z", "되돌리기"),
+                ("Ctrl+Y", "다시 실행"),
                 ("Tab", "사람들 목록"),
                 ("Esc", "메뉴 열기·닫기"),
             };
 
-            const int rowsPerColumn = 5;
+            // 한 줄에 54px씩 여섯 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.
+            const int rowsPerColumn = 6;
+            const float rowHeight = 54f;
             for (int i = 0; i < rows.Length; i++)
             {
                 float x = i / rowsPerColumn * 492f;
-                float y = -4f - i % rowsPerColumn * 58f;
+                float y = -4f - i % rowsPerColumn * rowHeight;
 
                 RectTransform badge = UiFactory.Badge($"Key{i}", page, rows[i].key, Surface, Ink, 40f, 20f);
                 UiFactory.Place(badge, UiFactory.TopLeft, new Vector2(x, y), badge.sizeDelta);
@@ -655,7 +661,7 @@ namespace AtelierVerse.EditorTools
             }
 
             TMP_Text note = UiFactory.Text("Note", page, "대화는 여러 사람이 함께 들어오는 기능과 같이 연결됩니다.", 20f, Muted);
-            UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -304f), new Vector2(960f, 30f));
+            UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - rowsPerColumn * rowHeight), new Vector2(960f, 30f));
             return page.gameObject;
         }
 

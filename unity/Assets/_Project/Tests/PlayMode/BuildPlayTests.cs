@@ -237,15 +237,6 @@ namespace AtelierVerse.Tests
             Assert.IsNotNull(builder, "PC 캐릭터에 블록 놓기가 없습니다.");
         }
 
-        /// <summary>마우스를 잡고, 아래로 pitch도를 보고, 숫자 키로 부품을 고른 뒤 조준이 잡힐 때까지 기다린다.</summary>
-        private IEnumerator AimWithPart(float pitch, UnityEngine.InputSystem.Controls.KeyControl partKey)
-        {
-            player.CaptureLook(true);
-            player.SetLook(0f, pitch);
-            yield return Tap(partKey);
-            yield return Frames(2);
-        }
-
         private PlacedBlock FindBlock(Vector3Int cell)
         {
             foreach (PlacedBlock block in world.GetComponentsInChildren<PlacedBlock>())

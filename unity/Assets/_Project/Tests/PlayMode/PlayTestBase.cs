@@ -121,6 +121,25 @@ namespace AtelierVerse.Tests
             yield return null;
         }
 
+        /// <summary>마우스를 잡고, 아래로 pitch도를 보고, 숫자 키로 부품을 고른 뒤 조준이 잡힐 때까지 기다린다.</summary>
+        protected IEnumerator AimWithPart(float pitch, KeyControl partKey)
+        {
+            player.CaptureLook(true);
+            player.SetLook(0f, pitch);
+            yield return Tap(partKey);
+            yield return Frames(2);
+        }
+
+        /// <summary>Ctrl을 누른 채 키를 한 번 눌렀다 뗀다.</summary>
+        protected IEnumerator TapWithCtrl(KeyControl key)
+        {
+            Press(keyboard.leftCtrlKey);
+            yield return null;
+            yield return Tap(key);
+            Release(keyboard.leftCtrlKey);
+            yield return null;
+        }
+
         protected IEnumerator Scroll(float notches)
         {
             Set(mouse.scroll, new Vector2(0f, notches));
