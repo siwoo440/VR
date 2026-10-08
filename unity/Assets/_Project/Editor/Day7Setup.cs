@@ -11,7 +11,7 @@ namespace AtelierVerse.EditorTools
 {
     /// <summary>
     /// 7일차 구성을 한 번에 적용한다: 걷기·날기 표시와 V 키 안내가 든 게임 화면을 다시 조립해 씬에 바꿔 넣는다.
-    /// 입력 자산의 Fly 동작은 파일에 직접 들어 있고, 날기 자체는 캐릭터 스크립트(DesktopPlayerController)에 있어 셋업이 만들지 않는다.
+    /// 입력 자산의 Fly 동작은 파일에 직접 들어 있고, 날기 자체는 캐릭터의 몸(CharacterMotor, 9일차에 나눔)에 있어 셋업이 만들지 않는다.
     /// 여러 번 실행해도 결과가 같도록 작성했다. 6일차 셋업이 먼저 적용되어 있어야 한다.
     /// 메뉴: Atelier Verse/7일차 셋업 실행
     /// </summary>

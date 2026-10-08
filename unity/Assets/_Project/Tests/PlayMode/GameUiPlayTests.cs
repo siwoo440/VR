@@ -25,7 +25,7 @@ namespace AtelierVerse.Tests
             Assert.IsTrue(ui.IsPeopleListVisible);
             Assert.AreEqual(9, ui.Hotbar.SlotCount);
             Assert.AreEqual(HotbarModel.None, ui.Hotbar.SelectedIndex);
-            Assert.IsTrue(player.IsFirstPerson);
+            Assert.IsTrue(player.Rig.IsFirstPerson);
             Assert.IsFalse(player.LookCaptured);
 
             PeopleListView people = ui.GetComponentInChildren<PeopleListView>();
@@ -96,22 +96,22 @@ namespace AtelierVerse.Tests
         public IEnumerator 휠을_당기면_3인칭이_되어_몸이_보이고_밀면_1인칭으로_돌아온다()
         {
             yield return LoadSandbox();
-            Assert.IsTrue(player.Avatar.IsFirstPerson);
+            Assert.IsTrue(player.Motor.Avatar.IsFirstPerson);
 
             yield return Scroll(-1f);
-            Assert.IsFalse(player.IsFirstPerson);
-            Assert.AreEqual(2.5f, player.ViewDistance, 0.01f, "휠 한 칸에 한 단계만 바뀌어야 합니다.");
+            Assert.IsFalse(player.Rig.IsFirstPerson);
+            Assert.AreEqual(2.5f, player.Rig.ViewDistance, 0.01f, "휠 한 칸에 한 단계만 바뀌어야 합니다.");
 
             yield return new WaitForSeconds(0.6f);
-            Assert.AreEqual(-2.5f, player.ViewCamera.transform.localPosition.z, 0.1f);
-            Assert.IsFalse(player.Avatar.IsFirstPerson, "3인칭에서는 몸이 보여야 합니다.");
+            Assert.AreEqual(-2.5f, player.Rig.ViewCamera.transform.localPosition.z, 0.1f);
+            Assert.IsFalse(player.Motor.Avatar.IsFirstPerson, "3인칭에서는 몸이 보여야 합니다.");
 
             yield return Scroll(1f);
-            Assert.IsTrue(player.IsFirstPerson);
+            Assert.IsTrue(player.Rig.IsFirstPerson);
 
             yield return new WaitForSeconds(0.6f);
-            Assert.AreEqual(0f, player.ViewCamera.transform.localPosition.z, 0.01f);
-            Assert.IsTrue(player.Avatar.IsFirstPerson);
+            Assert.AreEqual(0f, player.Rig.ViewCamera.transform.localPosition.z, 0.01f);
+            Assert.IsTrue(player.Motor.Avatar.IsFirstPerson);
         }
 
         [UnityTest]
@@ -170,7 +170,7 @@ namespace AtelierVerse.Tests
             yield return null;
 
             Assert.IsFalse(ui.IsMenuOpen);
-            Assert.IsFalse(player.IsFirstPerson);
+            Assert.IsFalse(player.Rig.IsFirstPerson);
         }
 
         [UnityTest]
@@ -218,14 +218,14 @@ namespace AtelierVerse.Tests
             yield return null;
 
             Assert.AreEqual(90f, GameSettings.FieldOfView, 0.01f);
-            Assert.AreEqual(90f, player.ViewCamera.fieldOfView, 0.01f);
+            Assert.AreEqual(90f, player.Rig.ViewCamera.fieldOfView, 0.01f);
             Assert.AreEqual(GameSettings.MaxLookSensitivity, GameSettings.LookSensitivity, 0.0001f);
             Assert.IsFalse(ui.IsPeopleListVisible);
 
             Find<Button>(ui.Menu, "Reset").onClick.Invoke();
             yield return null;
 
-            Assert.AreEqual(GameSettings.DefaultFieldOfView, player.ViewCamera.fieldOfView, 0.01f);
+            Assert.AreEqual(GameSettings.DefaultFieldOfView, player.Rig.ViewCamera.fieldOfView, 0.01f);
             Assert.IsTrue(ui.IsPeopleListVisible);
         }
 
@@ -261,7 +261,7 @@ namespace AtelierVerse.Tests
             yield return Frames(2);
             SaveCapture(Path.Combine(directory, "hud-first-person.png"));
 
-            player.SetViewDistance(5f);
+            player.Rig.SetViewDistance(5f);
             Press(keyboard.wKey);
             yield return new WaitForSeconds(0.9f);
             SaveCapture(Path.Combine(directory, "hud-third-person.png"));

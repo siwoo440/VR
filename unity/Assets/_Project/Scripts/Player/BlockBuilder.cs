@@ -39,6 +39,7 @@ namespace AtelierVerse.Player
         [SerializeField] private Color blockedColor = new Color(0.72f, 0.27f, 0.06f);
 
         private DesktopPlayerController player;
+        private ViewRig rig;
         private BlockWorld world;
         private Renderer ghost;
         private MaterialPropertyBlock ghostColor;
@@ -77,6 +78,7 @@ namespace AtelierVerse.Player
         private void Awake()
         {
             player = GetComponent<DesktopPlayerController>();
+            rig = player.Rig;
             world = FindAnyObjectByType<BlockWorld>();
             ghostColor = new MaterialPropertyBlock();
 
@@ -188,10 +190,10 @@ namespace AtelierVerse.Player
             CanPlaceAtTarget = false;
             Blocked = BlockedReason.None;
             hasRemoveTarget = false;
-            if (!active || player.ViewCamera == null) return;
+            if (!active || rig.ViewCamera == null) return;
 
-            Transform view = player.ViewCamera.transform;
-            float distance = reach + Vector3.Distance(view.position, player.HeadPosition);
+            Transform view = rig.ViewCamera.transform;
+            float distance = reach + Vector3.Distance(view.position, rig.HeadPosition);
             if (!Physics.Raycast(view.position, view.forward, out RaycastHit hit, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
 
             float cellSize = GridMath.DefaultCellSize;

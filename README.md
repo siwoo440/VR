@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 8일차(Windows 빌드)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 9일차(조작과 겉모습 나누기)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -48,6 +48,7 @@
 | 6일차 | 놓인 블록을 고른 부품으로 칠하기, 화면 위 가운데의 알림 띠 | [`unity/Devlogs/Day06`](unity/Devlogs/Day06/README.md) |
 | 7일차 | 날기(만들기 시점)와 걸어 보기의 전환 | [`unity/Devlogs/Day07`](unity/Devlogs/Day07/README.md) |
 | 8일차 | Windows 빌드 스크립트, 실제 빌드와 실행 확인, 메뉴의 버전 표시 | [`unity/Devlogs/Day08`](unity/Devlogs/Day08/README.md) |
+| 9일차 | 캐릭터를 몸·카메라 리그·PC 조작으로 나눔(동작은 그대로) | [`unity/Devlogs/Day09`](unity/Devlogs/Day09/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -130,6 +131,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. 조작과 겉모습 나누기
-2. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인
-3. 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기
+1. Unity Hub에서 Android 빌드 구성 설치(사용자), VR 리그와 Quest 빌드 확인
+2. 모양이 다른 부품과 옮기기·돌리기, 부품 고르는 창
+3. 여러 맵 다루기, 시작 위치와 맵 정보

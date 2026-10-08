@@ -217,11 +217,11 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(new Vector3Int(0, 1, -3), builder.TargetCell);
             SaveCapture(Path.Combine(directory, "build-first-person.png"));
 
-            player.SetViewDistance(4f);
+            player.Rig.SetViewDistance(4f);
             yield return new WaitForSeconds(0.6f);
             SaveCapture(Path.Combine(directory, "build-third-person.png"));
 
-            player.SetViewDistance(0f);
+            player.Rig.SetViewDistance(0f);
             player.SetLook(0f, 80f);
             yield return new WaitForSeconds(0.6f);
             SaveCapture(Path.Combine(directory, "build-blocked.png"));

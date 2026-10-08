@@ -36,24 +36,24 @@ namespace AtelierVerse.Tests
         [Test]
         public void 일인칭에서_휠을_당기면_가까운_3인칭_거리가_된다()
         {
-            Assert.AreEqual(Near, DesktopPlayerController.StepViewDistance(0f, false, Near, Far, Step));
+            Assert.AreEqual(Near, ViewRig.StepViewDistance(0f, false, Near, Far, Step));
         }
 
         [Test]
         public void 삼인칭에서_휠을_당기면_한_칸씩_멀어지고_가장_먼_거리에서_멈춘다()
         {
-            Assert.AreEqual(3.5f, DesktopPlayerController.StepViewDistance(Near, false, Near, Far, Step));
-            Assert.AreEqual(Far, DesktopPlayerController.StepViewDistance(7.6f, false, Near, Far, Step));
-            Assert.AreEqual(Far, DesktopPlayerController.StepViewDistance(Far, false, Near, Far, Step));
+            Assert.AreEqual(3.5f, ViewRig.StepViewDistance(Near, false, Near, Far, Step));
+            Assert.AreEqual(Far, ViewRig.StepViewDistance(7.6f, false, Near, Far, Step));
+            Assert.AreEqual(Far, ViewRig.StepViewDistance(Far, false, Near, Far, Step));
         }
 
         [Test]
         public void 휠을_밀면_한_칸씩_가까워지고_가장_가까운_거리에서는_1인칭이_된다()
         {
-            Assert.AreEqual(4f, DesktopPlayerController.StepViewDistance(5f, true, Near, Far, Step));
-            Assert.AreEqual(Near, DesktopPlayerController.StepViewDistance(3f, true, Near, Far, Step));
-            Assert.AreEqual(0f, DesktopPlayerController.StepViewDistance(Near, true, Near, Far, Step));
-            Assert.AreEqual(0f, DesktopPlayerController.StepViewDistance(0f, true, Near, Far, Step));
+            Assert.AreEqual(4f, ViewRig.StepViewDistance(5f, true, Near, Far, Step));
+            Assert.AreEqual(Near, ViewRig.StepViewDistance(3f, true, Near, Far, Step));
+            Assert.AreEqual(0f, ViewRig.StepViewDistance(Near, true, Near, Far, Step));
+            Assert.AreEqual(0f, ViewRig.StepViewDistance(0f, true, Near, Far, Step));
         }
 
         [Test]

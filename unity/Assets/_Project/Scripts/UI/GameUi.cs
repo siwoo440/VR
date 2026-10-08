@@ -116,7 +116,7 @@ namespace AtelierVerse.UI
             }
 
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
-            if (player != null) player.FlyModeChanged += OnFlyModeChanged;
+            if (player != null) player.Motor.FlyModeChanged += OnFlyModeChanged;
             if (hotbar != null) hotbar.Model.SelectionChanged += ShowSelectedPart;
             if (world != null) world.Changed += ShowBlockCount;
             if (autoSave != null) autoSave.Changed += ShowSaveState;
@@ -129,7 +129,7 @@ namespace AtelierVerse.UI
             if (autoSave != null) autoSave.Changed -= ShowSaveState;
             if (world != null) world.Changed -= ShowBlockCount;
             if (hotbar != null) hotbar.Model.SelectionChanged -= ShowSelectedPart;
-            if (player != null) player.FlyModeChanged -= OnFlyModeChanged;
+            if (player != null) player.Motor.FlyModeChanged -= OnFlyModeChanged;
             if (menuButton != null) menuButton.onClick.RemoveListener(ToggleMenu);
 
             if (menu != null)
@@ -150,7 +150,7 @@ namespace AtelierVerse.UI
             ShowSelectedPart(hotbar != null ? hotbar.SelectedIndex : HotbarModel.None);
             ShowBlockCount();
             ShowSaveState();
-            ShowFlyMode(player != null && player.IsFlying);
+            ShowFlyMode(player != null && player.Motor.IsFlying);
             RefreshHud();
         }
 
@@ -185,7 +185,7 @@ namespace AtelierVerse.UI
             if (player != null)
             {
                 player.SetInputBlocked(true);
-                menu.ShowViewMode(player.IsFirstPerson);
+                menu.ShowViewMode(player.Rig.IsFirstPerson);
             }
 
             menu.Open();
@@ -208,13 +208,13 @@ namespace AtelierVerse.UI
 
         private void RespawnAndClose()
         {
-            if (player != null) player.Respawn();
+            if (player != null) player.Motor.Respawn();
             CloseMenu();
         }
 
         private void ToggleViewAndClose()
         {
-            if (player != null) player.ToggleView();
+            if (player != null) player.Rig.ToggleView();
             CloseMenu();
         }
 
@@ -322,7 +322,7 @@ namespace AtelierVerse.UI
         {
             bool menuOpen = IsMenuOpen;
             bool captured = player != null && player.LookCaptured;
-            bool firstPerson = player == null || player.IsFirstPerson;
+            bool firstPerson = player == null || player.Rig.IsFirstPerson;
 
             bool building = hotbar != null && hotbar.SelectedIndex != HotbarModel.None;
 

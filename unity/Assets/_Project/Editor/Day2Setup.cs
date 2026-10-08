@@ -395,13 +395,8 @@ namespace AtelierVerse.EditorTools
             GameObject nameplate = BuildNameplate(root.transform);
             AvatarView avatar = BuildAvatar(root.transform, nameplate);
 
-            var controller = root.AddComponent<DesktopPlayerController>();
-            var serialized = new SerializedObject(controller);
-            serialized.FindProperty("actions").objectReferenceValue = actions;
-            serialized.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
-            serialized.FindProperty("viewCamera").objectReferenceValue = camera;
-            serialized.FindProperty("avatar").objectReferenceValue = avatar;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            // 몸·카메라 리그·PC 조작을 붙이고 잇는다(9일차에 셋으로 나눔).
+            PlayerWiring.Apply(root, actions, pivot.transform, camera, avatar);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);

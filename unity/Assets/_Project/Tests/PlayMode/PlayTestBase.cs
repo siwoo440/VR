@@ -208,7 +208,7 @@ namespace AtelierVerse.Tests
         /// <summary>캐릭터의 카메라가 보는 장면을 화면 요소와 함께 PNG로 저장한다.</summary>
         protected void SaveCapture(string path)
         {
-            Camera source = player.ViewCamera;
+            Camera source = player.Rig.ViewCamera;
             captureCamera.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
             captureCamera.fieldOfView = source.fieldOfView;
             captureCamera.nearClipPlane = source.nearClipPlane;

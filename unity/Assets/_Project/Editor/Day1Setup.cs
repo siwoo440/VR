@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using AtelierVerse.Core;
-using AtelierVerse.Player;
 using AtelierVerse.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -179,11 +178,8 @@ namespace AtelierVerse.EditorTools
             camera.fieldOfView = 70f;
             pivot.AddComponent<AudioListener>();
 
-            var controller = root.AddComponent<DesktopPlayerController>();
-            var serialized = new SerializedObject(controller);
-            serialized.FindProperty("actions").objectReferenceValue = actions;
-            serialized.FindProperty("cameraPivot").objectReferenceValue = pivot.transform;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            // 몸·카메라 리그·PC 조작을 붙이고 잇는다. 1일차에는 겉모습이 없고 카메라가 기준점에 붙어 있어 1인칭만 된다.
+            PlayerWiring.Apply(root, actions, pivot.transform, camera, null);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);

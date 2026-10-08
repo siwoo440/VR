@@ -26,16 +26,16 @@ namespace AtelierVerse.Tests
         public IEnumerator V_키로_날기를_켜고_끈다()
         {
             yield return LoadFlyScene();
-            Assert.IsFalse(player.IsFlying);
+            Assert.IsFalse(player.Motor.IsFlying);
             Assert.AreEqual(GameUi.WalkLabel, modeLabel.text);
 
             yield return Tap(keyboard.vKey);
-            Assert.IsTrue(player.IsFlying);
+            Assert.IsTrue(player.Motor.IsFlying);
             Assert.AreEqual(GameUi.FlyLabel, modeLabel.text);
             Assert.AreEqual(GameUi.FlyOnMessage, notice.Message);
 
             yield return Tap(keyboard.vKey);
-            Assert.IsFalse(player.IsFlying);
+            Assert.IsFalse(player.Motor.IsFlying);
             Assert.AreEqual(GameUi.WalkLabel, modeLabel.text);
             Assert.AreEqual(GameUi.FlyOffMessage, notice.Message);
         }
@@ -83,7 +83,7 @@ namespace AtelierVerse.Tests
             yield return null;
 
             float moved = Vector3.Dot(player.transform.position - before, player.transform.forward);
-            Assert.That(moved, Is.InRange(player.FlySpeed - 1.5f, player.FlySpeed + 1.5f), "날 때의 속도로 1초 동안 간 거리와 다릅니다.");
+            Assert.That(moved, Is.InRange(player.Motor.FlySpeed - 1.5f, player.Motor.FlySpeed + 1.5f), "날 때의 속도로 1초 동안 간 거리와 다릅니다.");
             Assert.AreEqual(before.y, player.transform.position.y, 0.05f, "앞으로 가는 동안 높이가 바뀌었습니다.");
         }
 
@@ -112,7 +112,7 @@ namespace AtelierVerse.Tests
             ui.OpenMenu();
             yield return null;
             yield return Tap(keyboard.vKey);
-            Assert.IsFalse(player.IsFlying);
+            Assert.IsFalse(player.Motor.IsFlying);
             ui.CloseMenu();
             yield return null;
 
@@ -129,7 +129,7 @@ namespace AtelierVerse.Tests
             Release(keyboard.spaceKey);
             yield return null;
 
-            Assert.IsTrue(player.IsFlying);
+            Assert.IsTrue(player.Motor.IsFlying);
             Assert.AreEqual(height, player.transform.position.y, 0.05f, "메뉴가 열린 동안 움직였습니다.");
         }
 
@@ -138,12 +138,12 @@ namespace AtelierVerse.Tests
         {
             yield return LoadFlyScene();
             yield return Tap(keyboard.vKey);
-            Assert.IsTrue(player.IsFlying);
+            Assert.IsTrue(player.Motor.IsFlying);
 
-            player.Respawn();
+            player.Motor.Respawn();
             yield return null;
 
-            Assert.IsFalse(player.IsFlying);
+            Assert.IsFalse(player.Motor.IsFlying);
             Assert.AreEqual(GameUi.WalkLabel, modeLabel.text);
         }
 
@@ -196,7 +196,7 @@ namespace AtelierVerse.Tests
 
             player.CaptureLook(true);
             player.SetLook(20f, 35f);
-            player.SetViewDistance(5f);
+            player.Rig.SetViewDistance(5f);
             yield return new WaitForSeconds(0.6f);
             SaveCapture(Path.Combine(directory, "fly-third-person.png"));
         }

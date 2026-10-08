@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 8일차(Windows 빌드 스크립트 `scripts/build-windows.mjs`, 실제 빌드 104MB·61초와 10초 실행 확인, 메뉴의 버전 표시, 창 모드 1600×900)
-- 마지막 검증: 편집 모드 테스트 73개 통과, 플레이 모드 테스트 60개 통과·6개 건너뜀(그림 찍기, `-captureDir`을 주면 66개 통과). Windows 빌드 성공과 실행 파일의 자동 확인(열기·저장·끝내기) 통과. 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행은 하지 않음
+- 마지막 작업: Unity 9일차(캐릭터를 몸 `CharacterMotor`·카메라 리그 `ViewRig`·PC 조작 `DesktopPlayerController`로 나눔. 게임에서의 동작은 그대로)
+- 마지막 검증: 편집 모드 테스트 73개 통과, 플레이 모드 테스트 73개 통과(그림 찍기 6개 포함, `-captureDir` 없이 돌리면 67개 통과·6개 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인(열기·저장·끝내기) 통과. 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행은 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 9일차(조작과 겉모습 나누기). 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 10일차. Android Build Support가 설치되어 있으면 VR 리그와 Quest 빌드, 아니면 모양이 다른 부품. 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -24,7 +24,7 @@
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`)
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day08`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day09`가 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -106,7 +106,7 @@
 
 ### Unity 7일차
 
-- 날기(`DesktopPlayerController.IsFlying`, `SetFlying`): V(`Player` 맵의 `Fly`)로 켜고 끔. 중력 없이 Space(Jump)로 오르고 Shift(Sprint)로 내려오며 속도 7m/s. 블록과 부딪힘. 시작 위치로 돌아가면 꺼짐. 저장하지 않음.
+- 날기(9일차부터 `CharacterMotor.IsFlying`, `SetFlying`): V(`Player` 맵의 `Fly`)로 켜고 끔. 중력 없이 Space(Jump)로 오르고 Shift(Sprint)로 내려오며 속도 7m/s. 블록과 부딪힘. 시작 위치로 돌아가면 꺼짐. 저장하지 않음.
 - 오른쪽 아래 걷기·날기 표시(`GameUi.modeLabel`·`modeDot`), 켜고 끌 때 알림, 키 안내와 도움말의 V.
 
 ### Unity 8일차
@@ -116,8 +116,16 @@
 - `Bootstrap`이 `-quitAfter 초`와 `-screenshotOut 경로`를 읽음(자동 확인 전용, 인자가 없으면 전과 같음).
 - 플레이어 설정: 창 모드(1600×900, 크기 조절), 뒤에서도 실행, Mono. Esc 메뉴에 `v{Application.version}` 표시(`GameUi.brandLabel`).
 
+### Unity 9일차
+
+- `DesktopPlayerController`가 함께 맡던 일을 셋으로 나눔. `CharacterMotor`(걷기·달리기·점프·중력·날기·시작 위치로, 입력을 모름), `ViewRig`(위아래 시선·1인칭과 3인칭 거리·어깨 너머·벽 앞 멈춤·시야각, PC 전용), `DesktopPlayerController`(키보드·마우스를 읽어 둘에 전함, 마우스 잡기와 조작 막기).
+- `GameUi`와 `BlockBuilder`는 옮겨 간 것을 `player.Motor`·`player.Rig`에서 읽음. 옛 멤버를 `DesktopPlayerController`에 남겨 두지 않음.
+- `Editor/PlayerWiring.cs`가 세 스크립트를 붙이고 잇는 일을 맡고 1·2·9일차 셋업이 함께 씀.
+- 조작 스크립트 없이 몸만 있는 캐릭터가 걷고 달리고 뛰고 나는 것을 `MotorPlayTests`로 확인.
+
 ### 아직 동작하지 않는 것
 
+- VR 조작과 다른 사람의 캐릭터는 아직 없습니다. 9일차에 넣을 자리(몸과 겉모습의 분리)만 만들었습니다.
 - 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
 - 블록 옮기기·돌리기가 없습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
 - 날기 속도는 하나(7m/s)이고 벽을 통과하지 못합니다.
@@ -134,7 +142,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 8일차 : Windows 빌드 확인 |
+| (이 문서가 든 커밋) | 9일차 : 조작과 겉모습 나누기 |
+| `0e5408f` | 8일차 : Windows 빌드 확인 |
 | `838d9ed` | 7일차 : 날기와 걸어 보기 |
 | `2335df9` | 6일차 : 블록 칠하기와 알림 띠 |
 | `1d8dd2c` | 5일차 : 되돌리기와 다시 실행 |
@@ -186,16 +195,16 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup ~ Day8Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer
+  Editor/           Day1Setup ~ Day9Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer
   Input/            AtelierInput.inputactions (Player 맵, Game 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
   Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel)
-  Scripts/Player/   DesktopPlayerController, AvatarView, Nameplate, BlockBuilder
+  Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar
   Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
   Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests
-  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 ```
@@ -240,8 +249,13 @@ unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 
 ### 캐릭터와 화면의 연결
 
+- 캐릭터는 세 스크립트로 나뉩니다(9일차). 몸은 `CharacterMotor`, PC 카메라는 `ViewRig`, 키보드·마우스는 `DesktopPlayerController`입니다. 조작은 매 프레임 몸의 의도(`MoveDirection`, `Sprint`, `Ascend`, `Descend`, `Jump()`)를 채우고, 몸은 그 의도대로만 움직입니다. 조작이 막히거나 꺼지면 `Motor.Stop()`을 부릅니다.
+- 몸은 `DefaultExecutionOrder(50)`으로 다른 스크립트보다 늦게 움직입니다. 조작이 같은 프레임에 의도를 먼저 정하게 하기 위해서이며, 이 순서를 바꾸면 조작이 한 프레임 늦습니다.
+- 새 조작(VR, 다른 사람의 캐릭터)은 `DesktopPlayerController`를 고치지 않고 `CharacterMotor`의 의도를 채우는 스크립트를 따로 만듭니다. `ViewRig`는 PC 전용입니다.
+- 옮겨 간 멤버는 `player.Motor`(날기, 시작 위치로, 속도, 겉모습)와 `player.Rig`(카메라, 머리 위치, 1인칭 여부, 시점 거리)에서 씁니다. `DesktopPlayerController`에는 `InputBlocked`, `LookCaptured`, `SetInputBlocked`, `CaptureLook`, `SetLook`만 남았습니다. `Motor`와 `Rig`는 처음 쓸 때 찾으므로 다른 스크립트의 `OnEnable`에서 써도 됩니다.
+- 캐릭터 프리팹의 구성을 바꿀 때는 `Editor/PlayerWiring.cs`를 고칩니다. 1·2·9일차 셋업이 함께 쓰므로 한곳만 고치면 됩니다.
 - `DesktopPlayerController`는 마우스를 잡았을 때만(`LookCaptured`) 시점을 돌립니다. `Cursor.lockState`는 창 없는 실행에서 믿을 수 없어 자체 상태로 판단합니다.
-- 걷기(`Move`)와 날기(`Fly`)는 같은 스크립트의 두 갈래이며 `IsFlying`으로 나뉩니다. 날 때는 Jump·Sprint 동작이 위·아래가 됩니다. 이동 코드를 고치면 1일차 걷기 테스트(`SandboxPlayTests`)와 7일차 날기 테스트가 함께 통과해야 합니다.
+- 걷기와 날기는 `CharacterMotor`의 두 갈래이며 `IsFlying`으로 나뉩니다. 날 때는 Jump·Sprint 동작이 위·아래가 됩니다. 이동 코드를 고치면 1일차 걷기 테스트(`SandboxPlayTests`), 7일차 날기 테스트, 9일차 `MotorPlayTests`가 함께 통과해야 합니다.
 - 메뉴가 열리면 `GameUi`가 `SetInputBlocked(true)`로 조작을 막고, 닫으면 풀고 마우스를 다시 잡습니다.
 - 화면의 단추는 마우스로만 누릅니다. `EventSystem`의 키보드 이동(`sendNavigationEvents`)을 꺼 두었습니다. 켜면 Space나 WASD가 단추를 누릅니다.
 - 꾸미기용 그림과 글자는 `raycastTarget`을 꺼 두었습니다. 켜져 있으면 그 위를 눌렀을 때 마우스 잡기가 되지 않습니다.
@@ -335,9 +349,9 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
-1. **9일차: 조작과 겉모습 나누기.** `DesktopPlayerController`의 입력·걷기·날기·카메라를 나누어, 입력이 없는 다른 사람의 캐릭터(1-D)와 VR 캐릭터(1-B)가 같은 겉모습(`AvatarView`, `Nameplate`)을 쓰게 합니다. 가안: `CharacterMotor`(이동·중력·날기, 입력과 무관) + `DesktopInput`(키·마우스 → 모터) + `ViewRig`(카메라 거리·어깨). 기존 테스트 131개가 그대로 통과해야 하고, 프리팹 구조가 바뀌면 9일차 셋업이 `Player_Desktop`을 다시 만듭니다.
-2. **VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다. 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1입니다. `GameUI`의 메뉴를 눈앞에 띄우는 방식으로 옮깁니다.
-3. 그 뒤는 1-A(혼자 만들기)의 나머지: 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기, 부품 수 상한 정하기(Quest에서 재기).
+1. **10일차 후보 가: VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다(시작할 때 `C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1이며, 패키지를 받는 것은 내려받기이므로 사용자에게 먼저 알립니다. VR 조작은 `CharacterMotor`의 의도를 채우는 스크립트로 만들고, `GameUi`·`BlockBuilder`가 `DesktopPlayerController`를 직접 아는 부분은 "이 기기의 조작"을 가리키는 공통 길로 바꿉니다(`docs/BACKLOG.md` 3.5). `GameUI`의 메뉴는 눈앞에 띄우는 방식으로 옮깁니다.
+2. **10일차 후보 나: 모양이 다른 부품과 부품 고르는 창.** Android 빌드 구성이 없으면 이것을 먼저 합니다. 반 블록·경사·기둥·계단, 방향(`facing`)과 돌리기, 부품이 아홉 칸을 넘을 때의 고르는 창. 부품이 차지하는 칸이 한 칸을 넘으면 맵 형식의 판을 올립니다(`docs/MAP-FORMAT.md` 5절).
+3. 그 뒤는 1-A(혼자 만들기)의 나머지: 여러 맵 다루기, 시작 위치와 맵 정보, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -369,7 +383,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day08/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day09/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준
