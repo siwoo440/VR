@@ -5,3 +5,6 @@ node_modules/
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+
+# Unity 검증용 사본 (에디터가 열려 있을 때 창 없이 테스트를 돌리는 곳)
+/.verify/

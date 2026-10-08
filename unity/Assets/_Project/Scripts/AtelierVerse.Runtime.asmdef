@@ -2,7 +2,9 @@
     "name": "AtelierVerse.Runtime",
     "rootNamespace": "AtelierVerse",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

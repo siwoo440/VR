@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace AtelierVerse.EditorTools
@@ -19,6 +20,7 @@ namespace AtelierVerse.EditorTools
         private static readonly (string id, Action apply)[] Steps =
         {
             ("Day01", Day1Setup.Apply),
+            ("Day02", Day2Setup.Apply),
         };
 
         static ProjectSetupRunner()
@@ -45,7 +47,27 @@ namespace AtelierVerse.EditorTools
                 return;
             }
 
+            if (!HasPending()) return;
+
+            // 셋업은 씬을 새로 열기 때문에, 저장하지 않은 변경이 있으면 먼저 저장할지 묻는다. 취소하면 이번에는 건너뛴다.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[Atelier Verse] 저장하지 않은 씬이 있어 자동 셋업을 건너뛰었습니다. 메뉴 Atelier Verse에서 직접 실행할 수 있습니다.");
+                return;
+            }
+
             RunPending(false);
+        }
+
+        private static bool HasPending()
+        {
+            HashSet<string> done = ReadState();
+            foreach ((string id, Action _) in Steps)
+            {
+                if (!done.Contains(id)) return true;
+            }
+
+            return false;
         }
 
         private static void RunPending(bool rethrow)

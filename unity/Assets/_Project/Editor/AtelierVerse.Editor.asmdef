@@ -3,7 +3,9 @@
     "rootNamespace": "AtelierVerse.EditorTools",
     "references": [
         "AtelierVerse.Runtime",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
