@@ -1,0 +1,24 @@
+* text=auto
+
+# Unity YAML (병합 시 줄바꿈 유지)
+*.unity      text eol=lf
+*.prefab     text eol=lf
+*.asset      text eol=lf
+*.meta       text eol=lf
+*.mat        text eol=lf
+*.anim       text eol=lf
+*.controller text eol=lf
+*.inputactions text eol=lf
+*.cs         text diff=csharp
+
+# 바이너리
+*.png  binary
+*.jpg  binary
+*.psd  binary
+*.webp binary
+*.glb  binary
+*.wav  binary
+*.mp3  binary
+*.ogg  binary
+*.ttf  binary
+*.otf  binary
