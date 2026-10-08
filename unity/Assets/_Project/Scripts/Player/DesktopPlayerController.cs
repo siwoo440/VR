@@ -32,6 +32,7 @@ namespace AtelierVerse.Player
         [SerializeField] private float farViewDistance = 8f;
         [SerializeField] private float zoomStep = 1f;
         [SerializeField] private float zoomSpeed = 14f;
+        [SerializeField] private Vector2 shoulderOffset = new Vector2(0.55f, 0.3f);
 
         private CharacterController controller;
         private InputActionMap map;
@@ -66,6 +67,9 @@ namespace AtelierVerse.Player
         public AvatarView Avatar => avatar;
 
         public Camera ViewCamera => viewCamera;
+
+        /// <summary>머리(카메라 기준점)의 위치. 손이 닿는 거리를 잴 때 쓴다.</summary>
+        public Vector3 HeadPosition => cameraPivot != null ? cameraPivot.position : transform.position;
 
         private bool CanMoveCamera => viewCamera != null && viewCamera.transform != cameraPivot;
 
@@ -146,6 +150,14 @@ namespace AtelierVerse.Player
             transform.SetPositionAndRotation(startPosition, startRotation);
             verticalVelocity = 0f;
             controller.enabled = true;
+        }
+
+        /// <summary>바라보는 방향을 정한다. yaw는 좌우 각도, lookPitch는 위아래 각도이며 아래쪽이 양수다.</summary>
+        public void SetLook(float yaw, float lookPitch)
+        {
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            pitch = Mathf.Clamp(lookPitch, -pitchLimit, pitchLimit);
+            if (cameraPivot != null) cameraPivot.localEulerAngles = new Vector3(pitch, 0f, 0f);
         }
 
         /// <summary>1인칭과 3인칭을 서로 바꾼다. 3인칭은 마지막에 쓰던 거리로 돌아간다.</summary>
@@ -243,7 +255,9 @@ namespace AtelierVerse.Player
                 allowed = hit.distance;
             }
 
-            viewCamera.transform.localPosition = new Vector3(0f, 0f, -allowed);
+            // 3인칭에서는 화면 가운데의 조준점이 자기 머리에 가리지 않도록 어깨 너머로 비켜선다.
+            float shoulder = nearViewDistance > 0f ? Mathf.Clamp01(allowed / nearViewDistance) : 0f;
+            viewCamera.transform.localPosition = new Vector3(shoulderOffset.x * shoulder, shoulderOffset.y * shoulder, -allowed);
             if (avatar != null) avatar.SetFirstPerson(allowed < FirstPersonLimit);
         }
     }

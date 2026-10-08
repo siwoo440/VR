@@ -21,11 +21,11 @@ namespace AtelierVerse.EditorTools
     /// </summary>
     public static class Day2Setup
     {
-        public const string FontAssetPath = Root + "/Art/Fonts/NanumGothic SDF.asset";
+        public const string FontAssetPath = UiFactory.FontAssetPath;
 
         private const string Root = "Assets/_Project";
         private const string FontPath = Root + "/Art/Fonts/NanumGothic.ttf";
-        private const string UiArtDir = Root + "/Art/UI";
+        private const string UiArtDir = UiFactory.ArtDir;
         private const string MaterialsDir = Root + "/Art/Materials";
         private const string SandboxScene = Root + "/Scenes/Sandbox.unity";
         private const string InputPath = Root + "/Input/AtelierInput.inputactions";
@@ -182,7 +182,7 @@ namespace AtelierVerse.EditorTools
             UiFactory.Rounded = CreateSprite($"{UiArtDir}/Rounded.png", DrawRounded(64, UiFactory.SpriteCorner, 0f), 28f, FilterMode.Bilinear);
             UiFactory.RoundedLine = CreateSprite($"{UiArtDir}/RoundedLine.png", DrawRounded(64, UiFactory.SpriteCorner, 4f), 28f, FilterMode.Bilinear);
 
-            var icons = new Day2Ui.Icons
+            var icons = new GameUiBuilder.Icons
             {
                 Menu = CreateIcon("Menu", MenuIcon),
                 Respawn = CreateIcon("Respawn", RespawnIcon),
@@ -194,14 +194,14 @@ namespace AtelierVerse.EditorTools
             };
 
             // 부품 칸에 넣는 것은 1일차에 만든 블록 재질과 같은 여섯 가지 색이다.
-            Day2Ui.Item[] items =
+            GameUiBuilder.Item[] items =
             {
-                new Day2Ui.Item("골드 블록", AtelierPalette.Gold),
-                new Day2Ui.Item("블루 블록", AtelierPalette.Blue),
-                new Day2Ui.Item("테라코타 블록", AtelierPalette.Clay),
-                new Day2Ui.Item("잎 블록", AtelierPalette.Leaf),
-                new Day2Ui.Item("흰 블록", AtelierPalette.Ivory),
-                new Day2Ui.Item("나무 블록", AtelierPalette.Wood),
+                new GameUiBuilder.Item("골드 블록", AtelierPalette.Gold),
+                new GameUiBuilder.Item("블루 블록", AtelierPalette.Blue),
+                new GameUiBuilder.Item("테라코타 블록", AtelierPalette.Clay),
+                new GameUiBuilder.Item("잎 블록", AtelierPalette.Leaf),
+                new GameUiBuilder.Item("흰 블록", AtelierPalette.Ivory),
+                new GameUiBuilder.Item("나무 블록", AtelierPalette.Wood),
             };
 
             InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
@@ -513,9 +513,9 @@ namespace AtelierVerse.EditorTools
 
         // ── 게임 화면과 씬 ────────────────────────────────────────────
 
-        private static GameObject CreateGameUiPrefab(InputActionAsset actions, Day2Ui.Icons icons, Day2Ui.Item[] items)
+        private static GameObject CreateGameUiPrefab(InputActionAsset actions, GameUiBuilder.Icons icons, GameUiBuilder.Item[] items)
         {
-            GameObject root = Day2Ui.Build(actions, icons, items);
+            GameObject root = GameUiBuilder.Build(actions, icons, items);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, GameUiPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return prefab;

@@ -575,7 +575,8 @@ GameObject:
   - component: {fileID: 8712979783514560307}
   - component: {fileID: 2271589610146557278}
   - component: {fileID: 2396162414930155537}
-  m_Layer: 0
+  - component: {fileID: 8944452744979851213}
+  m_Layer: 2
   m_Name: Player_Desktop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -650,6 +651,24 @@ MonoBehaviour:
   farViewDistance: 8
   zoomStep: 1
   zoomSpeed: 14
+  shoulderOffset: {x: 0.55, y: 0.3}
+--- !u!114 &8944452744979851213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3823877252223735148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4710a3cff144a2180116e652d9b32f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.Player.BlockBuilder
+  actions: {fileID: -944628639613478452, guid: b58b26ba776d83c4fb47092039c5d58f, type: 3}
+  ghostPrefab: {fileID: 8180261717995509615, guid: fe1c6860fa051df4e8fadc8d9bec5ec8, type: 3}
+  reach: 6
+  ghostAlpha: 0.55
+  blockedColor: {r: 0.72, g: 0.27, b: 0.06, a: 1}
 --- !u!1 &3878414935886083504
 GameObject:
   m_ObjectHideFlags: 0

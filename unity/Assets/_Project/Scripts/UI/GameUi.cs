@@ -1,5 +1,6 @@
 using AtelierVerse.Core;
 using AtelierVerse.Player;
+using AtelierVerse.World;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,7 +12,7 @@ namespace AtelierVerse.UI
 {
     /// <summary>
     /// 게임 화면 전체를 묶는 곳. 늘 보이는 화면(위쪽 띠, 사람들 목록, 부품 칸)과 Esc 메뉴를 잇고,
-    /// 메뉴가 열려 있는 동안 캐릭터 조작을 막는다.
+    /// 메뉴가 열려 있는 동안 캐릭터 조작을 막는다. 부품 칸에서 고른 부품을 블록 놓기(BlockBuilder)에 알려 준다.
     /// </summary>
     public class GameUi : MonoBehaviour
     {
@@ -31,6 +32,8 @@ namespace AtelierVerse.UI
         [SerializeField] private GameObject peoplePanel;
         [SerializeField] private GameObject crosshair;
         [SerializeField] private GameObject focusHint;
+        [SerializeField] private GameObject buildHint;
+        [SerializeField] private TMP_Text blockCountLabel;
         [SerializeField] private Button menuButton;
         [SerializeField] private TMP_Text roomLabel;
         [SerializeField] private TMP_Text menuRoomLabel;
@@ -44,6 +47,8 @@ namespace AtelierVerse.UI
         private InputAction peopleAction;
         private InputAction slotNextAction;
         private InputAction slotPreviousAction;
+        private BlockBuilder builder;
+        private BlockWorld world;
         private bool viewLabelSet;
         private bool viewLabelFirstPerson;
 
@@ -60,6 +65,8 @@ namespace AtelierVerse.UI
         private void Awake()
         {
             if (player == null) player = FindAnyObjectByType<DesktopPlayerController>();
+            builder = FindAnyObjectByType<BlockBuilder>();
+            world = FindAnyObjectByType<BlockWorld>();
         }
 
         private void OnEnable()
@@ -87,12 +94,16 @@ namespace AtelierVerse.UI
             }
 
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
+            if (hotbar != null) hotbar.Model.SelectionChanged += ShowSelectedPart;
+            if (world != null) world.Changed += ShowBlockCount;
             GameSettings.Changed += ApplySettings;
         }
 
         private void OnDisable()
         {
             GameSettings.Changed -= ApplySettings;
+            if (world != null) world.Changed -= ShowBlockCount;
+            if (hotbar != null) hotbar.Model.SelectionChanged -= ShowSelectedPart;
             if (menuButton != null) menuButton.onClick.RemoveListener(ToggleMenu);
 
             if (menu != null)
@@ -110,6 +121,8 @@ namespace AtelierVerse.UI
         {
             ShowRoomInfo();
             ApplySettings();
+            ShowSelectedPart(hotbar != null ? hotbar.SelectedIndex : HotbarModel.None);
+            ShowBlockCount();
             RefreshHud();
         }
 
@@ -221,6 +234,18 @@ namespace AtelierVerse.UI
             }
         }
 
+        /// <summary>고른 부품을 블록 놓기에 알리고, 부품을 골랐을 때만 놓기 안내를 보인다.</summary>
+        private void ShowSelectedPart(int index)
+        {
+            if (builder != null) builder.SelectedPart = index;
+            if (buildHint != null) buildHint.SetActive(index != HotbarModel.None);
+        }
+
+        private void ShowBlockCount()
+        {
+            if (blockCountLabel != null && world != null) blockCountLabel.text = $"블록 {world.Count}/{world.MaxBlocks}";
+        }
+
         private void ApplySettings()
         {
             if (peoplePanel != null) peoplePanel.SetActive(GameSettings.ShowPeopleList);
@@ -232,7 +257,9 @@ namespace AtelierVerse.UI
             bool captured = player != null && player.LookCaptured;
             bool firstPerson = player == null || player.IsFirstPerson;
 
-            if (crosshair != null) crosshair.SetActive(captured && firstPerson && !menuOpen);
+            bool building = hotbar != null && hotbar.SelectedIndex != HotbarModel.None;
+
+            if (crosshair != null) crosshair.SetActive(captured && !menuOpen && (firstPerson || building));
             if (focusHint != null) focusHint.SetActive(!captured && !menuOpen);
 
             if (viewLabel != null && (!viewLabelSet || viewLabelFirstPerson != firstPerson))

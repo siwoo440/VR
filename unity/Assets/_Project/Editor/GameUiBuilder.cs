@@ -11,12 +11,12 @@ using UnityEngine.UI;
 namespace AtelierVerse.EditorTools
 {
     /// <summary>
-    /// 2일차의 게임 화면(GameUI 프리팹)을 조립한다.
+    /// 게임 화면(GameUI 프리팹)을 조립한다. 일차가 지나며 화면에 요소가 늘면 이곳에 더하고, 그 일차의 셋업이 다시 조립한다.
     /// 늘 보이는 화면은 로블록스처럼 위쪽 띠·사람들 목록·아래쪽 부품 칸으로 두고,
     /// Esc 메뉴는 로블록스의 탭과 아래 단추에 VRChat의 큰 타일을 섞었다.
     /// 기준 화면 크기는 1920×1080이고 위치와 크기는 그 기준의 값이다.
     /// </summary>
-    internal static class Day2Ui
+    internal static class GameUiBuilder
     {
         public struct Icons
         {
@@ -39,6 +39,21 @@ namespace AtelierVerse.EditorTools
                 Name = name;
                 Color = color;
             }
+        }
+
+        /// <summary>2일차 셋업이 그려 둔 블록 그림을 불러온다. 뒤 일차의 셋업이 화면을 다시 조립할 때 쓴다.</summary>
+        public static Icons LoadIcons()
+        {
+            return new Icons
+            {
+                Menu = UiFactory.LoadSprite("Icon_Menu"),
+                Respawn = UiFactory.LoadSprite("Icon_Respawn"),
+                View = UiFactory.LoadSprite("Icon_View"),
+                Home = UiFactory.LoadSprite("Icon_Home"),
+                Map = UiFactory.LoadSprite("Icon_Map"),
+                Avatar = UiFactory.LoadSprite("Icon_Avatar"),
+                Shield = UiFactory.LoadSprite("Icon_Shield"),
+            };
         }
 
         private const float Margin = 28f;
@@ -70,6 +85,7 @@ namespace AtelierVerse.EditorTools
             TMP_Text roomLabel = BuildRoomChip(hud);
             PeopleListView peoplePanel = BuildPeoplePanel(hud);
             HotbarView hotbar = BuildHotbar(hud, items);
+            GameObject buildHint = BuildBuildHint(hud, out TMP_Text blockCountLabel);
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
             GameObject crosshair = BuildCrosshair(hud);
@@ -85,6 +101,8 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("peoplePanel").objectReferenceValue = peoplePanel.gameObject;
             serialized.FindProperty("crosshair").objectReferenceValue = crosshair;
             serialized.FindProperty("focusHint").objectReferenceValue = focusHint;
+            serialized.FindProperty("buildHint").objectReferenceValue = buildHint;
+            serialized.FindProperty("blockCountLabel").objectReferenceValue = blockCountLabel;
             serialized.FindProperty("menuButton").objectReferenceValue = menuButton;
             serialized.FindProperty("roomLabel").objectReferenceValue = roomLabel;
             serialized.FindProperty("menuRoomLabel").objectReferenceValue = menuRoomLabel;
@@ -239,6 +257,40 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("selectedFrameColor").colorValue = Gold;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
+        }
+
+        /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
+        private static GameObject BuildBuildHint(RectTransform hud, out TMP_Text countLabel)
+        {
+            (string key, string label)[] hints =
+            {
+                ("왼쪽 누르기", "놓기"),
+                ("오른쪽 누르기", "지우기"),
+            };
+
+            Image glass = UiFactory.Box("BuildHint", hud, DarkGlass, 22f);
+            float x = 14f;
+
+            foreach ((string key, string label) in hints)
+            {
+                RectTransform badge = UiFactory.Badge($"Key_{label}", glass.transform, key, AtelierPalette.WithAlpha(Paper, 0.94f), Ink);
+                UiFactory.Place(badge, UiFactory.MiddleLeft, new Vector2(x, 0f), badge.sizeDelta);
+                x += badge.sizeDelta.x + 8f;
+
+                TMP_Text text = UiFactory.Text($"Label_{label}", glass.transform, label, 18f, Paper);
+                float width = UiFactory.WidthOf(text);
+                UiFactory.Place(text.rectTransform, UiFactory.MiddleLeft, new Vector2(x, 0f), new Vector2(width + 2f, 28f));
+                x += width + 18f;
+            }
+
+            const float countWidth = 150f;
+            countLabel = UiFactory.Text("BlockCount", glass.transform, "블록 0/500", 18f, Gold, true, TextAlignmentOptions.Right);
+            UiFactory.Place(countLabel.rectTransform, UiFactory.MiddleLeft, new Vector2(x, 0f), new Vector2(countWidth, 28f));
+            x += countWidth + 18f;
+
+            UiFactory.Place(glass.rectTransform, UiFactory.BottomCenter, new Vector2(0f, Margin + SlotSize + 26f + 40f + 10f), new Vector2(x, 44f));
+            glass.gameObject.SetActive(false);
+            return glass.gameObject;
         }
 
         private static void BuildKeyHints(RectTransform hud)
@@ -561,25 +613,28 @@ namespace AtelierVerse.EditorTools
                 ("Space", "점프"),
                 ("Shift", "달리기"),
                 ("휠", "1인칭·3인칭 바꾸기"),
-                ("1~9", "부품 칸 고르기"),
+                ("1~9", "부품 고르기"),
+                ("왼쪽 누르기", "블록 놓기"),
+                ("오른쪽 누르기", "블록 지우기"),
                 ("Tab", "사람들 목록"),
                 ("Esc", "메뉴 열기·닫기"),
             };
 
+            const int rowsPerColumn = 5;
             for (int i = 0; i < rows.Length; i++)
             {
-                float x = i / 4 * 492f;
-                float y = -6f - i % 4 * 64f;
+                float x = i / rowsPerColumn * 492f;
+                float y = -4f - i % rowsPerColumn * 58f;
 
                 RectTransform badge = UiFactory.Badge($"Key{i}", page, rows[i].key, Surface, Ink, 40f, 20f);
                 UiFactory.Place(badge, UiFactory.TopLeft, new Vector2(x, y), badge.sizeDelta);
 
                 TMP_Text text = UiFactory.Text($"Text{i}", page, rows[i].text, 24f, Ink);
-                UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 150f, y), new Vector2(330f, 40f));
+                UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 172f, y), new Vector2(310f, 40f));
             }
 
-            TMP_Text note = UiFactory.Text("Note", page, "부품 놓기와 대화는 다음 단계에서 연결됩니다.", 20f, Muted);
-            UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -280f), new Vector2(960f, 30f));
+            TMP_Text note = UiFactory.Text("Note", page, "대화는 여러 사람이 함께 들어오는 기능과 같이 연결됩니다.", 20f, Muted);
+            UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -304f), new Vector2(960f, 30f));
             return page.gameObject;
         }
 

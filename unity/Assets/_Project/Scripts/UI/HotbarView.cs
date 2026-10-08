@@ -50,6 +50,12 @@ namespace AtelierVerse.UI
             Refresh();
         }
 
+        /// <summary>칸에 든 부품의 이름. 빈 칸이나 범위 밖이면 빈 문자열이다.</summary>
+        public string GetItemName(int index)
+        {
+            return index >= 0 && index < slots.Length ? slots[index].itemName ?? string.Empty : string.Empty;
+        }
+
         public void Select(int index)
         {
             Model.Select(index);

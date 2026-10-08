@@ -1,4 +1,5 @@
 // Unity 에디터가 프로젝트를 열고 있을 때 쓰는 검증용 사본(.verify/unity)을 만들고 실제 프로젝트와 맞추는 도구
+import { randomUUID } from "node:crypto"; // 식별자 만들기
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"; // 파일 처리
 import { dirname, extname, join } from "node:path"; // 경로 처리
 import { fileURLToPath } from "node:url"; // 파일 주소 변환
@@ -69,9 +70,29 @@ function prepare() // 사본 만들기. 사본의 Library는 남겨 두어 다�
     console.log(`사본을 만들었습니다: ${COPY}`); // 결과 표시
 }
 
+function ensureScriptMeta(relative) // 새 스크립트의 식별자를 실제 프로젝트에서 먼저 정한다
+{
+    const meta = join(REAL, `${relative}.meta`); // 메타 파일
+    if (existsSync(meta)) return; // 이미 있으면 그대로
+    console.log(`GUID ${relative}`); // 한 일 표시
+    if (dry) return; // 보여 주기만
+    try // 그 사이에 에디터가 만들었으면 덮어쓰지 않는다
+    {
+        writeFileSync(meta, `fileFormatVersion: 2\nguid: ${randomUUID().replace(/-/g, "")}\n`, { flag: "wx" }); // 새 식별자 기록
+    }
+    catch (error) // 이미 생긴 경우
+    {
+        if (error.code !== "EEXIST") throw error; // 다른 오류는 그대로 알림
+    }
+}
+
 function toVerify() // 고친 소스를 실제 프로젝트에서 사본으로
 {
     let count = 0; // 복사한 수
+    for (const relative of walk(join(REAL, "Assets"), "Assets", [])) // 실제 프로젝트의 파일마다
+    {
+        if (relative.endsWith(".cs")) ensureScriptMeta(relative); // 프리팹이 스크립트를 식별자로 가리키므로 양쪽이 같아야 한다
+    }
     for (const relative of walk(join(REAL, "Assets"), "Assets", [])) // 실제 프로젝트의 파일마다
     {
         const { isMeta, extension } = kind(relative); // 파일 종류
@@ -79,6 +100,16 @@ function toVerify() // 고친 소스를 실제 프로젝트에서 사본으로
         if (same(join(REAL, relative), join(COPY, relative))) continue; // 같으면 건너뜀
         copy(join(REAL, relative), join(COPY, relative), isMeta ? "META" : "SRC ", relative); // 복사
         count++; // 수 세기
+    }
+    for (const relative of walk(join(COPY, "Assets"), "Assets", [])) // 사본의 파일마다
+    {
+        const { isMeta, extension } = kind(relative); // 파일 종류
+        if (isMeta || !SOURCE.has(extension) || existsSync(join(REAL, relative))) continue; // 실제 프로젝트에서 지우거나 이름을 바꾼 소스만 남긴다
+        console.log(`DEL  ${relative}`); // 한 일 표시
+        count++; // 수 세기
+        if (dry) continue; // 보여 주기만
+        rmSync(join(COPY, relative), { force: true }); // 소스 지우기
+        rmSync(join(COPY, `${relative}.meta`), { force: true }); // 메타도 지우기
     }
     console.log(`${dry ? "(보기만) " : ""}${count}개`); // 결과 표시
 }

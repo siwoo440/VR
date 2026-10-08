@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 422dfe4277704f4b8dded9ee5804d25b, type: 3}
+  m_Name: PartCatalog
+  m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.World.PartCatalog
+  parts:
+  - id: block.gold
+    displayName: "\uACE8\uB4DC \uBE14\uB85D"
+    material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
+    color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+  - id: block.blue
+    displayName: "\uBE14\uB8E8 \uBE14\uB85D"
+    material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
+    color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+  - id: block.clay
+    displayName: "\uD14C\uB77C\uCF54\uD0C0 \uBE14\uB85D"
+    material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
+    color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+  - id: block.leaf
+    displayName: "\uC78E \uBE14\uB85D"
+    material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
+    color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+  - id: block.ivory
+    displayName: "\uD770 \uBE14\uB85D"
+    material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
+    color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+  - id: block.wood
+    displayName: "\uB098\uBB34 \uBE14\uB85D"
+    material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
+    color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}

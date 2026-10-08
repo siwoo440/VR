@@ -1,5 +1,7 @@
 using AtelierVerse.Core;
+using System;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +14,8 @@ namespace AtelierVerse.EditorTools
     internal static class UiFactory
     {
         public const int UiLayer = 5;
+        public const string ArtDir = "Assets/_Project/Art/UI";
+        public const string FontAssetPath = "Assets/_Project/Art/Fonts/NanumGothic SDF.asset";
 
         /// <summary>둥근 모서리 그림(Rounded.png)에 그려진 모서리 반지름(픽셀).</summary>
         public const float SpriteCorner = 24f;
@@ -30,6 +34,23 @@ namespace AtelierVerse.EditorTools
         public static Sprite Rounded { get; set; }
 
         public static Sprite RoundedLine { get; set; }
+
+        /// <summary>2일차 셋업이 만든 글꼴과 둥근 모서리 그림을 불러온다. 뒤 일차의 셋업이 화면을 다시 만들 때 먼저 부른다.</summary>
+        public static void LoadShared()
+        {
+            Font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
+            Rounded = LoadSprite("Rounded");
+            RoundedLine = LoadSprite("RoundedLine");
+            if (Font == null) throw new InvalidOperationException($"글꼴 자산을 찾을 수 없습니다: {FontAssetPath}. 2일차 셋업을 먼저 실행하세요.");
+        }
+
+        public static Sprite LoadSprite(string name)
+        {
+            string path = $"{ArtDir}/{name}.png";
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) throw new InvalidOperationException($"화면용 그림을 찾을 수 없습니다: {path}. 2일차 셋업을 먼저 실행하세요.");
+            return sprite;
+        }
 
         public static RectTransform Rect(string name, Transform parent)
         {

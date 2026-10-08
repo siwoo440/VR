@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.IO;
 using AtelierVerse.Core;
@@ -6,9 +5,6 @@ using AtelierVerse.Player;
 using AtelierVerse.UI;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
@@ -16,53 +12,10 @@ namespace AtelierVerse.Tests
 {
     /// <summary>
     /// 게임 화면을 실제로 실행해 확인한다: 메뉴 열고 닫기, 부품 칸, 사람들 목록, 1인칭·3인칭, 설정.
-    /// 키와 마우스는 InputTestFixture의 가상 장치로 넣고, 화면의 단추는 onClick을 직접 불러 누른다.
+    /// 키와 마우스는 가상 장치로 넣고, 화면의 단추는 onClick을 직접 불러 누른다.
     /// </summary>
-    public class GameUiPlayTests : InputTestFixture
+    public class GameUiPlayTests : PlayTestBase
     {
-        private const string SandboxScene = "Sandbox";
-        private const int TestFrameRate = 60;
-        private const int CaptureWidth = 1600;
-        private const int CaptureHeight = 900;
-
-        private int previousFrameRate;
-        private float savedLook;
-        private float savedFieldOfView;
-        private bool savedPeopleList;
-        private Action savedExitHandler;
-        private Keyboard keyboard;
-        private Mouse mouse;
-        private GameUi ui;
-        private DesktopPlayerController player;
-
-        public override void Setup()
-        {
-            base.Setup();
-
-            previousFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = TestFrameRate;
-
-            savedLook = GameSettings.LookSensitivity;
-            savedFieldOfView = GameSettings.FieldOfView;
-            savedPeopleList = GameSettings.ShowPeopleList;
-            GameSettings.ResetToDefaults();
-
-            savedExitHandler = AppExit.Handler;
-            keyboard = InputSystem.AddDevice<Keyboard>();
-            mouse = InputSystem.AddDevice<Mouse>();
-        }
-
-        public override void TearDown()
-        {
-            AppExit.Handler = savedExitHandler;
-            GameSettings.LookSensitivity = savedLook;
-            GameSettings.FieldOfView = savedFieldOfView;
-            GameSettings.ShowPeopleList = savedPeopleList;
-            Application.targetFrameRate = previousFrameRate;
-
-            base.TearDown();
-        }
-
         [UnityTest]
         public IEnumerator 처음에는_메뉴가_닫혀_있고_화면_요소가_준비되어_있다()
         {
@@ -300,133 +253,32 @@ namespace AtelierVerse.Tests
         [UnityTest]
         public IEnumerator 화면_그림을_찍는다()
         {
-            string directory = ReadArgument("-captureDir");
-            if (string.IsNullOrEmpty(directory)) Assert.Ignore("-captureDir 인자가 없어 그림을 찍지 않습니다.");
-
+            string directory = RequireCaptureDirectory();
             yield return LoadSandbox();
-            Directory.CreateDirectory(directory);
-
-            // 화면에 겹쳐 그리는 캔버스는 카메라 그림에 찍히지 않으므로, 찍는 동안만 캡처 카메라 앞에 붙인다.
-            var target = new RenderTexture(CaptureWidth, CaptureHeight, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-            var holder = new GameObject("CaptureCamera");
-            var capture = holder.AddComponent<Camera>();
-            capture.targetTexture = target;
-
-            Canvas canvas = Find<Canvas>(ui, "Canvas");
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = capture;
-            canvas.planeDistance = 0.5f;
+            BeginCapture();
 
             player.CaptureLook(true);
-            ui.Hotbar.Select(1);
-            yield return null;
-            yield return null;
-            Save(capture, target, Path.Combine(directory, "hud-first-person.png"));
+            yield return Frames(2);
+            SaveCapture(Path.Combine(directory, "hud-first-person.png"));
 
             player.SetViewDistance(5f);
             Press(keyboard.wKey);
             yield return new WaitForSeconds(0.9f);
-            Save(capture, target, Path.Combine(directory, "hud-third-person.png"));
+            SaveCapture(Path.Combine(directory, "hud-third-person.png"));
             Release(keyboard.wKey);
             yield return null;
 
             ui.OpenMenu();
-            yield return null;
-            yield return null;
-            Save(capture, target, Path.Combine(directory, "menu-shortcuts.png"));
+            yield return Frames(2);
+            SaveCapture(Path.Combine(directory, "menu-shortcuts.png"));
 
             string[] names = { "menu-people.png", "menu-settings.png", "menu-help.png" };
             for (int i = 0; i < names.Length; i++)
             {
                 ui.Menu.ShowTab(i + 1);
-                yield return null;
-                yield return null;
-                Save(capture, target, Path.Combine(directory, names[i]));
+                yield return Frames(2);
+                SaveCapture(Path.Combine(directory, names[i]));
             }
-
-            capture.targetTexture = null;
-            UnityEngine.Object.Destroy(holder);
-            target.Release();
-            UnityEngine.Object.Destroy(target);
-        }
-
-        private IEnumerator LoadSandbox()
-        {
-            yield return SceneManager.LoadSceneAsync(SandboxScene, LoadSceneMode.Single);
-            yield return null;
-
-            ui = UnityEngine.Object.FindAnyObjectByType<GameUi>();
-            player = UnityEngine.Object.FindAnyObjectByType<DesktopPlayerController>();
-            Assert.IsNotNull(ui, "Sandbox 씬에서 게임 화면(GameUI)을 찾을 수 없습니다.");
-            Assert.IsNotNull(player, "Sandbox 씬에서 PC 캐릭터를 찾을 수 없습니다.");
-
-            yield return new WaitForSeconds(0.3f);
-        }
-
-        /// <summary>키나 마우스 단추를 한 번 눌렀다 뗀다. 누른 것이 한 프레임 동안 보이도록 사이에 프레임을 둔다.</summary>
-        private IEnumerator Tap(ButtonControl button)
-        {
-            Press(button);
-            yield return null;
-            yield return null;
-            Release(button);
-            yield return null;
-            yield return null;
-        }
-
-        private IEnumerator Scroll(float notches)
-        {
-            Set(mouse.scroll, new Vector2(0f, notches));
-            yield return null;
-            yield return null;
-            Set(mouse.scroll, Vector2.zero);
-            yield return null;
-            yield return null;
-        }
-
-        private static T Find<T>(Component root, string name) where T : Component
-        {
-            foreach (T candidate in root.GetComponentsInChildren<T>(true))
-            {
-                if (candidate.gameObject.name == name) return candidate;
-            }
-
-            Assert.Fail($"{root.name} 아래에서 {name}({typeof(T).Name})을 찾을 수 없습니다.");
-            return null;
-        }
-
-        private void Save(Camera capture, RenderTexture target, string path)
-        {
-            Camera source = player.ViewCamera;
-            capture.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
-            capture.fieldOfView = source.fieldOfView;
-            capture.nearClipPlane = source.nearClipPlane;
-            capture.clearFlags = source.clearFlags;
-            capture.backgroundColor = source.backgroundColor;
-
-            Canvas.ForceUpdateCanvases();
-            capture.Render();
-
-            var picture = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = target;
-            picture.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
-            picture.Apply();
-            RenderTexture.active = previous;
-
-            File.WriteAllBytes(path, picture.EncodeToPNG());
-            UnityEngine.Object.Destroy(picture);
-        }
-
-        private static string ReadArgument(string name)
-        {
-            string[] arguments = Environment.GetCommandLineArgs();
-            for (int i = 0; i < arguments.Length - 1; i++)
-            {
-                if (arguments[i] == name) return arguments[i + 1];
-            }
-
-            return null;
         }
     }
 }

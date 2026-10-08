@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 2일차(블록 캐릭터, 1인칭·3인칭 시점, 게임 화면)
-- 마지막 검증: 편집 모드 테스트 23개 통과, 플레이 모드 테스트 17개 통과와 1개 건너뜀(화면 그림 찍기). 에디터에서 직접 해 보는 확인, Windows 빌드, Quest 실행은 하지 않음
+- 마지막 작업: Unity 3일차(부품 칸에서 고른 블록을 모눈에 놓고 지우기)
+- 마지막 검증: 편집 모드 테스트 31개 통과, 플레이 모드 테스트 28개 통과와 2개 건너뜀(화면 그림 찍기). 에디터에서 직접 해 보는 확인, Windows 빌드, Quest 실행은 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 3일차(부품 칸에서 고른 블록을 모눈에 놓고 지우기)
+- 다음 작업: Unity 4일차(맵 데이터 형식을 정하고 놓은 블록을 저장하고 불러오기)
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -23,7 +23,7 @@
 4. `Assets/_Project/Scenes/Sandbox` 씬에서 재생. 조작은 `README.md`의 "Unity 프로젝트" 절 참고
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`, `Day02`가 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day03`이 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -76,9 +76,18 @@
 - 개인 설정 저장(`GameSettings`: 마우스 감도, 시야각, 사람들 목록 표시).
 - 한글 글꼴(나눔고딕)과 TextMesh Pro.
 
+### Unity 3일차
+
+- 부품을 고르고 조준한 칸에 블록 놓기(마우스 왼쪽)와 지우기(마우스 오른쪽). 놓일 칸에 반투명 미리 보기 블록이 보임.
+- 블록의 기록(`BlockMap`)과 화면(`BlockWorld`), 부품 목록(`PartCatalog`). 1일차의 집·단·계단 블록 19개를 블록 세계로 옮겨 똑같이 지울 수 있음.
+- 부품 칸 위의 놓기 안내와 블록 수 표시(`블록 19/500`).
+- 3인칭에서 카메라가 어깨 너머로 비켜서 조준점이 머리에 가리지 않음.
+
 ### 아직 동작하지 않는 것
 
-- 부품 칸은 고르기만 됩니다. 블록을 놓는 동작이 없습니다.
+- 놓은 블록은 저장되지 않습니다. 게임을 끄면 사라집니다.
+- 블록 옮기기·돌리기·칠하기와 실행 취소가 없습니다.
+- 블록 수 상한 500개와 블록 하나를 게임 오브젝트 하나로 두는 방식은 임시입니다. Quest에서 재 본 뒤에 정합니다.
 - 바로가기의 내 작업실·맵 둘러보기·캐릭터·안전·신고는 "준비 중"으로 표시되고 누를 수 없습니다.
 - 사람들 목록과 이름표에는 자기 자신("손님")만 나옵니다. 로그인, 저장, 여러 사람 접속이 없습니다.
 - 대화(채팅) 화면이 없습니다.
@@ -89,7 +98,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 2일차 : 블록 캐릭터, 1인칭·3인칭 시점, 게임 화면. 인수인계 문서와 검증용 사본 도구 포함 |
+| (이 문서가 든 커밋) | 3일차 : 블록 놓고 지우기 |
+| `e91444b` | 2일차 : 블록 캐릭터, 1인칭·3인칭 시점, 게임 화면. 인수인계 문서와 검증용 사본 도구 포함 |
 | `8268c63` | 1일차 : Unity 프로젝트 기반 구성과 PC 걷기 |
 | `d72754c` | 구현 방식을 Unity 앱으로 바꾼 결정에 맞춰 문서와 화면 시안 문구 수정 |
 | `7fababc` | 빠진 화면 여섯 개 추가와 탭 구조·누르기 크기 수정 |
@@ -130,19 +140,20 @@ Claude가 판단해서 정한 것도 있습니다. 사용자가 바꾸자고 하
 ```
 unity/Assets/_Project/
   Art/Fonts/        NanumGothic.ttf, 라이선스 전문, NanumGothic SDF(글꼴 자산)
-  Art/Materials/    GridFloor, Block_Gold·Blue·Clay·Leaf·Ivory·Wood·Ink
+  Art/Materials/    GridFloor, Block_Gold·Blue·Clay·Leaf·Ivory·Wood·Ink, Block_Ghost(미리 보기)
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
-  Editor/           Day1Setup, Day2Setup, Day2Ui, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture
+  Data/             PartCatalog.asset (부품 목록)
+  Editor/           Day1Setup, Day2Setup, Day3Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture
   Input/            AtelierInput.inputactions (Player 맵, Game 맵)
-  Prefabs/          Player_Desktop, GameUI
+  Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
   Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap
-  Scripts/Player/   DesktopPlayerController, AvatarView, Nameplate
+  Scripts/Player/   DesktopPlayerController, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView
-  Scripts/World/    GridMath
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests
-  Tests/PlayMode/   SandboxPlayTests, GameUiPlayTests
+  Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 ```
@@ -152,7 +163,16 @@ unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 - 프리팹·씬·재질·그림은 손으로 만들지 않고 `Editor/DayNSetup.cs`가 만듭니다. 여러 번 실행해도 결과가 같게 작성합니다.
 - `ProjectSetupRunner`가 에디터를 열 때 아직 적용하지 않은 일차를 실행하고 `ProjectSettings/AtelierVerseSetupState.txt`에 기록합니다. 저장하지 않은 씬이 있으면 먼저 묻습니다. 명령줄에서는 `RunFromCommandLine`을 부릅니다.
 - 새 일차를 만들면 `ProjectSetupRunner`의 `Steps`에 한 줄을 더하고, 셋업을 적용한 결과(프리팹·씬 등)를 함께 커밋합니다.
-- 화면을 고칠 때는 프리팹을 직접 고치지 말고 `Day2Ui`·`UiFactory`를 고친 뒤 셋업을 다시 적용합니다. 직접 고치면 다음 셋업에서 덮어씁니다.
+- 화면을 고칠 때는 프리팹을 직접 고치지 말고 `GameUiBuilder`·`UiFactory`를 고친 뒤 가장 최근 일차의 셋업을 다시 적용합니다. 직접 고치면 다음 셋업에서 덮어씁니다. 화면에 요소가 늘면 `GameUiBuilder`에 더하고 그 일차의 셋업이 다시 조립합니다.
+- 셋업 안에서 씬을 새로 열면(`OpenScene`) 그 전에 만들어 변수에 들고 있던 자산 참조가 끊길 수 있습니다. 씬을 연 뒤에 `AssetDatabase.LoadAssetAtPath`로 다시 불러옵니다(3일차에 겪음).
+
+### 블록
+
+- 맵의 블록은 `BlockMap`(칸 → 부품 번호)이 기록하고 `BlockWorld`가 화면의 블록과 맞춥니다. 블록을 놓거나 지울 때는 `BlockWorld.Place`·`Remove`만 씁니다. 씬에 블록을 직접 놓으면 기록에 오르지 않습니다.
+- 씬에 미리 놓는 블록은 `BlockWorld`의 자식으로 두고 `PlacedBlock`에 칸과 부품 번호를 적습니다. 시작할 때 기록에 오릅니다.
+- 부품 목록(`PartCatalog`)의 순서가 부품 칸의 순서이고 부품 번호입니다. 부품의 `id`(`block.gold` 등)는 저장에 쓸 이름이라 바꾸지 않습니다.
+- `BlockBuilder`는 화면 가운데에서 광선을 쏘아 닿은 면의 바깥쪽 칸에 놓습니다. 캐릭터는 `Ignore Raycast` 층이라 광선에 걸리지 않고, 겹침 검사(`CheckBox`)에는 걸려서 자기가 선 칸에는 놓이지 않습니다.
+- 부품을 고르거나 마우스를 잡은 바로 그 프레임에는 놓지 않습니다(한 프레임 기다림). 마우스를 잡는 누름으로 블록이 놓이는 것을 막기 위해서입니다.
 
 ### 캐릭터와 화면의 연결
 
@@ -205,7 +225,7 @@ Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVer
 사용자가 Unity 에디터로 프로젝트를 열어 두면 같은 폴더에서는 "another Unity instance is running"으로 실패합니다. 에디터를 끄지 않고 검증용 사본에서 진행합니다.
 
 ```bash
-node scripts/unity-verify.mjs prepare --hold Day03   # 사본(.verify/unity) 만들기. Day03은 검증 전이라 미뤄 둘 일차
+node scripts/unity-verify.mjs prepare --hold Day04   # 사본(.verify/unity) 만들기. Day04는 검증 전이라 미뤄 둘 일차
 # 사본을 <프로젝트>로 삼아 위의 명령으로 셋업과 테스트를 실행
 node scripts/unity-verify.mjs to-verify              # 소스를 고쳤으면 실제 → 사본으로 보냄
 node scripts/unity-verify.mjs to-real --dry          # 가져올 자산 미리 보기
@@ -215,7 +235,8 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 - 소스(`.cs` 등)는 항상 실제 프로젝트에서 고칩니다. 사본에서는 고치지 않습니다.
 - `--hold`는 실제 프로젝트의 적용 기록에 그 일차를 미리 적어, 열려 있는 에디터에서 검증 전의 셋업이 자동으로 돌지 않게 합니다. 사본의 기록에서는 빼서 사본에서 셋업이 돌게 합니다.
-- 스크립트의 `.meta`(식별자)는 실제 프로젝트의 것이 기준입니다. 프리팹이 스크립트를 식별자로 가리키기 때문입니다.
+- 스크립트의 `.meta`(식별자)는 실제 프로젝트의 것이 기준입니다. 프리팹이 스크립트를 식별자로 가리키기 때문입니다. `to-verify`는 새 스크립트에 `.meta`가 없으면 실제 프로젝트에 먼저 만들어 양쪽이 같은 식별자를 쓰게 하고, 실제 프로젝트에서 지우거나 이름을 바꾼 소스는 사본에서도 지웁니다.
+- 새 일차의 코드를 쓰기 전에 `prepare --hold`부터 실행합니다. 그래야 열려 있는 에디터가 검증 전의 셋업을 자동으로 돌리지 않습니다.
 - 사본은 처음에 `Library`를 새로 만드느라 5~7분 걸리고 2GB쯤 차지합니다. 끝나면 지웁니다.
 - 사본은 저장소 바로 아래에 둡니다. 경로가 길면 Unity가 패키지 파일을 열지 못합니다.
 
@@ -245,10 +266,10 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에 있습니다. 지금은 0단계입니다.
 
-1. **3일차: 블록 놓고 지우기.** 부품 칸에서 고른 색의 블록을 조준한 모눈 칸에 놓고, 놓은 블록을 지웁니다. `GridMath`로 칸을 구하고 `HotbarView.SelectedIndex`로 고른 부품을 읽습니다. 캐릭터가 서 있는 칸에는 놓지 못하게 하고, 놓은 수의 상한을 둡니다(상한 값은 Quest에서 재기 전까지 임시).
-2. **맵 데이터 형식.** 부품 + 속성 + 동작의 형식을 문서로 확정하고, 놓은 블록을 그 형식으로 저장하고 불러옵니다.
+1. **4일차: 맵 데이터 형식과 저장.** 부품 + 속성 + 동작의 형식을 문서로 확정하고, `BlockMap.Blocks`를 그 형식으로 이 기기에 저장하고 불러옵니다. 부품은 번호가 아니라 `id`로 적습니다. 조립품과 동작 규칙은 넣지 않고 자리만 남깁니다.
+2. **블록 다루기의 나머지.** 옮기기·돌리기·칠하기와 실행 취소.
 3. **VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다. 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1입니다. `GameUI`의 메뉴를 눈앞에 띄우는 방식으로 옮깁니다.
-4. 그 뒤는 1-A(혼자 만들기)의 나머지: 옮기기·돌리기·칠하기, 실행 취소.
+4. 그 뒤는 1-A(혼자 만들기)의 나머지: 걸어 보기와 만들기의 전환, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -277,7 +298,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 2. `README.md`: 들어 있는 것, 조작, 반영한 결정
 3. `docs/ROADMAP.md`: 부족한 부분과 구현 단계
 4. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
-5. `unity/Devlogs/Day02/README.md`, `unity/Devlogs/Day01/README.md`: 일차별로 한 일과 검사 결과
+5. `unity/Devlogs/Day03/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준
