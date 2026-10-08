@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 10일차(VR 조작과 추적 리그, 실제 헤드셋 연결 전)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 11일차(OpenXR 연결, 실제 헤드셋 확인 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -50,6 +50,7 @@
 | 8일차 | Windows 빌드 스크립트, 실제 빌드와 실행 확인, 메뉴의 버전 표시 | [`unity/Devlogs/Day08`](unity/Devlogs/Day08/README.md) |
 | 9일차 | 캐릭터를 몸·카메라 리그·PC 조작으로 나눔(동작은 그대로) | [`unity/Devlogs/Day09`](unity/Devlogs/Day09/README.md) |
 | 10일차 | VR 조작과 추적 리그(머리·두 손, 스틱 이동, 끊어서 돌기). 기본은 키보드·마우스 | [`unity/Devlogs/Day10`](unity/Devlogs/Day10/README.md) |
+| 11일차 | OpenXR 연결. VR로 시작했을 때만 VR 화면을 켜고, 기기가 없으면 키보드·마우스로 돌아옴 | [`unity/Devlogs/Day11`](unity/Devlogs/Day11/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 파일(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\local.map.json`)에 자동으로 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -66,7 +67,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 사람들 목록 | Tab |
 | 메뉴 | Esc |
 
-VR 조작도 들어 있습니다. 다만 실제 헤드셋에 화면을 내는 연결(OpenXR 패키지)이 아직 없어 가상 기기 테스트로만 확인했습니다.
+VR 조작도 들어 있습니다. 실행 파일 옆의 `AtelierVerse-VR.bat`(또는 `AtelierVerse.exe -vr`)으로 켜면 VR 화면으로 시작하고, 기기가 없으면 키보드·마우스로 돌아옵니다. PC에 Meta Quest Link나 SteamVR 같은 VR 프로그램(OpenXR 런타임)이 있어야 합니다. **실제 헤드셋으로는 아직 확인하지 못했습니다.** 헤드셋 안에는 메뉴가 보이지 않고 블록을 놓을 수 없습니다.
 
 | VR 조작 | 입력 |
 | --- | --- |
@@ -85,7 +86,9 @@ node scripts/build-windows.mjs
 
 `--run`을 붙이면 만든 실행 파일을 10초 동안 실제로 띄웠다가 스스로 끝내고, 맵 파일이 만들어졌는지와 로그에 예외가 없는지, 화면 그림(`smoke.png`)을 확인합니다. `--development`는 개발용 빌드, `--out 폴더`는 다른 출력 폴더, `--skip-build --run`은 이미 만든 실행 파일만 다시 확인합니다. 에디터 메뉴 `Atelier Verse/Windows 빌드 만들기`로도 만들 수 있습니다.
 
-실행 파일은 `-quitAfter 초`와 `-screenshotOut 경로` 인자를 알아듣습니다(자동 확인용).
+빌드하면 실행 파일 옆에 VR로 시작하는 `AtelierVerse-VR.bat`이 함께 생깁니다. 그냥 연 `AtelierVerse.exe`는 VR 프로그램을 찾지 않습니다. `--run --vr`은 실행 확인을 VR로 시작해서 합니다(VR 프로그램이 없는 PC에서는 키보드·마우스로 돌아오는지를 봅니다).
+
+실행 파일은 `-vr`(VR 화면으로 시작)과, 자동 확인용인 `-quitAfter 초`·`-screenshotOut 경로` 인자를 알아듣습니다.
 
 ## 시안 보는 방법
 
@@ -141,6 +144,6 @@ node scripts/serve.mjs
 
 지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
-1. OpenXR 패키지를 넣어 실제 헤드셋에 잇기(패키지 내려받기는 사용자 허락 뒤), VR 메뉴와 VR에서 만들기
+1. 실제 헤드셋으로 확인하기(사용자: Quest Link나 SteamVR을 설치한 뒤 `AtelierVerse-VR.bat`), VR 메뉴와 VR에서 만들기
 2. Unity Hub에서 Android 빌드 구성 설치(사용자), Quest 단독 빌드와 성능 재기
 3. 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기

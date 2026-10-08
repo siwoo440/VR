@@ -1,4 +1,5 @@
 using System;
+using AtelierVerse.Core;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -40,6 +41,12 @@ namespace AtelierVerse.Player
         private void Awake()
         {
             Apply(Decide());
+        }
+
+        /// <summary>VR 화면을 켜려다 생긴 안내(켰다, 기기를 찾지 못했다)를 화면이 준비된 뒤에 한 번 알린다.</summary>
+        private void Start()
+        {
+            if (XrSession.TakeNotice(out string message, out NoticeKind kind)) Notice.Post(message, kind);
         }
 
         /// <summary>시작할 때의 조작 방식. 강제한 값이 있으면 그 값, 없으면 VR 화면이 켜져 있는지로 정한다.</summary>

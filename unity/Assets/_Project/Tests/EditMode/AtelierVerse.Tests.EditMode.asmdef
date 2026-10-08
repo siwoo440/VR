@@ -5,7 +5,10 @@
         "AtelierVerse.Runtime",
         "AtelierVerse.Editor",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.XR.Management",
+        "Unity.XR.Management.Editor",
+        "Unity.XR.OpenXR"
     ],
     "includePlatforms": [
         "Editor"

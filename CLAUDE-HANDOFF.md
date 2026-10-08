@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 10일차(VR 조작 `XrPlayerController`, 추적 리그 `XrRig`, 조작 방식 고르기 `PlayerModeSwitch`. 기본은 키보드·마우스. 가상 기기로만 확인했고 실제 헤드셋 연결은 아직 없음)
-- 마지막 검증: 편집 모드 테스트 75개 통과, 플레이 모드 테스트 85개 통과(그림 찍기 7개 포함, `-captureDir` 없이 돌리면 78개 통과·7개 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(키보드·마우스로 시작). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(OpenXR 패키지와 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
+- 마지막 작업: Unity 11일차(OpenXR 연결. `XrSession`이 `-vr`로 시작했을 때만 VR 화면을 켜고, 빌드 뒤 `XrBootConfig`가 시작 설정의 XR 사전 초기화를 빼고 `AtelierVerse-VR.bat`을 둠. 기본은 키보드·마우스. 실제 헤드셋으로는 확인하지 못함)
+- 마지막 검증: 편집 모드 테스트 84개 통과, 플레이 모드 테스트 85개 통과(그림 찍기 7개 포함, `-captureDir` 없이 돌리면 78개 통과·7개 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`과 `AtelierVerse-VR.bat`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 11일차. 사용자가 패키지 내려받기를 허락하면 OpenXR 연결, 아니면 모양이 다른 부품. 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 12일차. 사용자가 헤드셋으로 켜 본 결과가 있으면 그것부터, 없으면 VR 메뉴(또는 모양이 다른 부품). 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -22,9 +22,9 @@
 3. Unity Hub에서 `unity` 폴더를 프로젝트로 추가해 열기. 처음 열면 `Library`를 새로 만드느라 몇 분 걸림
 4. `Assets/_Project/Scenes/Sandbox` 씬에서 재생. 조작은 `README.md`의 "Unity 프로젝트" 절 참고
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
-6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`)
+6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`). VR로 켜려면 그 옆의 `AtelierVerse-VR.bat`
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day10`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day11`이 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -131,9 +131,18 @@
 - 입력 자산의 `XR` 묶음(동작 11개)은 컨트롤러의 공통 쓰임새(`{Primary2DAxis}` 등)로 묶음.
 - VR에서는 블록 놓기를 끄고, 화면 요소는 헤드셋 안에 보이지 않음.
 
+### Unity 11일차
+
+- 패키지: XR Plugin Management 4.5.4, OpenXR Plugin 1.16.1(따라온 것: XR Core Utilities 2.6.0, XR Legacy Input Helpers 2.1.13). 사용자가 내려받기를 허락함(2026-10-08).
+- `Day11Setup`: PC(Standalone)의 XR 설정에 OpenXR 로더를 넣고 "시작할 때 XR 켜기"를 끔. 컨트롤러 프로파일 여섯 개(Oculus Touch, Meta Quest Touch Plus·Pro, Valve Index, HTC Vive, Microsoft Motion)를 켬. 설정 자산은 `Assets/XR`.
+- `XrSession`(`Scripts/Core`): 실행 인자에 `-vr`이 있을 때만 첫 씬이 열리기 전에 OpenXR 로더를 켬. 추적 기준을 바닥으로 맞추고, 켜지 못하면 키보드·마우스로 시작하며 알림 띠에 까닭을 알림. 에디터에서는 메뉴 `Atelier Verse/재생할 때 VR 켜기`.
+- `XrBootConfig`(`Editor`, 빌드가 끝나면 자동): 실행 파일의 시작 설정(`boot.config`)에서 XR 사전 초기화 줄을 빼고, 실행 파일 옆에 `AtelierVerse-VR.bat`(`-vr`을 붙여 켬)을 씀.
+- `scripts/build-windows.mjs`: `--vr`(실행 확인을 `-vr`로), 시작 설정과 배치 파일 검사, 평소 실행의 로그에 VR 프로그램을 찾은 흔적이 있으면 실패.
+- 이 컴퓨터에는 VR 프로그램이 없어 `-vr` 실행은 "VR 기기를 찾지 못해 키보드·마우스로 시작합니다"로 돌아오는 것까지만 확인함.
+
 ### 아직 동작하지 않는 것
 
-- **VR은 실제 헤드셋에 화면이 나가지 않습니다.** OpenXR 패키지가 없어 XR 화면을 켤 수 없고, 10일차의 VR 조작은 가상 기기 테스트로만 확인했습니다. 헤드셋 안의 메뉴와 VR에서 만들기도 없습니다.
+- **VR은 실제 헤드셋으로 확인하지 못했습니다.** OpenXR 연결(11일차)과 VR 조작(10일차)은 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. 헤드셋 안의 메뉴와 VR에서 만들기도 없습니다. Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
 - 다른 사람의 캐릭터는 아직 없습니다.
 - 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
 - 블록 옮기기·돌리기가 없습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
@@ -144,14 +153,14 @@
 - 바로가기의 내 작업실·맵 둘러보기·캐릭터·안전·신고는 "준비 중"으로 표시되고 누를 수 없습니다.
 - 사람들 목록과 이름표에는 자기 자신("손님")만 나옵니다. 로그인, 저장, 여러 사람 접속이 없습니다.
 - 대화(채팅) 화면이 없습니다.
-- VR 리그가 없어 VR 기기에서 볼 수 없습니다.
 
 ---
 ## 최근 커밋 기록
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 10일차 : VR 조작과 추적 리그 |
+| (이 문서가 든 커밋) | 11일차 : OpenXR 연결 |
+| `d95ae1b` | 10일차 : VR 조작과 추적 리그 |
 | `12ac372` | 9일차 : 조작과 겉모습 나누기 |
 | `0e5408f` | 8일차 : Windows 빌드 확인 |
 | `838d9ed` | 7일차 : 날기와 걸어 보기 |
@@ -206,18 +215,19 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup ~ Day10Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer
-  Input/            AtelierInput.inputactions (Player 맵, Game 맵)
+  Editor/           Day1Setup ~ Day11Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
+  Input/            AtelierInput.inputactions (Player 맵, Game 맵, XR 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
-  Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel)
+  Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel), XrSession
   Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, XrRig, XrPlayerController, PlayerModeSwitch, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar
   Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests
   Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
+unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일). 11일차 셋업이 만든 것
 ```
 
 ### 일차별 셋업
@@ -276,6 +286,17 @@ unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 - 꾸미기용 그림과 글자는 `raycastTarget`을 꺼 두었습니다. 켜져 있으면 그 위를 눌렀을 때 마우스 잡기가 되지 않습니다.
 - 게임 끝내기는 `AppExit.Request()`로 모입니다. 테스트는 `AppExit.Handler`를 바꿔 실제로 끝나지 않게 합니다.
 
+### VR 화면(OpenXR)
+
+- VR 화면은 `XrSession`만 켜고 끕니다. XR 설정의 "시작할 때 XR 켜기"(`InitManagerOnStart`)는 꺼 둡니다. 켜면 VR 프로그램이 깔린 PC에서 실행할 때마다 헤드셋 프로그램이 뜹니다(`XrSessionTests`가 검사).
+- VR로 시작하는 길은 실행 인자 `-vr`(실행 파일 옆의 `AtelierVerse-VR.bat`이 붙여 줌)과 에디터 메뉴 `Atelier Verse/재생할 때 VR 켜기`입니다. 메뉴 설정은 이 컴퓨터의 에디터 설정에만 저장되고, 명령줄(창 없는) 실행에서는 무시합니다.
+- `XrSession`은 첫 씬이 열리기 전에 켭니다. 그래야 `PlayerModeSwitch`가 처음부터 VR 조작을 고릅니다. 켜지 못하면 안내 문구를 남기고, `PlayerModeSwitch.Start`가 알림 띠에 올립니다.
+- 빌드가 끝나면 `XrBootConfig`가 `<이름>_Data/boot.config`에서 `xrsdk-pre-init-library` 줄을 뺍니다. 이 줄이 있으면 `-vr` 없이 켜도 화면이 뜨기 전에 OpenXR 런타임을 찾아갑니다(11일차에 로그로 확인). `build-windows.mjs`가 이 줄이 남았는지와 평소 실행의 로그를 검사합니다.
+- **그 항목을 실행 인자로 주는 명령을 실행하지 않습니다.** Microsoft Defender가 `Exploit:Win32/CVE-2025-59489`(Unity의 보안 문제)로 보고 실행을 막으며 사용자 PC에 경보 기록이 남습니다. 셸 명령의 글자에 그 인자 모양이 들어 있기만 해도 셸 실행이 거부됩니다(11일차에 겪음). 문서와 코드에 항목 이름을 적는 것은 괜찮습니다.
+- OpenXR 런타임이 없는 PC에서 `-vr`로 켜면 "VR 기기를 찾지 못해 키보드·마우스로 시작합니다"로 돌아옵니다. 이 컴퓨터가 그런 PC입니다.
+- 컨트롤러 프로파일을 더하려면 `Day11Setup`의 `ControllerProfiles`에 넣고 셋업을 다시 적용합니다. XR 설정 자산(`Assets/XR`)을 손으로 고치지 않습니다.
+- XR 설정은 PC(Standalone)용뿐입니다. Quest 단독 빌드를 할 때 Android용 설정을 셋업에 더합니다.
+
 ### 글꼴
 
 - 글꼴 자산은 필요한 글자를 쓸 때마다 채우는 방식(Dynamic)입니다. 이용자가 입력한 이름도 표시하기 위해서입니다.
@@ -310,6 +331,9 @@ Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVer
 
 # Windows 빌드와 자동 실행 확인(저장소 폴더에서). 빌드만 하려면 --run을 뺀다
 node scripts/build-windows.mjs --run
+
+# 이미 만든 실행 파일을 -vr로 켜서 확인(VR 프로그램이 없는 PC에서는 키보드·마우스로 돌아오는지를 본다)
+node scripts/build-windows.mjs --skip-build --run --vr
 ```
 
 - 결과는 `<결과.xml>`의 `test-run` 줄(통과·실패 수)과 로그의 `error CS`로 확인합니다.
@@ -339,7 +363,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 ### 명령줄로 확인할 수 없는 것
 
-실제 마우스 포인터로 단추가 눌리는지, 마우스 시점의 느낌, 점프, 실행 파일에서의 직접 조작, Quest에서의 실행입니다. Windows 빌드는 `build-windows.mjs --run`이 "열리고, 저장하고, 끝난다"까지만 확인합니다. 확인하지 않은 것은 확인하지 않았다고 일지와 보고에 적습니다.
+실제 마우스 포인터로 단추가 눌리는지, 마우스 시점의 느낌, 점프, 실행 파일에서의 직접 조작, 헤드셋 안의 화면과 컨트롤러, Quest에서의 실행입니다. Windows 빌드는 `build-windows.mjs --run`이 "열리고, 저장하고, 끝난다"까지만 확인합니다. 확인하지 않은 것은 확인하지 않았다고 일지와 보고에 적습니다.
 
 ---
 ## 사용자 결정이 필요한 항목
@@ -353,8 +377,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 사용자가 직접 해야 하는 것입니다.
 
-- XR 패키지를 내려받아도 되는지 답하기(아래 "다음 작업" 1번). 답이 있어야 실제 헤드셋에 이을 수 있음
-- PC에서 VR을 확인하려면 Meta Quest Link 또는 SteamVR 설치(이 컴퓨터에는 OpenXR 런타임이 없음)
+- 헤드셋으로 확인하기: Meta Quest Link 또는 SteamVR을 설치해 헤드셋을 PC에 잇고, `unity/Builds/Windows/AtelierVerse-VR.bat`을 열어 화면·두 손·스틱 이동·눈높이를 확인(방법은 `unity/Devlogs/Day11/README.md`의 "직접 확인하는 방법"). 이 컴퓨터에는 OpenXR 런타임이 없음
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(Quest 단독 빌드 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
 - 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기, 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
@@ -366,10 +389,11 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
-1. **11일차 후보 가: OpenXR 연결.** 사용자의 허락이 있어야 합니다. 받을 것은 Unity 공식 패키지 저장소(`download.packages.unity.com`)의 XR Plugin Management `com.unity.xr.management` 4.5.4(0.2MB)와 OpenXR Plugin `com.unity.xr.openxr` 1.16.1(39.4MB), 그리고 따라오는 XR Core Utilities(약 1.6MB)·XR Legacy Input Helpers입니다(2026-10-08에 크기를 확인하고 물어 둠). 할 일: `Packages/manifest.json`에 더하기, XR 설정에서 Standalone에 OpenXR 로더를 넣되 "시작할 때 XR 켜기"는 끄기, 컨트롤러 프로파일(Oculus Touch 등) 켜기, 실행할 때 `-vr`이 있으면 로더를 직접 켜고 실패하면 키보드·마우스로 돌아오기, 추적 기준을 바닥으로 맞추기, Windows 빌드가 `-vr` 없이 지금처럼 뜨는지 확인. 이 컴퓨터에는 OpenXR 런타임이 없어 실제 기기 확인은 사용자가 Quest Link나 SteamVR을 설치한 뒤에 합니다. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인).
-2. **11일차 후보 나: 모양이 다른 부품과 부품 고르는 창.** 패키지 허락 전이면 이것을 먼저 합니다. 반 블록·경사·기둥·계단, 방향(`facing`)과 돌리기, 부품이 아홉 칸을 넘을 때의 고르는 창. 부품이 차지하는 칸이 한 칸을 넘으면 맵 형식의 판을 올립니다(`docs/MAP-FORMAT.md` 5절).
-3. **VR의 나머지(실제 기기 연결 뒤).** VR 메뉴(화면 요소를 눈앞에 띄우고 손의 광선으로 누르기, 이때 `GameUi`·`BlockBuilder`가 `DesktopPlayerController`를 직접 아는 부분을 "이 기기의 조작"을 가리키는 공통 길로 바꿈), VR에서 만들기(컨트롤러로 가리켜 놓기·지우기·칠하기), 순간 이동과 부드럽게 돌기, 시야 좁히기.
-4. 그 뒤는 1-A(혼자 만들기)의 나머지: 여러 맵 다루기, 시작 위치와 맵 정보, 부품 수 상한 정하기(Quest에서 재기).
+1. **헤드셋으로 켜 본 결과가 있으면 그것부터.** 사용자가 `AtelierVerse-VR.bat`으로 켜 본 결과(화면이 나오는지, 두 손, 눈높이, 스틱)를 받아 고칩니다. VR 화면이 켜지지 않으면 실행 로그(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\Player.log`)의 `[XR]` 줄을 봅니다. 그래픽 장치가 둘인 PC에서만 켜지지 않으면 사전 초기화를 남긴 VR 전용 빌드를 검토합니다(`docs/BACKLOG.md` 3.4).
+2. **12일차 후보 가: VR 메뉴와 "이 기기의 조작"을 가리키는 공통 길.** 화면 요소를 눈앞에 띄우고 손의 광선으로 누릅니다. 이때 `GameUi`·`BlockBuilder`가 `DesktopPlayerController`를 직접 아는 부분을 "이 기기의 조작"을 가리키는 공통 길로 바꿉니다. 가상 기기로 만들고 검사할 수 있습니다.
+3. **12일차 후보 나: 모양이 다른 부품과 부품 고르는 창.** 반 블록·경사·기둥·계단, 방향(`facing`)과 돌리기, 부품이 아홉 칸을 넘을 때의 고르는 창. 부품이 차지하는 칸이 한 칸을 넘으면 맵 형식의 판을 올립니다(`docs/MAP-FORMAT.md` 5절).
+4. **VR의 나머지.** VR에서 만들기(컨트롤러로 가리켜 놓기·지우기·칠하기), 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
+5. 그 뒤는 1-A(혼자 만들기)의 나머지: 여러 맵 다루기, 시작 위치와 맵 정보, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -401,7 +425,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day10/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day11/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

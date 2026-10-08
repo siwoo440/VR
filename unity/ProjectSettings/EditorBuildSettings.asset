@@ -11,5 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Sandbox.unity
     guid: 8d8c58d7445d7f741948e846c38c4d94
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: dc623ae78c1a74445b541dd2671d7a7a, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 587be9ad00a11f042a8c3346c46da897, type: 2}
   m_UseUCBPForAssetBundles: 0

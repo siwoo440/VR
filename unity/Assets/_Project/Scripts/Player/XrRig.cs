@@ -1,3 +1,4 @@
+using AtelierVerse.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,7 +14,7 @@ namespace AtelierVerse.Player
     public class XrRig : MonoBehaviour
     {
         /// <summary>기기가 아직 머리 위치를 주지 않을 때 쓰는 선 키의 눈높이.</summary>
-        public const float DefaultHeadHeight = 1.55f;
+        public const float DefaultHeadHeight = XrSession.StandingEyeHeight;
 
         private const string MapName = "XR";
 
@@ -86,6 +87,8 @@ namespace AtelierVerse.Player
             rightRotation = map.FindAction("RightHandRotation", true);
             map.Enable();
 
+            // 추적 기준이 바닥이 아닌 기기에서는 추적 공간을 눈높이만큼 올려 둔다.
+            origin.localPosition = new Vector3(0f, XrSession.OriginHeight, 0f);
             TakeCamera();
             if (avatar != null) avatar.SetFirstPerson(true);
             ApplyPoses();
@@ -120,7 +123,7 @@ namespace AtelierVerse.Player
             if (!hasCamera) return;
 
             Vector3 head = headPosition.ReadValue<Vector3>();
-            if (head == Vector3.zero) head = new Vector3(0f, DefaultHeadHeight, 0f);
+            if (head == Vector3.zero && XrSession.OriginHeight <= 0f) head = new Vector3(0f, DefaultHeadHeight, 0f);
             viewCamera.transform.SetLocalPositionAndRotation(head, Valid(headRotation.ReadValue<Quaternion>()));
 
             ApplyHand(leftHand, leftPosition, leftRotation);

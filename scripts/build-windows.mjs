@@ -1,5 +1,7 @@
 // Windows 실행 파일을 명령줄로 만들고, 원하면 바로 실행해 저장 파일과 로그로 확인하는 도구
-// 사용법: node scripts/build-windows.mjs [--out 폴더] [--development] [--run] [--quit-after 초] [--skip-build] [--unity Unity.exe 경로]
+// 사용법: node scripts/build-windows.mjs [--out 폴더] [--development] [--run] [--vr] [--quit-after 초] [--skip-build] [--unity Unity.exe 경로]
+// --vr은 실행 확인을 -vr로 한다. VR 프로그램이 없는 PC에서는 키보드·마우스로 돌아오는지를 보게 된다.
+// 평소 실행(--vr 없음)은 VR 프로그램(OpenXR 런타임)을 한 번도 찾지 않아야 하며, 찾은 흔적이 로그에 있으면 실패로 본다.
 import { spawnSync } from "node:child_process"; // 외부 프로그램 실행
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "node:fs"; // 파일 확인
 import { homedir } from "node:os"; // 사용자 폴더
@@ -9,6 +11,10 @@ import { fileURLToPath } from "node:url"; // 파일 주소 변환
 const REPO = normalize(join(fileURLToPath(new URL(".", import.meta.url)), "..")); // 저장소 폴더
 const PROJECT = join(REPO, "unity"); // Unity 프로젝트 폴더
 const EXECUTABLE = "AtelierVerse.exe"; // 실행 파일 이름
+const VR_LAUNCHER = "AtelierVerse-VR.bat"; // VR로 시작하는 배치 파일 이름
+const BOOT_CONFIG = join("AtelierVerse_Data", "boot.config"); // 실행 파일의 시작 설정
+const PRE_INIT_KEY = "xrsdk-pre-init-library"; // 시작 설정에 남아 있으면 안 되는 XR 사전 초기화 항목
+const RUNTIME_CONTACT = /OpenXR-Loader|Loading OpenXR loader|XR_ERROR_|xrCreateInstance/; // 로그에서 VR 프로그램을 찾은 흔적
 const SAVE_FILE = join(homedir(), "AppData", "LocalLow", "Palettra Games", "Atelier Verse", "maps", "local.map.json"); // 실행 파일이 쓰는 맵 파일
 const args = process.argv.slice(2); // 명령줄 인자
 
@@ -82,12 +88,23 @@ if (!existsSync(executable)) // 실행 파일 확인
 }
 console.log(`실행 파일: ${executable} (폴더 전체 ${(folderSize(out) / 1024 / 1024).toFixed(0)}MB)`); // 크기 안내
 
+const preInit = grep(join(out, BOOT_CONFIG), new RegExp(`^\\s*${PRE_INIT_KEY}=`)); // 시작 설정의 XR 사전 초기화 줄
+const launcher = join(out, VR_LAUNCHER); // VR로 시작하는 파일
+console.log(`시작 설정의 XR 사전 초기화: ${preInit.length ? "남아 있음" : "없음"}`); // 사전 초기화 확인
+console.log(`VR로 시작하는 파일: ${existsSync(launcher) ? "있음" : "없음"} ${launcher}`); // 배치 파일 확인
+if (preInit.length > 0 || !existsSync(launcher)) // 빌드 뒤 다듬기가 빠진 경우
+{
+    console.error("빌드 뒤 다듬기(XrBootConfig)가 적용되지 않았습니다. 평소 실행에도 VR 프로그램이 깨어날 수 있습니다."); // 안내
+    process.exit(1); // 실패 종료
+}
+
 if (flag("--run")) // 실행 확인 단계
 {
     const seconds = option("--quit-after", "10"); // 끝내기까지의 초
-    const screenshot = join(out, "smoke.png"); // 화면 그림
+    const screenshot = join(out, flag("--vr") ? "smoke-vr.png" : "smoke.png"); // 화면 그림
     const log = join(out, "player.log"); // 실행 로그
     const exeArgs = ["-quitAfter", seconds, "-screenshotOut", screenshot, "-logFile", log, "-screen-fullscreen", "0", "-screen-width", "1280", "-screen-height", "720"]; // 실행 인자
+    if (flag("--vr")) exeArgs.push("-vr"); // VR 화면으로 시작 요청
     console.log(`실행 시작: ${seconds}초 뒤 스스로 끝남`); // 안내
     const run = spawnSync(executable, exeArgs, { stdio: "ignore", timeout: (Number(seconds) + 90) * 1000 }); // 실행(끝날 때까지 기다림)
     console.log(`실행 종료 코드 ${run.status}${run.error ? ` (${run.error.message})` : ""}`); // 결과
@@ -96,5 +113,8 @@ if (flag("--run")) // 실행 확인 단계
     console.log(problems.length ? `로그의 예외 ${problems.length}줄:\n${problems.slice(0, 10).join("\n")}` : "로그에 예외 없음"); // 예외 안내
     console.log(`저장 파일: ${existsSync(SAVE_FILE) ? "있음" : "없음"} ${SAVE_FILE}`); // 저장 확인
     console.log(`화면 그림: ${existsSync(screenshot) ? "있음" : "없음"} ${screenshot}`); // 그림 확인
-    if (run.status !== 0 || !existsSync(SAVE_FILE) || problems.length > 0) process.exit(1); // 하나라도 틀리면 실패
+    const contacts = grep(log, RUNTIME_CONTACT).length; // VR 프로그램을 찾은 줄 수
+    const quiet = flag("--vr") || contacts === 0; // 평소 실행은 한 번도 찾지 않아야 함
+    console.log(`VR 프로그램을 찾은 흔적: ${contacts}줄${flag("--vr") ? " (-vr로 켰으므로 찾는 것이 정상)" : quiet ? "" : " (평소 실행인데 찾았음)"}`); // 흔적 안내
+    if (run.status !== 0 || !existsSync(SAVE_FILE) || problems.length > 0 || !quiet) process.exit(1); // 하나라도 틀리면 실패
 }
