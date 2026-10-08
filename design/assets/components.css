@@ -817,6 +817,19 @@ button.av-row /* 버튼으로 쓴 줄 */
     font-weight: 600; /* 글자 굵기 */
 } /* 알림 띠 끝 */
 
+.av-room-code /* 방 코드 */
+{ /* 방 코드 시작 */
+    width: fit-content; /* 글자 폭 맞춤 */
+    padding: 0.35rem 0.9rem; /* 안쪽 여백 */
+    border: 0.09rem dashed var(--av-ink); /* 점선 외곽선 */
+    border-radius: var(--av-radius-small); /* 코드 모서리 */
+    background: color-mix(in srgb, var(--av-gold) 22%, var(--av-paper)); /* 골드 바탕 */
+    font-family: var(--av-mono); /* 고정폭 글꼴 */
+    font-size: 1.35rem; /* 큰 글자 */
+    font-weight: 700; /* 코드 굵기 */
+    letter-spacing: 0.12em; /* 글자 간격 */
+} /* 방 코드 끝 */
+
 .av-price /* 가격 */
 { /* 가격 시작 */
     font-family: var(--av-mono); /* 고정폭 글꼴 */

@@ -62,17 +62,18 @@
             <button class="av-button av-button-icon" type="button" disabled aria-label="마이크 (4단계에서 제공)" title="음성 대화는 4단계에서 제공"><span class="av-icon" data-i="mic"></span></button> <!-- 음성 대화(이후 단계) -->
             <button class="av-button av-button-icon" type="button" aria-label="감정 표현"><span class="av-icon" data-i="smile"></span></button> <!-- 감정 표현 -->
             <button class="av-button av-button-icon" type="button" aria-label="사진 찍기"><span class="av-icon" data-i="camera"></span></button> <!-- 사진 찍기 -->
-            <button class="av-button av-button-blue" type="button" data-av-open="vr"><span class="av-icon" data-i="vr"></span>VR로 입장</button> <!-- VR 입장 안내 열기 -->
+            <button class="av-button av-button-blue" type="button" data-av-open="vr"><span class="av-icon" data-i="vr"></span>VR 기기로 들어오기</button> <!-- VR 입장 안내 열기 -->
             <span class="av-keys av-room-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 <kbd>Space</kbd> 점프 <kbd>Enter</kbd> 채팅</span> <!-- 조작 키 안내 -->
         </footer> <!-- 방 아래 행동 띠 끝 -->
     </div> <!-- 방 전체 틀 끝 -->
 
     <dialog class="av-dialog" id="vr" aria-labelledby="vr-title"> <!-- VR 입장 대화상자 -->
         <div class="av-dialog-body"> <!-- 대화상자 내용 -->
-            <h2 class="av-card-title" id="vr-title">VR로 입장하기</h2> <!-- 대화상자 제목 -->
-            <p>이 기기에서 VR 헤드셋을 찾지 못했습니다. 헤드셋의 브라우저에서 아래 링크를 열면 같은 방에 VR로 들어옵니다.</p> <!-- 입장 방법 안내 -->
+            <h2 class="av-card-title" id="vr-title">VR 기기로 들어오기</h2> <!-- 대화상자 제목 -->
+            <p>VR 기기에서 앱을 열고 아래 방 코드를 입력하면 같은 방에 들어옵니다.</p> <!-- 입장 방법 안내 -->
+            <p class="av-room-code" translate="no">CAFE-2046</p> <!-- 방 코드 -->
             <div class="av-copy"><input class="av-input" value="atelier.example/r/board-cafe" readonly aria-label="방 링크"><button class="av-button av-button-primary" type="button" data-av-toast="방 링크를 복사했습니다.">복사</button></div> <!-- 방 링크 복사 -->
-            <p class="av-help">헤드셋으로 이 화면을 보고 있다면 "VR로 입장"을 누르는 즉시 VR 화면으로 바뀝니다.</p> <!-- 헤드셋 안내 -->
+            <p class="av-help">PC와 VR 기기는 같은 계정으로 로그인합니다. 링크는 PC에서 친구를 초대할 때 씁니다.</p> <!-- 계정과 링크 안내 -->
             <div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div> <!-- 닫기 버튼 -->
         </div> <!-- 대화상자 내용 끝 -->
     </dialog> <!-- VR 입장 대화상자 끝 -->
@@ -81,7 +82,8 @@
         <div class="av-dialog-body"> <!-- 대화상자 내용 -->
             <h2 class="av-card-title" id="room-invite-title">이 방에 초대하기</h2> <!-- 대화상자 제목 -->
             <div class="av-copy"><input class="av-input" value="atelier.example/r/board-cafe" readonly aria-label="방 링크"><button class="av-button av-button-primary" type="button" data-av-toast="방 링크를 복사했습니다.">복사</button></div> <!-- 방 링크 복사 -->
-            <p class="av-help">빈자리가 5개 남았습니다.</p> <!-- 남은 자리 안내 -->
+            <p class="av-room-code" translate="no">CAFE-2046</p> <!-- 방 코드 -->
+            <p class="av-help">빈자리가 5개 남았습니다. VR 기기에서는 방 코드로 들어옵니다.</p> <!-- 남은 자리 안내 -->
             <div class="av-cluster"><button class="av-button" type="button" data-av-close>닫기</button></div> <!-- 닫기 버튼 -->
         </div> <!-- 대화상자 내용 끝 -->
     </dialog> <!-- 방 초대 대화상자 끝 -->
