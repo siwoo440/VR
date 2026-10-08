@@ -17,10 +17,11 @@ namespace AtelierVerse.Player
 
     /// <summary>
     /// 고른 부품을 조준한 칸에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠한다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
-    /// 부품을 고르고 마우스를 잡은 상태에서만 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
+    /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 다른 물체와 겹치는 칸에는 놓지 않는다.
     /// 놓기·지우기·칠하기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
+    /// 조준 광선과 조작이 막혔는지는 이 기기의 캐릭터(LocalPlayer)에게 물으므로 조작 방식을 직접 알지 않는다.
     /// </summary>
-    [RequireComponent(typeof(DesktopPlayerController))]
+    [RequireComponent(typeof(LocalPlayer))]
     public class BlockBuilder : MonoBehaviour
     {
         public const int NoPart = -1;
@@ -38,8 +39,7 @@ namespace AtelierVerse.Player
         [SerializeField] private float ghostAlpha = 0.55f;
         [SerializeField] private Color blockedColor = new Color(0.72f, 0.27f, 0.06f);
 
-        private DesktopPlayerController player;
-        private ViewRig rig;
+        private LocalPlayer player;
         private BlockWorld world;
         private Renderer ghost;
         private MaterialPropertyBlock ghostColor;
@@ -72,13 +72,12 @@ namespace AtelierVerse.Player
         private bool IsActive => world != null
             && world.Catalog != null
             && world.Catalog.IsValid(SelectedPart)
-            && player.LookCaptured
+            && player.IsAiming
             && !player.InputBlocked;
 
         private void Awake()
         {
-            player = GetComponent<DesktopPlayerController>();
-            rig = player.Rig;
+            player = GetComponent<LocalPlayer>();
             world = FindAnyObjectByType<BlockWorld>();
             ghostColor = new MaterialPropertyBlock();
 
@@ -182,7 +181,7 @@ namespace AtelierVerse.Player
         }
 
         /// <summary>
-        /// 화면 가운데가 가리키는 곳을 찾는다. 닿은 면의 바깥쪽 칸이 놓일 칸이고, 닿은 것이 놓인 블록이면 그 블록이 지울 대상이다.
+        /// 조준 광선이 가리키는 곳을 찾는다. 닿은 면의 바깥쪽 칸이 놓일 칸이고, 닿은 것이 놓인 블록이면 그 블록이 지울 대상이다.
         /// </summary>
         private void UpdateTarget(bool active)
         {
@@ -190,11 +189,9 @@ namespace AtelierVerse.Player
             CanPlaceAtTarget = false;
             Blocked = BlockedReason.None;
             hasRemoveTarget = false;
-            if (!active || rig.ViewCamera == null) return;
+            if (!active || !player.TryGetAim(out Ray aim, out float extraReach)) return;
 
-            Transform view = rig.ViewCamera.transform;
-            float distance = reach + Vector3.Distance(view.position, rig.HeadPosition);
-            if (!Physics.Raycast(view.position, view.forward, out RaycastHit hit, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
+            if (!Physics.Raycast(aim, out RaycastHit hit, reach + extraReach, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return;
 
             float cellSize = GridMath.DefaultCellSize;
             TargetCell = GridMath.WorldToCell(hit.point + hit.normal * (cellSize * 0.5f));

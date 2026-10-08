@@ -8,10 +8,12 @@ namespace AtelierVerse.UI
     /// <summary>
     /// Esc로 여는 메뉴. 위쪽 탭과 아래쪽 큰 단추는 로블록스의 메뉴를, 바로가기의 큰 타일은 VRChat의 메뉴를 따랐다.
     /// 무엇을 할지는 직접 처리하지 않고 요청 이벤트로 알린다.
+    /// 조작 방식(키보드·마우스, VR)에 따라 그 조작에 맞는 안내만 보인다.
     /// </summary>
     public class QuickMenuView : MonoBehaviour
     {
         private const float QuitConfirmSeconds = 3f;
+        private const float UnavailableAlpha = 0.62f;
 
         [SerializeField] private GameObject root;
         [SerializeField] private Button[] tabButtons;
@@ -24,6 +26,9 @@ namespace AtelierVerse.UI
         [SerializeField] private Button respawnTile;
         [SerializeField] private Button viewTile;
         [SerializeField] private TMP_Text viewTileTitle;
+        [SerializeField] private CanvasGroup viewTileGroup;
+        [SerializeField] private GameObject[] desktopOnly;
+        [SerializeField] private GameObject[] vrOnly;
         [SerializeField] private string quitText = "게임 끝내기";
         [SerializeField] private string quitConfirmText = "한 번 더 누르면 끝납니다";
 
@@ -39,6 +44,9 @@ namespace AtelierVerse.UI
         public int CurrentTab { get; private set; }
 
         public int TabCount => tabPages.Length;
+
+        /// <summary>VR 조작에 맞춘 안내를 보이는 중인지.</summary>
+        public bool IsVrMode { get; private set; }
 
         /// <summary>끝내기 단추를 한 번 눌러 확인을 기다리는 중인지.</summary>
         public bool IsQuitArmed => Time.unscaledTime < quitArmedUntil;
@@ -95,6 +103,30 @@ namespace AtelierVerse.UI
         public void ShowViewMode(bool firstPerson)
         {
             if (viewTileTitle != null) viewTileTitle.text = firstPerson ? "3인칭으로 보기" : "1인칭으로 보기";
+        }
+
+        /// <summary>
+        /// 조작 방식에 맞는 안내만 보인다. VR에서는 키 딱지와 키보드·마우스 안내를 감추고 VR 조작 안내를 보이며,
+        /// 1인칭·3인칭을 바꾸는 타일은 누를 수 없게 한다(VR은 늘 1인칭이다).
+        /// </summary>
+        public void ShowControlMode(bool vr)
+        {
+            IsVrMode = vr;
+            SetActive(desktopOnly, !vr);
+            SetActive(vrOnly, vr);
+
+            if (viewTile != null) viewTile.interactable = !vr;
+            if (viewTileGroup != null) viewTileGroup.alpha = vr ? UnavailableAlpha : 1f;
+        }
+
+        private static void SetActive(GameObject[] items, bool active)
+        {
+            if (items == null) return;
+
+            foreach (GameObject item in items)
+            {
+                if (item != null && item.activeSelf != active) item.SetActive(active);
+            }
         }
 
         /// <summary>실수로 끝내지 않도록 두 번 눌러야 끝내기를 요청한다.</summary>

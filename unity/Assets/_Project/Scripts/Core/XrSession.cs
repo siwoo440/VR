@@ -20,7 +20,7 @@ namespace AtelierVerse.Core
         /// <summary>추적 기준이 바닥이 아닐 때 추적 공간을 올려 두는 선 키의 눈높이.</summary>
         public const float StandingEyeHeight = 1.55f;
 
-        public const string StartedMessage = "VR 기기로 시작했습니다";
+        public const string StartedMessage = "VR 기기로 시작했습니다 · 왼손의 메뉴 단추로 메뉴를 엽니다";
         public const string NoSettingsMessage = "VR 설정이 없어 키보드·마우스로 시작합니다";
         public const string NoDeviceMessage = "VR 기기를 찾지 못해 키보드·마우스로 시작합니다";
 

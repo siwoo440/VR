@@ -11,46 +11,11 @@ using UnityEngine.TestTools;
 namespace AtelierVerse.Tests
 {
     /// <summary>
-    /// VR 조작과 추적을 가상 기기로 실행해 확인한다. 실제 헤드셋 없이, 입력 시스템에 가상의 머리 기기와 두 컨트롤러를 붙여 값을 넣는다.
+    /// VR 조작과 추적을 가상 기기로 실행해 확인한다. 가상 기기와 도우미는 XrPlayTestBase에 있다.
     /// 실제 기기에서의 화면과 착용감은 이 테스트로 확인되지 않는다.
     /// </summary>
-    public class XrPlayTests : PlayTestBase
+    public class XrPlayTests : XrPlayTestBase
     {
-        private const string ControllerLayout = "AtelierTestXrController";
-        private const float Settle = 0.5f;
-
-        // 실제 컨트롤러의 공통 쓰임새(스틱, 스틱 누르기, 첫째·둘째 단추)만 가진 시험용 컨트롤러.
-        private const string ControllerJson = @"{
-            ""name"": ""AtelierTestXrController"",
-            ""extend"": ""XRController"",
-            ""controls"": [
-                { ""name"": ""thumbstick"", ""layout"": ""Stick"", ""usage"": ""Primary2DAxis"" },
-                { ""name"": ""thumbstickClicked"", ""layout"": ""Button"", ""usage"": ""Primary2DAxisClick"" },
-                { ""name"": ""primaryButton"", ""layout"": ""Button"", ""usage"": ""PrimaryButton"" },
-                { ""name"": ""secondaryButton"", ""layout"": ""Button"", ""usage"": ""SecondaryButton"" }
-            ]
-        }";
-
-        private XRHMD headset;
-        private XRController leftController;
-        private XRController rightController;
-        private PlayerModeSwitch modeSwitch;
-        private CharacterMotor motor;
-        private XrRig rig;
-        private XrPlayerController xrControl;
-
-        public override void Setup()
-        {
-            base.Setup();
-
-            InputSystem.RegisterLayout(ControllerJson);
-            headset = InputSystem.AddDevice<XRHMD>();
-            leftController = (XRController)InputSystem.AddDevice(ControllerLayout);
-            rightController = (XRController)InputSystem.AddDevice(ControllerLayout);
-            InputSystem.SetDeviceUsage(leftController, CommonUsages.LeftHand);
-            InputSystem.SetDeviceUsage(rightController, CommonUsages.RightHand);
-        }
-
         [UnityTest]
         public IEnumerator 기본은_키보드와_마우스_조작이다()
         {
@@ -310,35 +275,6 @@ namespace AtelierVerse.Tests
             yield return Frames(3);
 
             SaveCapture(Path.Combine(directory, "vr-hands.png"));
-        }
-
-        private IEnumerator LoadVr()
-        {
-            PlayerModeSwitch.Forced = ControlMode.Vr;
-            yield return LoadSandbox();
-            FindParts();
-            yield return new WaitForSeconds(Settle);
-        }
-
-        private void FindParts()
-        {
-            modeSwitch = Object.FindAnyObjectByType<PlayerModeSwitch>();
-            Assert.IsNotNull(modeSwitch, "캐릭터에 조작 방식 고르기가 없습니다.");
-            motor = player.Motor;
-            rig = modeSwitch.XrRig;
-            xrControl = modeSwitch.XrControl;
-            Assert.IsNotNull(rig, "캐릭터에 VR 리그가 없습니다.");
-            Assert.IsNotNull(xrControl, "캐릭터에 VR 조작이 없습니다.");
-        }
-
-        private static Vector2Control Stick(InputDevice controller)
-        {
-            return (Vector2Control)controller["thumbstick"];
-        }
-
-        private static ButtonControl Button(InputDevice controller, string name)
-        {
-            return (ButtonControl)controller[name];
         }
     }
 }

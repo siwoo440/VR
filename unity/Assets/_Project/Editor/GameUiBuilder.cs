@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AtelierVerse.Core;
 using AtelierVerse.UI;
 using TMPro;
@@ -15,6 +16,8 @@ namespace AtelierVerse.EditorTools
     /// 늘 보이는 화면은 로블록스처럼 위쪽 띠·사람들 목록·아래쪽 부품 칸으로 두고,
     /// Esc 메뉴는 로블록스의 탭과 아래 단추에 VRChat의 큰 타일을 섞었다.
     /// 기준 화면 크기는 1920×1080이고 위치와 크기는 그 기준의 값이다.
+    /// VR에서는 같은 화면을 눈앞의 판으로 띄운다(XrUiPanel). 그때 늘 보이는 화면(Hud)과 메뉴 뒤의 어두운 막은 감추고,
+    /// 알림 띠와 메뉴만 남긴다. 메뉴 안에서 한쪽 조작에만 맞는 안내는 DesktopOnly·VrOnly로 모아 QuickMenuView가 켜고 끈다.
     /// </summary>
     internal static class GameUiBuilder
     {
@@ -72,12 +75,19 @@ namespace AtelierVerse.EditorTools
         private static readonly Color Gold = AtelierPalette.Gold;
         private static readonly Color DarkGlass = AtelierPalette.WithAlpha(AtelierPalette.Ink, 0.86f);
 
+        // 메뉴를 조립하는 동안 모아 두는 것: 키보드·마우스에서만 보일 것과 VR에서만 보일 것.
+        private static readonly List<Object> DesktopOnly = new List<Object>();
+        private static readonly List<Object> VrOnly = new List<Object>();
+
         public static GameObject Build(InputActionAsset actions, Icons icons, Item[] items)
         {
+            DesktopOnly.Clear();
+            VrOnly.Clear();
+
             var root = new GameObject("GameUI");
             var ui = root.AddComponent<GameUi>();
 
-            RectTransform canvas = CreateCanvas(root.transform);
+            RectTransform canvas = CreateCanvas(root.transform, out TrackedDeviceRaycaster trackedRaycaster);
             RectTransform hud = UiFactory.Rect("Hud", canvas);
             UiFactory.Fill(hud);
 
@@ -90,15 +100,19 @@ namespace AtelierVerse.EditorTools
             TMP_Text viewLabel = BuildViewChip(hud);
             TMP_Text saveLabel = BuildSaveChip(hud);
             TMP_Text modeLabel = BuildModeChip(hud, out Image modeDot);
-            BuildNoticeBar(hud);
             GameObject crosshair = BuildCrosshair(hud);
             GameObject focusHint = BuildFocusHint(hud);
 
-            QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople);
-            CreateEventSystem(root.transform);
+            // 알림 띠는 VR에서도 보여야 하므로 늘 보이는 화면(Hud) 밖에 둔다. 메뉴보다 먼저 만들어 메뉴 아래에 그려지게 한다.
+            BuildNoticeBar(canvas);
+
+            QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople, out GameObject scrim);
+            InputSystemUIInputModule inputModule = CreateEventSystem(root.transform, actions);
+            XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim);
 
             var serialized = new SerializedObject(ui);
             serialized.FindProperty("actions").objectReferenceValue = actions;
+            serialized.FindProperty("xrPanel").objectReferenceValue = xrPanel;
             serialized.FindProperty("hotbar").objectReferenceValue = hotbar;
             serialized.FindProperty("menu").objectReferenceValue = menu;
             serialized.FindProperty("peoplePanel").objectReferenceValue = peoplePanel.gameObject;
@@ -125,7 +139,7 @@ namespace AtelierVerse.EditorTools
             return root;
         }
 
-        private static RectTransform CreateCanvas(Transform parent)
+        private static RectTransform CreateCanvas(Transform parent, out TrackedDeviceRaycaster trackedRaycaster)
         {
             var gameObject = new GameObject("Canvas", typeof(RectTransform));
             gameObject.layer = UiFactory.UiLayer;
@@ -143,18 +157,73 @@ namespace AtelierVerse.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
 
             gameObject.AddComponent<GraphicRaycaster>();
+
+            // VR 컨트롤러의 광선으로 누르기 위한 부품. PC에서는 꺼 두고 XrUiPanel이 VR일 때만 켠다.
+            trackedRaycaster = gameObject.AddComponent<TrackedDeviceRaycaster>();
+            trackedRaycaster.enabled = false;
             return (RectTransform)gameObject.transform;
         }
 
-        /// <summary>마우스로만 누른다. 키보드로 옮겨 다니는 선택을 끄지 않으면 Space나 WASD가 단추를 누르게 된다.</summary>
-        private static void CreateEventSystem(Transform parent)
+        /// <summary>
+        /// 마우스와 VR 컨트롤러의 광선으로만 누른다. 키보드로 옮겨 다니는 선택을 끄지 않으면 Space나 WASD가 단추를 누르게 된다.
+        /// 누르는 입력은 이 프로젝트의 입력 자산(UI 묶음)에 잇는다. 마우스 쪽은 입력 시스템의 기본 정의와 같고, 추적 기기는 오른손만 쓴다.
+        /// </summary>
+        private static InputSystemUIInputModule CreateEventSystem(Transform parent, InputActionAsset actions)
         {
             var gameObject = new GameObject("EventSystem");
             gameObject.transform.SetParent(parent, false);
 
             var eventSystem = gameObject.AddComponent<EventSystem>();
             eventSystem.sendNavigationEvents = false;
-            gameObject.AddComponent<InputSystemUIInputModule>();
+
+            var module = gameObject.AddComponent<InputSystemUIInputModule>();
+            var serialized = new SerializedObject(module);
+            serialized.FindProperty("m_ActionsAsset").objectReferenceValue = actions;
+            SetAction(serialized, "m_PointAction", actions, "UI/Point");
+            SetAction(serialized, "m_LeftClickAction", actions, "UI/Click");
+            SetAction(serialized, "m_RightClickAction", actions, "UI/RightClick");
+            SetAction(serialized, "m_MiddleClickAction", actions, "UI/MiddleClick");
+            SetAction(serialized, "m_ScrollWheelAction", actions, "UI/ScrollWheel");
+            SetAction(serialized, "m_TrackedDevicePositionAction", actions, "UI/TrackedDevicePosition");
+            SetAction(serialized, "m_TrackedDeviceOrientationAction", actions, "UI/TrackedDeviceOrientation");
+            serialized.FindProperty("m_MoveAction").objectReferenceValue = null;
+            serialized.FindProperty("m_SubmitAction").objectReferenceValue = null;
+            serialized.FindProperty("m_CancelAction").objectReferenceValue = null;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return module;
+        }
+
+        /// <summary>입력 자산이 가져올 때 만들어 둔 동작 참조를 찾아 넣는다. 프리팹에 저장되려면 자산 안의 참조여야 한다.</summary>
+        private static void SetAction(SerializedObject serialized, string property, InputActionAsset actions, string actionPath)
+        {
+            InputAction action = actions.FindAction(actionPath);
+            if (action == null) throw new System.InvalidOperationException($"입력 자산에 {actionPath} 동작이 없습니다. AtelierInput.inputactions를 확인하세요.");
+
+            InputActionReference reference = null;
+            foreach (Object item in AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(actions)))
+            {
+                if (item is InputActionReference candidate && candidate.action != null && candidate.action.id == action.id)
+                {
+                    reference = candidate;
+                    break;
+                }
+            }
+
+            if (reference == null) throw new System.InvalidOperationException($"입력 자산에서 {actionPath} 동작의 참조를 찾지 못했습니다. 입력 자산을 다시 가져오세요.");
+            serialized.FindProperty(property).objectReferenceValue = reference;
+        }
+
+        /// <summary>VR에서 화면을 눈앞의 판으로 띄우는 스크립트. 판으로 띄울 때 감출 것(늘 보이는 화면, 메뉴 뒤의 막)을 알려 둔다.</summary>
+        private static XrUiPanel AddXrPanel(RectTransform canvas, TrackedDeviceRaycaster trackedRaycaster, InputSystemUIInputModule inputModule, params GameObject[] screenOnly)
+        {
+            var panel = canvas.gameObject.AddComponent<XrUiPanel>();
+            var serialized = new SerializedObject(panel);
+            serialized.FindProperty("canvas").objectReferenceValue = canvas.GetComponent<Canvas>();
+            serialized.FindProperty("trackedRaycaster").objectReferenceValue = trackedRaycaster;
+            serialized.FindProperty("inputModule").objectReferenceValue = inputModule;
+            SetObjects(serialized.FindProperty("screenOnly"), screenOnly);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return panel;
         }
 
         // ── 늘 보이는 화면 ─────────────────────────────────────────────
@@ -381,10 +450,13 @@ namespace AtelierVerse.EditorTools
             return label;
         }
 
-        /// <summary>화면 위 가운데의 알림 띠(6일차). 평소에는 숨겨져 있고 Notice.Post가 오면 잠시 보인다. 너비는 실행 중에 글자에 맞춘다.</summary>
-        private static NoticeBar BuildNoticeBar(RectTransform hud)
+        /// <summary>
+        /// 화면 위 가운데의 알림 띠(6일차). 평소에는 숨겨져 있고 Notice.Post가 오면 잠시 보인다. 너비는 실행 중에 글자에 맞춘다.
+        /// VR에서도 보이도록 캔버스 바로 아래에 둔다(12일차).
+        /// </summary>
+        private static NoticeBar BuildNoticeBar(RectTransform canvas)
         {
-            RectTransform holder = UiFactory.Rect("Notice", hud);
+            RectTransform holder = UiFactory.Rect("Notice", canvas);
             UiFactory.Place(holder, UiFactory.TopLeft, Vector2.zero, Vector2.zero);
             holder.anchorMin = new Vector2(0f, 1f);
             holder.anchorMax = new Vector2(1f, 1f);
@@ -438,7 +510,7 @@ namespace AtelierVerse.EditorTools
 
         // ── Esc 메뉴 ────────────────────────────────────────────────
 
-        private static QuickMenuView BuildQuickMenu(RectTransform canvas, Icons icons, out TMP_Text roomLabel, out TMP_Text nameLabel, out TMP_Text brandLabel, out PeopleListView people)
+        private static QuickMenuView BuildQuickMenu(RectTransform canvas, Icons icons, out TMP_Text roomLabel, out TMP_Text nameLabel, out TMP_Text brandLabel, out PeopleListView people, out GameObject scrimObject)
         {
             RectTransform holder = UiFactory.Rect("QuickMenu", canvas);
             UiFactory.Fill(holder);
@@ -452,6 +524,7 @@ namespace AtelierVerse.EditorTools
             var scrim = scrimRect.gameObject.AddComponent<Image>();
             scrim.color = AtelierPalette.Scrim;
             scrim.raycastTarget = true;
+            scrimObject = scrimRect.gameObject;
 
             Image panel = UiFactory.Card("Panel", root, Paper, Ink, 28f, 8f);
             UiFactory.Place(panel.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(PanelWidth, PanelHeight));
@@ -502,7 +575,7 @@ namespace AtelierVerse.EditorTools
             RectTransform pages = UiFactory.Rect("Pages", panel.transform);
             UiFactory.Fill(pages, PanelPadding, 124f, PanelPadding, 180f);
 
-            GameObject shortcutPage = BuildShortcutPage(pages, icons, out Button respawnTile, out Button viewTile, out TMP_Text viewTileTitle);
+            GameObject shortcutPage = BuildShortcutPage(pages, icons, out Button respawnTile, out Button viewTile, out TMP_Text viewTileTitle, out CanvasGroup viewTileGroup);
             GameObject peoplePage = BuildPeoplePage(pages, out people);
             GameObject settingsPage = BuildSettingsPage(pages);
             GameObject helpPage = BuildHelpPage(pages);
@@ -531,18 +604,27 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("respawnTile").objectReferenceValue = respawnTile;
             serialized.FindProperty("viewTile").objectReferenceValue = viewTile;
             serialized.FindProperty("viewTileTitle").objectReferenceValue = viewTileTitle;
+            serialized.FindProperty("viewTileGroup").objectReferenceValue = viewTileGroup;
+            SetObjects(serialized.FindProperty("desktopOnly"), DesktopOnly.ToArray());
+            SetObjects(serialized.FindProperty("vrOnly"), VrOnly.ToArray());
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }
 
         /// <summary>VRChat의 메뉴처럼 큰 타일로 자주 가는 곳을 둔다. 아직 만들지 않은 곳은 누를 수 없게 하고 "준비 중"으로 표시한다.</summary>
-        private static GameObject BuildShortcutPage(RectTransform pages, Icons icons, out Button respawnTile, out Button viewTile, out TMP_Text viewTileTitle)
+        private static GameObject BuildShortcutPage(RectTransform pages, Icons icons, out Button respawnTile, out Button viewTile, out TMP_Text viewTileTitle, out CanvasGroup viewTileGroup)
         {
             RectTransform page = UiFactory.Rect("ShortcutPage", pages);
             UiFactory.Fill(page);
 
             respawnTile = BuildTile(page, 0, "RespawnTile", "시작 위치로", "처음 선 자리로 돌아갑니다", icons.Respawn, Gold, Ink, "R", true, out _);
             viewTile = BuildTile(page, 1, "ViewTile", "3인칭으로 보기", "휠을 굴려도 바뀝니다", icons.View, AtelierPalette.Blue, Paper, null, true, out viewTileTitle);
+
+            // VR은 늘 1인칭이라 이 타일을 누를 수 없다. QuickMenuView가 VR에서 흐리게 하고 "PC 전용" 딱지를 보인다.
+            viewTileGroup = viewTile.gameObject.AddComponent<CanvasGroup>();
+            RectTransform pcOnly = UiFactory.Badge("PcOnly", viewTile.transform, "PC 전용", Paper, Muted, 30f);
+            UiFactory.Place(pcOnly, UiFactory.TopRight, new Vector2(-18f, -20f), pcOnly.sizeDelta);
+            VrOnly.Add(pcOnly.gameObject);
             BuildTile(page, 2, "HomeTile", "내 작업실", "내가 만든 맵으로 갑니다", icons.Home, AtelierPalette.Clay, Paper, null, false, out _);
             BuildTile(page, 3, "MapTile", "맵 둘러보기", "다른 사람의 맵을 찾습니다", icons.Map, AtelierPalette.Leaf, Paper, null, false, out _);
             BuildTile(page, 4, "AvatarTile", "캐릭터", "모습을 고릅니다", icons.Avatar, AtelierPalette.Blue, Paper, null, false, out _);
@@ -584,6 +666,7 @@ namespace AtelierVerse.EditorTools
             {
                 RectTransform badge = UiFactory.Badge("Key", tile.transform, key, Paper, Ink, 30f);
                 UiFactory.Place(badge, UiFactory.TopRight, new Vector2(-18f, -20f), badge.sizeDelta);
+                DesktopOnly.Add(badge.gameObject);
             }
 
             return UiFactory.Clickable(tile);
@@ -633,6 +716,12 @@ namespace AtelierVerse.EditorTools
 
             TMP_Text toggleHint = UiFactory.Text("Hint", toggleRow, "Tab 키로도 켜고 끕니다", 18f, Muted, false, TextAlignmentOptions.Right);
             UiFactory.Place(toggleHint.rectTransform, UiFactory.MiddleRight, new Vector2(-60f, 0f), new Vector2(360f, 30f));
+            DesktopOnly.Add(toggleHint.gameObject);
+
+            // 위의 두 설정은 키보드·마우스에만 쓰인다. VR에서는 그렇다고 알려 둔다.
+            TMP_Text vrNote = UiFactory.Text("VrNote", page, "마우스 감도와 시야각은 키보드·마우스로 할 때 적용됩니다.", 20f, Muted);
+            UiFactory.Place(vrNote.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - 3 * 76f), new Vector2(960f, 30f));
+            VrOnly.Add(vrNote.gameObject);
 
             Button reset = BigButton("Reset", page, "기본값으로", null, Paper, Ink, out _);
             UiFactory.Place((RectTransform)reset.transform, UiFactory.BottomLeft, new Vector2(0f, 6f), new Vector2(220f, 52f));
@@ -707,20 +796,56 @@ namespace AtelierVerse.EditorTools
                 ("Tab · Esc", "사람들 목록 · 메뉴"),
             };
 
+            // VR 컨트롤러의 조작. 컨트롤러마다 단추 이름이 달라 "첫째·둘째 단추"로 적는다(Quest의 오른손은 A·B).
+            (string key, string text)[] vrRows =
+            {
+                ("왼쪽 스틱", "걷기"),
+                ("왼쪽 스틱 누르기", "달리기"),
+                ("오른쪽 스틱 좌우", "45도씩 돌기"),
+                ("오른쪽 스틱 위아래", "날 때 위 · 아래"),
+                ("오른손 첫째 단추", "점프"),
+                ("오른손 둘째 단추", "날기 켜고 끄기"),
+                ("왼손 메뉴 단추", "메뉴 열고 닫기"),
+                ("오른손 방아쇠", "가리킨 것 누르기"),
+            };
+
             // 한 줄에 54px씩 여섯 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.
             const int rowsPerColumn = 6;
             const float rowHeight = 54f;
+
+            RectTransform desktopKeys = UiFactory.Rect("KeysDesktop", page);
+            UiFactory.Fill(desktopKeys);
+            DesktopOnly.Add(desktopKeys.gameObject);
             for (int i = 0; i < rows.Length; i++)
             {
                 float x = i / rowsPerColumn * 492f;
                 float y = -4f - i % rowsPerColumn * rowHeight;
 
-                RectTransform badge = UiFactory.Badge($"Key{i}", page, rows[i].key, Surface, Ink, 40f, 20f);
+                RectTransform badge = UiFactory.Badge($"Key{i}", desktopKeys, rows[i].key, Surface, Ink, 40f, 20f);
                 UiFactory.Place(badge, UiFactory.TopLeft, new Vector2(x, y), badge.sizeDelta);
 
-                TMP_Text text = UiFactory.Text($"Text{i}", page, rows[i].text, 24f, Ink);
+                TMP_Text text = UiFactory.Text($"Text{i}", desktopKeys, rows[i].text, 24f, Ink);
                 UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 172f, y), new Vector2(310f, 40f));
             }
+
+            RectTransform vrKeys = UiFactory.Rect("KeysVr", page);
+            UiFactory.Fill(vrKeys);
+            VrOnly.Add(vrKeys.gameObject);
+            for (int i = 0; i < vrRows.Length; i++)
+            {
+                float x = i / rowsPerColumn * 492f;
+                float y = -4f - i % rowsPerColumn * rowHeight;
+
+                RectTransform badge = UiFactory.Badge($"VrKey{i}", vrKeys, vrRows[i].key, Surface, Ink, 40f, 20f);
+                UiFactory.Place(badge, UiFactory.TopLeft, new Vector2(x, y), badge.sizeDelta);
+
+                TMP_Text text = UiFactory.Text($"VrText{i}", vrKeys, vrRows[i].text, 24f, Ink);
+                UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 232f, y), new Vector2(250f, 40f));
+            }
+
+            // 아직 없는 기능을 있는 것처럼 보이지 않게, VR에서 할 수 없는 것을 적어 둔다.
+            TMP_Text vrSoon = UiFactory.Text("VrSoon", vrKeys, "VR에서 블록을 놓는 기능은 준비 중입니다.", 20f, Muted);
+            UiFactory.Place(vrSoon.rectTransform, UiFactory.TopLeft, new Vector2(492f, -4f - 3 * rowHeight), new Vector2(468f, 30f));
 
             TMP_Text note = UiFactory.Text("Note", page, "대화는 여러 사람이 함께 들어오는 기능과 같이 연결됩니다.", 20f, Muted);
             UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - rowsPerColumn * rowHeight), new Vector2(960f, 30f));
@@ -739,6 +864,7 @@ namespace AtelierVerse.EditorTools
             {
                 RectTransform badge = UiFactory.Badge("Key", box.transform, key, AtelierPalette.WithAlpha(Ink, 0.12f), Ink);
                 UiFactory.Place(badge, UiFactory.MiddleLeft, new Vector2(16f, 0f), badge.sizeDelta);
+                DesktopOnly.Add(badge.gameObject);
             }
 
             return UiFactory.Clickable(box);

@@ -196,6 +196,7 @@ namespace AtelierVerse.Tests
 
         /// <summary>
         /// 화면에 겹쳐 그리는 캔버스는 카메라 그림에 찍히지 않으므로, 찍는 동안만 캡처 카메라 앞에 붙인다.
+        /// VR에서처럼 화면이 눈앞의 판으로 떠 있으면 그대로 찍힌다.
         /// </summary>
         protected void BeginCapture()
         {
@@ -204,6 +205,8 @@ namespace AtelierVerse.Tests
             captureCamera.targetTexture = captureTarget;
 
             Canvas canvas = Find<Canvas>(ui, "Canvas");
+            if (canvas.renderMode == RenderMode.WorldSpace) return;
+
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = captureCamera;
             canvas.planeDistance = 0.5f;

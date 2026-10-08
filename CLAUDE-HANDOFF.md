@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 11일차(OpenXR 연결. `XrSession`이 `-vr`로 시작했을 때만 VR 화면을 켜고, 빌드 뒤 `XrBootConfig`가 시작 설정의 XR 사전 초기화를 빼고 `AtelierVerse-VR.bat`을 둠. 기본은 키보드·마우스. 실제 헤드셋으로는 확인하지 못함)
-- 마지막 검증: 편집 모드 테스트 84개 통과, 플레이 모드 테스트 85개 통과(그림 찍기 7개 포함, `-captureDir` 없이 돌리면 78개 통과·7개 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`과 `AtelierVerse-VR.bat`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
+- 마지막 작업: Unity 12일차(VR 메뉴. VR에서 화면을 눈앞의 판 `XrUiPanel`으로 띄우고 오른손 광선으로 누름. 화면과 도구는 이 기기의 캐릭터 `LocalPlayer`를 거침. 화면 입력을 입력 자산의 `UI` 묶음으로 옮김. 기본은 키보드·마우스. 실제 헤드셋으로는 확인하지 못함)
+- 마지막 검증: 편집 모드 테스트 92개 통과, 플레이 모드 테스트 97개 통과(그림 찍기 8개 포함, `-captureDir` 없이 돌리면 그 8개는 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). 에디터와 실행 파일에서 직접 조작해 보는 확인, Quest 실행도 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 12일차. 사용자가 헤드셋으로 켜 본 결과가 있으면 그것부터, 없으면 VR 메뉴(또는 모양이 다른 부품). 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 13일차. 사용자가 헤드셋으로 켜 본 결과가 있으면 그것부터, 없으면 VR에서 만들기. 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -24,13 +24,14 @@
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`). VR로 켜려면 그 옆의 `AtelierVerse-VR.bat`
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day11`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day12`가 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
 - Unity 실행 파일의 기본 위치는 `C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Unity.exe`입니다.
 - 줄바꿈은 `unity/.gitattributes`가 정합니다(Unity YAML은 LF, 그림과 글꼴은 바이너리). 저장소의 다른 파일은 커밋할 때 "LF will be replaced by CRLF" 경고가 나오는데 문제가 아닙니다.
 - 이전 작업 컴퓨터는 C 드라이브 여유가 10~15GB였습니다. `Library` 사본을 여러 개 두지 않습니다.
+- Claude의 셸 도구로 보내는 명령 하나가 약 8천 자를 넘으면 잘려서 "unexpected EOF"로 실패합니다(12일차에 확인). 긴 파일은 파일 쓰기 도구로 만들고, 여러 군데를 고칠 때는 고치는 스크립트(Node)를 파일로 써서 실행합니다.
 
 ---
 ## 저장소 범위
@@ -140,9 +141,19 @@
 - `scripts/build-windows.mjs`: `--vr`(실행 확인을 `-vr`로), 시작 설정과 배치 파일 검사, 평소 실행의 로그에 VR 프로그램을 찾은 흔적이 있으면 실패.
 - 이 컴퓨터에는 VR 프로그램이 없어 `-vr` 실행은 "VR 기기를 찾지 못해 키보드·마우스로 시작합니다"로 돌아오는 것까지만 확인함.
 
+### Unity 12일차
+
+- 이 기기의 캐릭터 `LocalPlayer`(`Scripts/Player`): 화면과 도구가 조작 방식을 직접 알지 않고 거치는 한곳. 조작 방식(`Mode`, `IsVr`), 조작 막기(`SetInputBlocked`, `ResumeControl`), 조준(`IsAiming`, `TryGetAim`), 시점(`IsFirstPerson`, `CanToggleView`, `ToggleView`). `GameUi`와 `BlockBuilder`가 이것을 씀.
+- 입력 자산: `UI` 묶음(화면을 누르는 입력. 마우스 쪽은 입력 시스템의 기본 정의와 같고 VR은 오른손의 조준 자세와 방아쇠만), `Game/Menu`에 왼손의 메뉴 단추와 둘째 단추, `XR` 묶음에 오른손이 가리키는 자세.
+- 눈앞의 판 `XrUiPanel`(`Scripts/UI`, 캔버스에 붙음): VR에서 캔버스를 월드 공간으로 바꿈. 메뉴가 닫혀 있으면 머리를 따라와 알림만 보이고(1m 앞), 메뉴가 열리면 그때의 눈앞 1.6m에 놓여 머묾. 앞이 막히면 벽 앞으로 당기고 크기를 거리에 비례해 줄임. 늘 보이는 화면(`Hud`)과 메뉴 뒤의 막(`Scrim`)은 VR에서 감춤.
+- 손 광선: `XrRig`가 오른손이 가리키는 자세에 선과 끝의 작은 블록을 놓음(`ShowPointer`, `SetPointerLength`, `TryGetPointerRay`). 메뉴가 열려 있을 때만 보임. 누르는 일은 입력 시스템의 `TrackedDeviceRaycaster`와 `InputSystemUIInputModule`이 맡음(새 패키지 없음).
+- 메뉴의 VR용 안내: 도움말은 VR 조작, 시점 타일은 "PC 전용"으로 누를 수 없음, 설정에 안내 문장, 키 딱지 감춤(`QuickMenuView.ShowControlMode`).
+- 알림 띠를 `Hud` 밖(`Canvas/Notice`)으로 옮김. VR 시작 알림에 메뉴 여는 법을 더함.
+- `Day12Setup`: 캐릭터 프리팹에 `LocalPlayer`와 오른손 광선(`XrOrigin/RightPointer`), 게임 화면 프리팹 다시 조립, 재질 `PointerRay`.
+
 ### 아직 동작하지 않는 것
 
-- **VR은 실제 헤드셋으로 확인하지 못했습니다.** OpenXR 연결(11일차)과 VR 조작(10일차)은 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. 헤드셋 안의 메뉴와 VR에서 만들기도 없습니다. Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
+- **VR은 실제 헤드셋으로 확인하지 못했습니다.** VR 조작(10일차), OpenXR 연결(11일차), VR 메뉴(12일차)는 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. VR에서 만들기가 없고, VR에서는 알림과 메뉴만 보입니다(부품 칸, 걷기·날기 표시, 저장 표시가 보이지 않음). VR 메뉴의 판은 블록에 가릴 수 있고 오른손으로만 가리킵니다. Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
 - 다른 사람의 캐릭터는 아직 없습니다.
 - 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
 - 블록 옮기기·돌리기가 없습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
@@ -159,7 +170,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 11일차 : OpenXR 연결 |
+| (이 문서가 든 커밋) | 12일차 : VR 메뉴 |
+| `39d8d32` | 11일차 : OpenXR 연결 |
 | `d95ae1b` | 10일차 : VR 조작과 추적 리그 |
 | `12ac372` | 9일차 : 조작과 겉모습 나누기 |
 | `0e5408f` | 8일차 : Windows 빌드 확인 |
@@ -211,20 +223,20 @@ Claude가 판단해서 정한 것도 있습니다. 사용자가 바꾸자고 하
 ```
 unity/Assets/_Project/
   Art/Fonts/        NanumGothic.ttf, 라이선스 전문, NanumGothic SDF(글꼴 자산)
-  Art/Materials/    GridFloor, Block_Gold·Blue·Clay·Leaf·Ivory·Wood·Ink, Block_Ghost(미리 보기)
+  Art/Materials/    GridFloor, Block_Gold·Blue·Clay·Leaf·Ivory·Wood·Ink, Block_Ghost(미리 보기), PointerRay(오른손 광선)
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup ~ Day11Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
-  Input/            AtelierInput.inputactions (Player 맵, Game 맵, XR 맵)
+  Editor/           Day1Setup ~ Day12Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
+  Input/            AtelierInput.inputactions (Player 맵, Game 맵, XR 맵, UI 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
   Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel), XrSession
-  Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, XrRig, XrPlayerController, PlayerModeSwitch, AvatarView, Nameplate, BlockBuilder
-  Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar
+  Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, XrRig, XrPlayerController, PlayerModeSwitch, LocalPlayer, AvatarView, Nameplate, BlockBuilder
+  Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar, XrUiPanel
   Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave, EditHistory
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests
-  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTests
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests, XrUiPanelTests, UiInputTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTestBase, XrPlayTests, XrMenuPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일). 11일차 셋업이 만든 것
@@ -277,14 +289,26 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 - `XrRig`는 카메라의 부모를 `XrOrigin`으로 바꿉니다. 카메라의 부모를 `CameraPivot`으로 가정하는 코드는 PC 조작일 때만 맞습니다. 카메라가 필요하면 `player.Rig.ViewCamera`를 쓰면 두 조작에서 같은 카메라입니다.
 - 꺼져 있는 입력 묶음의 동작에 `controls`를 묻지 않습니다. 물으면 입력 시스템이 연결을 새로 계산해 상태를 만들어 두는데, 테스트 사이에 이것이 일어나면 다음 테스트의 입력이 전부 닿지 않습니다(10일차에 겪음). `action.enabled`를 먼저 봅니다.
 - VR 테스트는 가상 기기를 씁니다. `InputSystem.AddDevice<XRHMD>()`와, `XRController`를 넓힌 시험용 배치(스틱·단추에 공통 쓰임새를 붙인 JSON)를 `InputSystem.RegisterLayout`으로 등록해 붙입니다(`XrPlayTests`). 씬을 열기 전에 `PlayerModeSwitch.Forced = ControlMode.Vr`를 넣고, `PlayTestBase`가 테스트마다 null로 돌려놓습니다.
-- 옮겨 간 멤버는 `player.Motor`(날기, 시작 위치로, 속도, 겉모습)와 `player.Rig`(카메라, 머리 위치, 1인칭 여부, 시점 거리)에서 씁니다. `DesktopPlayerController`에는 `InputBlocked`, `LookCaptured`, `SetInputBlocked`, `CaptureLook`, `SetLook`만 남았습니다. `Motor`와 `Rig`는 처음 쓸 때 찾으므로 다른 스크립트의 `OnEnable`에서 써도 됩니다.
-- 캐릭터 프리팹의 구성을 바꿀 때는 `Editor/PlayerWiring.cs`를 고칩니다. 1·2·9일차 셋업이 함께 쓰므로 한곳만 고치면 됩니다.
+- **화면과 도구는 조작 스크립트를 직접 알지 않고 `LocalPlayer`를 거칩니다**(12일차). `GameUi.Player`와 `BlockBuilder`의 `player`는 `LocalPlayer`입니다. 조작 방식에 따라 달라지는 것(조작 막기, 조준, 시점)은 `LocalPlayer`에 더하고, `GameUi`나 도구에서 `IsVr`로 갈라 쓰는 곳을 늘리지 않습니다. `LocalPlayer`는 같은 뿌리의 조작과 리그를 처음 쓸 때 찾으므로 프리팹에서 이을 것이 없습니다.
+- 테스트의 `player`(`PlayTestBase`)는 지금도 `DesktopPlayerController`입니다. 몸은 `player.Motor`(날기, 시작 위치로, 속도, 겉모습), PC 카메라는 `player.Rig`(카메라, 머리 위치, 1인칭 여부, 시점 거리)에서 씁니다. `DesktopPlayerController`에는 `InputBlocked`, `LookCaptured`, `SetInputBlocked`, `CaptureLook`, `SetLook`만 남았습니다. `Motor`와 `Rig`는 처음 쓸 때 찾으므로 다른 스크립트의 `OnEnable`에서 써도 됩니다.
+- 캐릭터 프리팹의 구성을 바꿀 때는 `Editor/PlayerWiring.cs`를 고칩니다. `Apply`(몸·PC 카메라·PC 조작)는 1·2·9일차, `ApplyXr`(VR 리그·VR 조작·조작 방식 고르기)는 10일차, `ApplyLocal`(`LocalPlayer`와 오른손 광선)은 12일차 셋업이 씁니다.
 - `DesktopPlayerController`는 마우스를 잡았을 때만(`LookCaptured`) 시점을 돌립니다. `Cursor.lockState`는 창 없는 실행에서 믿을 수 없어 자체 상태로 판단합니다.
 - 걷기와 날기는 `CharacterMotor`의 두 갈래이며 `IsFlying`으로 나뉩니다. 날 때는 Jump·Sprint 동작이 위·아래가 됩니다. 이동 코드를 고치면 1일차 걷기 테스트(`SandboxPlayTests`), 7일차 날기 테스트, 9일차 `MotorPlayTests`가 함께 통과해야 합니다.
-- 메뉴가 열리면 `GameUi`가 `SetInputBlocked(true)`로 조작을 막고, 닫으면 풀고 마우스를 다시 잡습니다.
-- 화면의 단추는 마우스로만 누릅니다. `EventSystem`의 키보드 이동(`sendNavigationEvents`)을 꺼 두었습니다. 켜면 Space나 WASD가 단추를 누릅니다.
+- 메뉴가 열리면 `GameUi`가 `LocalPlayer.SetInputBlocked(true)`로 두 조작을 함께 막고, 닫으면 `ResumeControl()`로 풉니다(PC에서는 마우스를 다시 잡음). 막힌 채로 조작 방식이 바뀌어도 그대로 막혀 있습니다.
+- 화면의 단추는 마우스와 VR의 오른손 광선으로만 누릅니다. `EventSystem`의 키보드 이동(`sendNavigationEvents`)을 꺼 두었습니다. 켜면 Space나 WASD가 단추를 누릅니다.
 - 꾸미기용 그림과 글자는 `raycastTarget`을 꺼 두었습니다. 켜져 있으면 그 위를 눌렀을 때 마우스 잡기가 되지 않습니다.
 - 게임 끝내기는 `AppExit.Request()`로 모입니다. 테스트는 `AppExit.Handler`를 바꿔 실제로 끝나지 않게 합니다.
+
+### VR의 게임 화면
+
+- 화면은 하나(`GameUI` 프리팹)입니다. VR용 화면을 따로 만들지 않고, `XrUiPanel`이 같은 캔버스를 월드 공간으로 바꿔 눈앞의 판으로 띄웁니다. 조작 방식에 맞춰 놓는 일은 `GameUi.ApplyControlMode`가 시작할 때와 조작 방식이 바뀔 때 합니다.
+- VR에서 감출 것은 `XrUiPanel`의 `screenOnly`(지금은 `Hud`와 메뉴의 `Scrim`)에 넣습니다. VR에서도 보여야 하는 것은 `Hud` 밖(캔버스 바로 아래)에 둡니다. 알림 띠가 그렇게 `Canvas/Notice`에 있습니다.
+- 메뉴 안에서 한쪽 조작에만 맞는 안내는 `GameUiBuilder`에서 `DesktopOnly`·`VrOnly` 목록에 넣습니다. `QuickMenuView.ShowControlMode`가 켜고 끕니다.
+- 화면을 누르는 입력은 `AtelierInput.inputactions`의 `UI` 묶음입니다. 프리팹의 `InputSystemUIInputModule`은 자산 안의 동작 참조를 가리켜야 저장됩니다(`GameUiBuilder.SetAction`). `UI` 묶음의 동작은 그 모듈이 켜고 끄므로 다른 스크립트가 켜고 끄지 않습니다.
+- 보이는 광선(`XrRig`, `XR` 묶음의 `RightPointerPosition`·`RightPointerRotation`)과 누르는 광선(화면 입력, `UI` 묶음의 `TrackedDevicePosition`·`TrackedDeviceOrientation`)은 같은 연결 경로를 써야 어긋나지 않습니다(`UiInputTests`가 검사). 컨트롤러의 자세는 추적 공간 기준이라 `inputModule.xrTrackingOrigin`에 `XrOrigin`을 넣습니다(`XrUiPanel.ShowInWorld`).
+- `TrackedDeviceRaycaster`는 `canvas.worldCamera`가 있어야 동작하고, `raycastTarget`을 보지 않고 캔버스의 모든 그림에 닿습니다. 닿은 것의 부모에서 누를 것을 찾으므로 글자 위를 가리켜도 단추가 눌립니다. 캔버스 전체를 덮는 그림을 VR에서 켜 두면 그 뒤의 것이 눌리지 않습니다(메뉴의 `Scrim`을 VR에서 감추는 까닭 가운데 하나).
+- 판의 크기와 거리는 `XrUiPanel`의 직렬화 값입니다(`metersPerPixel` 0.0013, `menuDistance` 1.6, `followDistance` 1). 스크립트의 기본값을 바꾸면 가장 최근 일차의 셋업을 다시 적용해야 프리팹에 들어갑니다. 실제 헤드셋에서 보고 맞춰야 하는 값입니다.
+- VR 테스트는 `XrPlayTestBase`를 상속합니다. `LoadVr`, `OpenMenuWithController`, `PointRightHandAt(월드의 한 점)`, `PullTrigger`, `CenterOf(화면 요소)`가 있습니다. 판이 떠 있으면 `BeginCapture`는 캔버스를 건드리지 않고 그대로 찍습니다. 글자를 확인하는 그림은 카메라의 시야각을 줄여 찍습니다(`XrMenuPlayTests`의 그림 찍기).
 
 ### VR 화면(OpenXR)
 
@@ -320,7 +344,7 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 # 편집 모드 테스트 (-quit을 붙이지 않는다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform EditMode -testResults <결과.xml> -logFile <로그>
 
-# 플레이 모드 테스트. -captureDir을 주면 화면 그림 15장도 찍는다(2~10일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
+# 플레이 모드 테스트. -captureDir을 주면 화면 그림 21장도 찍는다(2~12일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform PlayMode -captureDir <그림 폴더> -testResults <결과.xml> -logFile <로그>
 
 # 아직 적용하지 않은 일차의 셋업 적용
@@ -377,7 +401,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 사용자가 직접 해야 하는 것입니다.
 
-- 헤드셋으로 확인하기: Meta Quest Link 또는 SteamVR을 설치해 헤드셋을 PC에 잇고, `unity/Builds/Windows/AtelierVerse-VR.bat`을 열어 화면·두 손·스틱 이동·눈높이를 확인(방법은 `unity/Devlogs/Day11/README.md`의 "직접 확인하는 방법"). 이 컴퓨터에는 OpenXR 런타임이 없음
+- 헤드셋으로 확인하기: Meta Quest Link 또는 SteamVR을 설치해 헤드셋을 PC에 잇고, `unity/Builds/Windows/AtelierVerse-VR.bat`을 열어 화면·두 손·스틱 이동·눈높이, 그리고 왼손 메뉴 단추로 뜨는 메뉴(글자가 읽히는지, 판의 거리와 크기, 광선의 방향, 방아쇠로 눌리는지)를 확인(방법은 `unity/Devlogs/Day11/README.md`와 `Day12/README.md`의 "직접 확인하는 방법"). 이 컴퓨터에는 OpenXR 런타임이 없음
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(Quest 단독 빌드 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
 - 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기, 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
@@ -389,10 +413,10 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
-1. **헤드셋으로 켜 본 결과가 있으면 그것부터.** 사용자가 `AtelierVerse-VR.bat`으로 켜 본 결과(화면이 나오는지, 두 손, 눈높이, 스틱)를 받아 고칩니다. VR 화면이 켜지지 않으면 실행 로그(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\Player.log`)의 `[XR]` 줄을 봅니다. 그래픽 장치가 둘인 PC에서만 켜지지 않으면 사전 초기화를 남긴 VR 전용 빌드를 검토합니다(`docs/BACKLOG.md` 3.4).
-2. **12일차 후보 가: VR 메뉴와 "이 기기의 조작"을 가리키는 공통 길.** 화면 요소를 눈앞에 띄우고 손의 광선으로 누릅니다. 이때 `GameUi`·`BlockBuilder`가 `DesktopPlayerController`를 직접 아는 부분을 "이 기기의 조작"을 가리키는 공통 길로 바꿉니다. 가상 기기로 만들고 검사할 수 있습니다.
-3. **12일차 후보 나: 모양이 다른 부품과 부품 고르는 창.** 반 블록·경사·기둥·계단, 방향(`facing`)과 돌리기, 부품이 아홉 칸을 넘을 때의 고르는 창. 부품이 차지하는 칸이 한 칸을 넘으면 맵 형식의 판을 올립니다(`docs/MAP-FORMAT.md` 5절).
-4. **VR의 나머지.** VR에서 만들기(컨트롤러로 가리켜 놓기·지우기·칠하기), 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
+1. **헤드셋으로 켜 본 결과가 있으면 그것부터.** 사용자가 `AtelierVerse-VR.bat`으로 켜 본 결과(화면이 나오는지, 두 손, 눈높이, 스틱, 메뉴의 글자와 판의 거리·크기, 광선의 방향)를 받아 고칩니다. VR 화면이 켜지지 않으면 실행 로그(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\Player.log`)의 `[XR]` 줄을 봅니다. 그래픽 장치가 둘인 PC에서만 켜지지 않으면 사전 초기화를 남긴 VR 전용 빌드를 검토합니다(`docs/BACKLOG.md` 3.4).
+2. **13일차 후보 가: VR에서 만들기.** 오른손 광선으로 가리켜 블록을 놓고 지우고 칠합니다. 조준 광선은 `LocalPlayer.TryGetAim`이 VR에서 이미 오른손을 줍니다. 할 일: `PlayerModeSwitch`가 VR에서 `BlockBuilder`를 끄는 것을 풀기, 놓기·지우기·칠하기의 VR 입력 정하기(`BlockBuilder`는 지금 `Player` 묶음의 `Place`·`Remove`·`Paint`를 읽음. 방아쇠는 메뉴가 열려 있을 때 화면을 누르는 데 쓰므로, 메뉴가 닫혀 있을 때만 놓기가 되어야 함. `IsAiming`이 조작 막힘을 봄), 부품 칸을 VR에서 보이고 고르는 방법 정하기(오른쪽 스틱 좌우는 돌기에 쓰고 있음), 놓일 자리를 가리키는 동안 손 광선 보이기, VR에서 보여야 하는 것(부품 칸, 걷기·날기, 저장 표시)을 `Hud` 밖으로 옮기기. 가상 기기로 만들고 검사할 수 있습니다.
+3. **13일차 후보 나: 모양이 다른 부품과 부품 고르는 창.** 반 블록·경사·기둥·계단, 방향(`facing`)과 돌리기, 부품이 아홉 칸을 넘을 때의 고르는 창. 부품이 차지하는 칸이 한 칸을 넘으면 맵 형식의 판을 올립니다(`docs/MAP-FORMAT.md` 5절).
+4. **VR의 나머지.** VR 메뉴를 늘 위에 그리기(지금은 블록에 가릴 수 있음), 판의 크기와 거리 설정, 왼손으로 가리키기, 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
 5. 그 뒤는 1-A(혼자 만들기)의 나머지: 여러 맵 다루기, 시작 위치와 맵 정보, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
@@ -425,7 +449,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day11/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day12/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

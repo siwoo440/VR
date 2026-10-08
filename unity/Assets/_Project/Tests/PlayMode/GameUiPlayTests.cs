@@ -12,7 +12,7 @@ namespace AtelierVerse.Tests
 {
     /// <summary>
     /// 게임 화면을 실제로 실행해 확인한다: 메뉴 열고 닫기, 부품 칸, 사람들 목록, 1인칭·3인칭, 설정.
-    /// 키와 마우스는 가상 장치로 넣고, 화면의 단추는 onClick을 직접 불러 누른다.
+    /// 키와 마우스는 가상 장치로 넣고, 화면의 단추는 onClick을 직접 불러 누른다(마우스로 실제로 누르는 길은 테스트 하나가 따로 확인한다).
     /// </summary>
     public class GameUiPlayTests : PlayTestBase
     {
@@ -33,6 +33,23 @@ namespace AtelierVerse.Tests
 
             Nameplate nameplate = player.GetComponentInChildren<Nameplate>(true);
             Assert.AreEqual("손님", nameplate.DisplayName);
+        }
+
+        [UnityTest]
+        public IEnumerator 마우스로_메뉴_단추를_누르면_메뉴가_열리고_마우스를_잡지_않는다()
+        {
+            yield return LoadSandbox();
+
+            // 화면에 겹쳐 그리는 캔버스에서는 요소의 월드 좌표가 곧 화면의 픽셀 좌표다.
+            var rect = (RectTransform)Find<Button>(ui, "MenuButton").transform;
+            Vector2 screen = rect.TransformPoint(rect.rect.center);
+
+            Set(mouse.position, screen);
+            yield return Frames(2);
+            yield return Tap(mouse.leftButton);
+
+            Assert.IsTrue(ui.IsMenuOpen, "마우스로 누른 메뉴 단추가 메뉴를 열지 않았습니다.");
+            Assert.IsFalse(player.LookCaptured, "화면의 단추를 누른 것이 마우스 잡기로 이어졌습니다.");
         }
 
         [UnityTest]

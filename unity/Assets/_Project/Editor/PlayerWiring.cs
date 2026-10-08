@@ -8,7 +8,8 @@ namespace AtelierVerse.EditorTools
 {
     /// <summary>
     /// 캐릭터의 뿌리에 조작과 리그를 붙이고 서로 잇는다. 캐릭터 프리팹을 만드는 셋업이 함께 쓰므로, 캐릭터의 구성이 바뀌면 이곳만 고친다.
-    /// Apply는 몸(CharacterMotor)·PC 카메라 리그(ViewRig)·PC 조작(DesktopPlayerController)을, ApplyXr는 VR 리그와 VR 조작, 조작 방식 고르기를 맡는다.
+    /// Apply는 몸(CharacterMotor)·PC 카메라 리그(ViewRig)·PC 조작(DesktopPlayerController)을, ApplyXr는 VR 리그와 VR 조작, 조작 방식 고르기를,
+    /// ApplyLocal은 이 기기의 캐릭터를 가리키는 공통 길(LocalPlayer)과 오른손 광선을 맡는다.
     /// 이미 붙어 있으면 다시 잇기만 하므로 여러 번 불러도 결과가 같다.
     /// </summary>
     internal static class PlayerWiring
@@ -17,6 +18,10 @@ namespace AtelierVerse.EditorTools
         public const string XrOriginName = "XrOrigin";
         public const string LeftHandName = "LeftHand";
         public const string RightHandName = "RightHand";
+        public const string RightPointerName = "RightPointer";
+
+        private const float PointerWidth = 0.004f;
+        private const float PointerDotSize = 0.014f;
 
         private static readonly Vector3 HandSize = new Vector3(0.09f, 0.06f, 0.14f);
 
@@ -68,6 +73,63 @@ namespace AtelierVerse.EditorTools
             leftHand.gameObject.SetActive(false);
             rightHand.gameObject.SetActive(false);
             return modeSwitch;
+        }
+
+        /// <summary>
+        /// 이 기기의 캐릭터를 가리키는 공통 길(LocalPlayer)과, 오른손이 가리키는 쪽으로 나가는 광선을 더한다.
+        /// 광선은 가는 선과 끝의 작은 블록이며 꺼 둔 채로 저장한다. 메뉴가 열려 있을 때 XrRig가 켠다.
+        /// VR 쪽이 없는 캐릭터에는 LocalPlayer만 붙인다.
+        /// </summary>
+        public static LocalPlayer ApplyLocal(GameObject root, Material pointerMaterial)
+        {
+            LocalPlayer local = Ensure<LocalPlayer>(root);
+
+            XrRig rig = root.GetComponent<XrRig>();
+            Transform origin = root.transform.Find(XrOriginName);
+            if (rig == null || origin == null) return local;
+
+            Transform pointer = EnsureChild(origin, RightPointerName);
+            pointer.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            Transform ray = EnsureChild(pointer, "Ray");
+            ray.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            LineRenderer line = ray.GetComponent<LineRenderer>();
+            if (line == null) line = ray.gameObject.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.positionCount = 2;
+            line.SetPosition(0, Vector3.zero);
+            line.SetPosition(1, new Vector3(0f, 0f, XrRig.DefaultPointerLength));
+            line.widthMultiplier = PointerWidth;
+            line.numCapVertices = 2;
+            line.alignment = LineAlignment.View;
+            line.sharedMaterial = pointerMaterial;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+
+            Transform dot = pointer.Find("Dot");
+            if (dot == null)
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.name = "Dot";
+                cube.layer = pointer.gameObject.layer;
+                Object.DestroyImmediate(cube.GetComponent<Collider>());
+                dot = cube.transform;
+                dot.SetParent(pointer, false);
+            }
+
+            dot.SetLocalPositionAndRotation(new Vector3(0f, 0f, XrRig.DefaultPointerLength), Quaternion.identity);
+            dot.localScale = Vector3.one * PointerDotSize;
+            var dotRenderer = dot.GetComponent<MeshRenderer>();
+            dotRenderer.sharedMaterial = pointerMaterial;
+            dotRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            dotRenderer.receiveShadows = false;
+
+            Set(rig, "rightPointer", pointer);
+            Set(rig, "pointerLine", line);
+            Set(rig, "pointerDot", dot);
+
+            pointer.gameObject.SetActive(false);
+            return local;
         }
 
         private static T Ensure<T>(GameObject root) where T : Component
