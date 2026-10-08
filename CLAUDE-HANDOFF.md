@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 8일
-- 마지막 작업: Unity 3일차(부품 칸에서 고른 블록을 모눈에 놓고 지우기), 그 뒤 앞으로 구현할 요소 문서(`docs/BACKLOG.md`) 작성
-- 마지막 검증: 편집 모드 테스트 31개 통과, 플레이 모드 테스트 28개 통과와 2개 건너뜀(화면 그림 찍기). 에디터에서 직접 해 보는 확인, Windows 빌드, Quest 실행은 하지 않음
+- 마지막 작업: Unity 4일차(맵 데이터 형식 1판 확정, 놓은 블록을 이 기기에 자동 저장하고 불러오기, 화면의 저장 표시)
+- 마지막 검증: 편집 모드 테스트 42개 통과, 플레이 모드 테스트 38개 통과(화면 그림 찍기 3개 포함, `-captureDir` 없이 돌리면 35개 통과·3개 건너뜀). 에디터에서 직접 해 보는 확인, Windows 빌드, Quest 실행은 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 4일차(맵 데이터 형식을 정하고 놓은 블록을 저장하고 불러오기)
+- 다음 작업: Unity 5일차(실행 취소). 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -23,7 +23,7 @@
 4. `Assets/_Project/Scenes/Sandbox` 씬에서 재생. 조작은 `README.md`의 "Unity 프로젝트" 절 참고
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day03`이 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day04`가 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -42,6 +42,7 @@
 | `docs/ROADMAP.md` | 부족한 부분, 구현 단계, 정해진 것과 남은 질문 |
 | `docs/PAGES.md` | 화면 흐름, 화면을 만드는 규칙, 앱 화면과 웹 화면의 구분, 게임 화면의 구성(4.1절) |
 | `docs/BACKLOG.md` | 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록. 영역별 표와 "가장 먼저 할 것" |
+| `docs/MAP-FORMAT.md` | 맵 파일 형식 1판. 구조, 읽을 때의 검사, 저장 위치, 판을 올리는 방법 |
 | `scripts/serve.mjs` | 화면 시안 미리보기 서버 |
 | `scripts/unity-verify.mjs` | 에디터가 열려 있을 때 쓰는 검증용 사본 도구(아래 "검증 방법") |
 
@@ -84,9 +85,15 @@
 - 부품 칸 위의 놓기 안내와 블록 수 표시(`블록 19/500`).
 - 3인칭에서 카메라가 어깨 너머로 비켜서 조준점이 머리에 가리지 않음.
 
+### Unity 4일차
+
+- 맵 데이터 형식 1판(`docs/MAP-FORMAT.md`, `MapDocument`): 부품은 저장용 이름으로 적고, 조립품과 동작 규칙은 빈 자리만 둠. 형식 이름·판 번호 검사, 옛 판을 올려 읽는 길, 모르는 부품·범위 밖·중복·상한 초과 건너뛰기.
+- 이 기기의 맵 파일 하나(`persistentDataPath/maps/local.map.json`)에 자동 저장(`MapAutoSave`, `MapStorage`): 블록이 바뀌고 1초 뒤, 앱을 끝내거나 씬을 떠날 때. 파일이 없으면 씬의 블록 19개를 첫 맵으로 저장하고, 깨진 파일은 옆으로 옮겨 둠.
+- 화면 오른쪽 아래의 저장 표시("저장했습니다", "저장 대기 중", "불러왔습니다", "블록 N개를 읽지 못했습니다", "저장하지 못했습니다").
+
 ### 아직 동작하지 않는 것
 
-- 놓은 블록은 저장되지 않습니다. 게임을 끄면 사라집니다.
+- 맵이 이 기기에 하나뿐입니다. 새 맵, 맵 목록, 이름 바꾸기가 없고 계정에는 저장되지 않습니다.
 - 블록 옮기기·돌리기·칠하기와 실행 취소가 없습니다.
 - 블록 수 상한 500개와 블록 하나를 게임 오브젝트 하나로 두는 방식은 임시입니다. Quest에서 재 본 뒤에 정합니다.
 - 바로가기의 내 작업실·맵 둘러보기·캐릭터·안전·신고는 "준비 중"으로 표시되고 누를 수 없습니다.
@@ -99,7 +106,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 앞으로 구현할 요소 문서 추가 |
+| (이 문서가 든 커밋) | 4일차 : 맵 데이터 형식과 저장·불러오기 |
+| `dae7792` | 앞으로 구현할 요소 문서 추가 |
 | `2afca66` | 3일차 : 블록 놓고 지우기 |
 | `e91444b` | 2일차 : 블록 캐릭터, 1인칭·3인칭 시점, 게임 화면. 인수인계 문서와 검증용 사본 도구 포함 |
 | `8268c63` | 1일차 : Unity 프로젝트 기반 구성과 PC 걷기 |
@@ -146,16 +154,16 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록)
-  Editor/           Day1Setup, Day2Setup, Day3Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture
+  Editor/           Day1Setup, Day2Setup, Day3Setup, Day4Setup, GameUiBuilder, UiFactory, ProjectSetupRunner, DynamicFontGuard, DevCapture
   Input/            AtelierInput.inputactions (Player 맵, Game 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
   Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap
   Scripts/Player/   DesktopPlayerController, AvatarView, Nameplate, BlockBuilder
   Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView
-  Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests
-  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests
+  Scripts/World/    GridMath, BlockMap, BlockWorld, PlacedBlock, PartCatalog, MapDocument, MapStorage, MapAutoSave
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 ```
@@ -175,6 +183,13 @@ unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 - 부품 목록(`PartCatalog`)의 순서가 부품 칸의 순서이고 부품 번호입니다. 부품의 `id`(`block.gold` 등)는 저장에 쓸 이름이라 바꾸지 않습니다.
 - `BlockBuilder`는 화면 가운데에서 광선을 쏘아 닿은 면의 바깥쪽 칸에 놓습니다. 캐릭터는 `Ignore Raycast` 층이라 광선에 걸리지 않고, 겹침 검사(`CheckBox`)에는 걸려서 자기가 선 칸에는 놓이지 않습니다.
 - 부품을 고르거나 마우스를 잡은 바로 그 프레임에는 놓지 않습니다(한 프레임 기다림). 마우스를 잡는 누름으로 블록이 놓이는 것을 막기 위해서입니다.
+
+### 맵 저장
+
+- 파일 형식은 `docs/MAP-FORMAT.md`가 기준입니다. 항목을 더하거나 바꾸면 `MapDocument.CurrentVersion`을 올리고 `Upgrade`에 옛 판을 바꾸는 단계를 더한 뒤 문서를 고칩니다. 부품의 `id`를 바꾸면 저장된 파일을 읽지 못하므로 바꾸지 않습니다.
+- `MapAutoSave`는 Sandbox 씬의 `BlockWorld` 오브젝트에 붙어 있습니다. 블록은 `BlockWorld.Place`·`Remove`로만 바꿔야 `Changed`가 울리고 저장이 예약됩니다.
+- 저장 폴더는 `MapStorage.Directory`로 바꿀 수 있습니다. 플레이 모드 테스트는 `PlayTestBase`가 테스트마다 임시 폴더로 바꿔 이 기기의 실제 파일을 건드리지 않습니다. 씬을 열기 전에 맵 파일을 미리 써 두는 테스트는 `PrepareMapDirectory()`를 먼저 불러야 합니다(앞 테스트의 씬이 내려가며 저장하는 시점 때문).
+- `MapAutoSave`는 씬이 내려갈 때(`OnDisable`) 남은 변경을 저장합니다. 테스트에서 씬을 다시 열 때 앞 씬의 블록이 따라오는 것처럼 보이면 이 때문입니다.
 
 ### 캐릭터와 화면의 연결
 
@@ -207,7 +222,7 @@ unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 # 편집 모드 테스트 (-quit을 붙이지 않는다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform EditMode -testResults <결과.xml> -logFile <로그>
 
-# 플레이 모드 테스트. -captureDir을 주면 화면 그림 6장도 찍는다
+# 플레이 모드 테스트. -captureDir을 주면 화면 그림 10장도 찍는다(2·3·4일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 옮긴다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform PlayMode -captureDir <그림 폴더> -testResults <결과.xml> -logFile <로그>
 
 # 아직 적용하지 않은 일차의 셋업 적용
@@ -260,7 +275,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(VR 리그를 만드는 일차 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
-- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴를 직접 확인
+- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기, 껐다 켰을 때 블록이 남는지 직접 확인
 - 통합 계정의 실제 연결(홈페이지 저장소의 `docs/UNIFIED-ACCOUNT.md`)
 
 ---
@@ -268,10 +283,10 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
-1. **4일차: 맵 데이터 형식과 저장.** 부품 + 속성 + 동작의 형식을 문서로 확정하고, `BlockMap.Blocks`를 그 형식으로 이 기기에 저장하고 불러옵니다. 부품은 번호가 아니라 `id`로 적습니다. 조립품과 동작 규칙은 넣지 않고 자리만 남깁니다.
-2. **블록 다루기의 나머지.** 옮기기·돌리기·칠하기와 실행 취소.
+1. **5일차: 실행 취소.** 놓기·지우기를 하나씩 기록해 되돌리고 다시 실행합니다. 뒤에 생기는 도구(칠하기, 옮기기)도 같은 기록을 쓰도록 `BlockWorld` 위에 기록 층을 둡니다. 되돌린 결과도 자동 저장되어야 합니다.
+2. **블록 칠하기와 알림 띠.** 저장 실패와 읽지 못한 블록 수도 띠로 옮깁니다.
 3. **VR 리그와 Quest 빌드.** Android Build Support가 설치된 뒤에 진행합니다. 이 에디터의 권장 버전은 XR Plugin Management 4.5.4, OpenXR 1.16.1, XR Interaction Toolkit 3.3.2, Meta OpenXR 2.3.1입니다. `GameUI`의 메뉴를 눈앞에 띄우는 방식으로 옮깁니다.
-4. 그 뒤는 1-A(혼자 만들기)의 나머지: 걸어 보기와 만들기의 전환, 부품 수 상한 정하기(Quest에서 재기).
+4. 그 뒤는 1-A(혼자 만들기)의 나머지: 만들기 시점, 모양이 다른 부품과 옮기기·돌리기, 여러 맵 다루기, 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -302,7 +317,8 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 3. `docs/ROADMAP.md`: 부족한 부분과 구현 단계
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
-6. `unity/Devlogs/Day03/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+6. `docs/MAP-FORMAT.md`: 맵 파일 형식
+7. `unity/Devlogs/Day04/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

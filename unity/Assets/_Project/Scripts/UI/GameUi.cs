@@ -39,6 +39,9 @@ namespace AtelierVerse.UI
         [SerializeField] private TMP_Text menuRoomLabel;
         [SerializeField] private TMP_Text menuNameLabel;
         [SerializeField] private TMP_Text viewLabel;
+        [SerializeField] private TMP_Text saveLabel;
+        [SerializeField] private Color saveTextColor = Color.white;
+        [SerializeField] private Color saveFailedColor = Color.yellow;
         [SerializeField] private string roomName = "시험 작업실";
         [SerializeField] private string localDisplayName = "손님";
 
@@ -49,6 +52,7 @@ namespace AtelierVerse.UI
         private InputAction slotPreviousAction;
         private BlockBuilder builder;
         private BlockWorld world;
+        private MapAutoSave autoSave;
         private bool viewLabelSet;
         private bool viewLabelFirstPerson;
 
@@ -67,6 +71,7 @@ namespace AtelierVerse.UI
             if (player == null) player = FindAnyObjectByType<DesktopPlayerController>();
             builder = FindAnyObjectByType<BlockBuilder>();
             world = FindAnyObjectByType<BlockWorld>();
+            autoSave = FindAnyObjectByType<MapAutoSave>();
         }
 
         private void OnEnable()
@@ -96,12 +101,14 @@ namespace AtelierVerse.UI
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
             if (hotbar != null) hotbar.Model.SelectionChanged += ShowSelectedPart;
             if (world != null) world.Changed += ShowBlockCount;
+            if (autoSave != null) autoSave.Changed += ShowSaveState;
             GameSettings.Changed += ApplySettings;
         }
 
         private void OnDisable()
         {
             GameSettings.Changed -= ApplySettings;
+            if (autoSave != null) autoSave.Changed -= ShowSaveState;
             if (world != null) world.Changed -= ShowBlockCount;
             if (hotbar != null) hotbar.Model.SelectionChanged -= ShowSelectedPart;
             if (menuButton != null) menuButton.onClick.RemoveListener(ToggleMenu);
@@ -123,6 +130,7 @@ namespace AtelierVerse.UI
             ApplySettings();
             ShowSelectedPart(hotbar != null ? hotbar.SelectedIndex : HotbarModel.None);
             ShowBlockCount();
+            ShowSaveState();
             RefreshHud();
         }
 
@@ -244,6 +252,21 @@ namespace AtelierVerse.UI
         private void ShowBlockCount()
         {
             if (blockCountLabel != null && world != null) blockCountLabel.text = $"블록 {world.Count}/{world.MaxBlocks}";
+        }
+
+        /// <summary>오른쪽 아래의 저장 표시. 자동 저장이 없으면 표시를 감춘다.</summary>
+        private void ShowSaveState()
+        {
+            if (saveLabel == null) return;
+
+            if (autoSave == null)
+            {
+                saveLabel.transform.parent.gameObject.SetActive(false);
+                return;
+            }
+
+            saveLabel.text = autoSave.Message;
+            saveLabel.color = autoSave.State == SaveState.Failed ? saveFailedColor : saveTextColor;
         }
 
         private void ApplySettings()

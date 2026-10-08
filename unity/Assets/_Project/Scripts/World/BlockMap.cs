@@ -35,6 +35,12 @@ namespace AtelierVerse.World
         /// <summary>놓을 수 있는 블록 수의 상한.</summary>
         public int Capacity { get; }
 
+        /// <summary>놓을 수 있는 범위의 가장 작은 칸.</summary>
+        public Vector3Int Min => min;
+
+        /// <summary>놓을 수 있는 범위의 가장 큰 칸(포함).</summary>
+        public Vector3Int Max => max;
+
         /// <summary>칸 번호와 부품 번호의 목록. 저장할 때 이 목록을 쓴다.</summary>
         public IReadOnlyDictionary<Vector3Int, int> Blocks => blocks;
 
@@ -76,6 +82,11 @@ namespace AtelierVerse.World
         public bool Remove(Vector3Int cell)
         {
             return blocks.Remove(cell);
+        }
+
+        public void Clear()
+        {
+            blocks.Clear();
         }
     }
 }

@@ -88,6 +88,7 @@ namespace AtelierVerse.EditorTools
             GameObject buildHint = BuildBuildHint(hud, out TMP_Text blockCountLabel);
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
+            TMP_Text saveLabel = BuildSaveChip(hud);
             GameObject crosshair = BuildCrosshair(hud);
             GameObject focusHint = BuildFocusHint(hud);
 
@@ -108,6 +109,9 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("menuRoomLabel").objectReferenceValue = menuRoomLabel;
             serialized.FindProperty("menuNameLabel").objectReferenceValue = menuNameLabel;
             serialized.FindProperty("viewLabel").objectReferenceValue = viewLabel;
+            serialized.FindProperty("saveLabel").objectReferenceValue = saveLabel;
+            serialized.FindProperty("saveTextColor").colorValue = Paper;
+            serialized.FindProperty("saveFailedColor").colorValue = Gold;
             SetObjects(serialized.FindProperty("peopleLists"), peoplePanel, menuPeople);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -328,6 +332,23 @@ namespace AtelierVerse.EditorTools
 
             TMP_Text label = UiFactory.Text("Label", glass.transform, "1인칭", 18f, Paper, true, TextAlignmentOptions.Center);
             UiFactory.Fill(label.rectTransform);
+            return label;
+        }
+
+        /// <summary>시점 표시 왼쪽의 저장 표시. 자동 저장의 안내 문구("저장했습니다" 등)가 그대로 들어간다(4일차).</summary>
+        private static TMP_Text BuildSaveChip(RectTransform hud)
+        {
+            const float viewChipWidth = 110f;
+            const float width = 280f;
+
+            Image glass = UiFactory.Box("SaveChip", hud, DarkGlass, 22f);
+            UiFactory.Place(glass.rectTransform, UiFactory.BottomRight, new Vector2(-Margin - viewChipWidth - 10f, Margin), new Vector2(width, 44f));
+
+            Image dot = UiFactory.Box("Dot", glass.transform, Gold, 6f);
+            UiFactory.Place(dot.rectTransform, UiFactory.MiddleLeft, new Vector2(16f, 0f), new Vector2(12f, 12f));
+
+            TMP_Text label = UiFactory.Text("Label", glass.transform, "저장 준비 중", 18f, Paper, true, TextAlignmentOptions.Center);
+            UiFactory.Fill(label.rectTransform, 34f, 0f, 12f, 0f);
             return label;
         }
 

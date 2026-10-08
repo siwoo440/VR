@@ -4,6 +4,7 @@ using System.IO;
 using AtelierVerse.Core;
 using AtelierVerse.Player;
 using AtelierVerse.UI;
+using AtelierVerse.World;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -15,6 +16,7 @@ namespace AtelierVerse.Tests
     /// <summary>
     /// 게임을 실제로 실행하는 테스트의 공통 바탕. 가상 키보드와 마우스, 초당 60프레임 고정, 개인 설정 되돌리기,
     /// Sandbox 씬 불러오기, 화면 그림 찍기를 맡는다.
+    /// 맵 파일은 테스트마다 새 임시 폴더에 두어 이 기기의 실제 저장 파일을 건드리지 않는다.
     /// </summary>
     public abstract class PlayTestBase : InputTestFixture
     {
@@ -37,9 +39,17 @@ namespace AtelierVerse.Tests
         protected GameUi ui;
         protected DesktopPlayerController player;
 
+        private static readonly string TestMapRoot = Path.Combine(Path.GetTempPath(), "atelier-verse-tests");
+
+        /// <summary>이 테스트의 맵 파일 폴더. 첫 LoadSandbox에서 저장 위치가 되고, 테스트가 끝나면 지운다.</summary>
+        protected string mapDirectory;
+
         public override void Setup()
         {
             base.Setup();
+
+            // 저장 위치는 여기서 바꾸지 않는다. 앞 테스트의 씬이 아직 떠 있어, 바꾸면 그 씬의 남은 변경이 이 테스트의 폴더에 쓰인다.
+            mapDirectory = Path.Combine(TestMapRoot, Path.GetRandomFileName());
 
             previousFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = TestFrameRate;
@@ -64,11 +74,14 @@ namespace AtelierVerse.Tests
             GameSettings.ShowPeopleList = savedPeopleList;
             Application.targetFrameRate = previousFrameRate;
 
+            if (Directory.Exists(mapDirectory)) Directory.Delete(mapDirectory, true);
+
             base.TearDown();
         }
 
         protected IEnumerator LoadSandbox()
         {
+            PrepareMapDirectory();
             yield return SceneManager.LoadSceneAsync(SandboxScene, LoadSceneMode.Single);
             yield return null;
 
@@ -78,6 +91,23 @@ namespace AtelierVerse.Tests
             Assert.IsNotNull(player, "Sandbox 씬에서 PC 캐릭터를 찾을 수 없습니다.");
 
             yield return new WaitForSeconds(0.3f);
+        }
+
+        /// <summary>
+        /// 이 테스트의 맵 폴더로 저장 위치를 바꾼다. 앞 테스트의 씬에 남은 변경은 바꾸기 전에 앞 테스트의 폴더로 저장해,
+        /// 씬이 내려갈 때의 저장이 이 테스트의 파일이 되지 않게 한다. 같은 테스트 안에서 두 번 부르면 아무것도 하지 않는다.
+        /// 씬을 열기 전에 맵 파일을 미리 써 두는 테스트는 파일을 쓰기 전에 직접 부른다.
+        /// </summary>
+        protected void PrepareMapDirectory()
+        {
+            if (MapStorage.Directory == mapDirectory) return;
+
+            MapAutoSave previous = UnityEngine.Object.FindAnyObjectByType<MapAutoSave>();
+            if (previous != null && previous.HasPendingChanges) previous.SaveNow();
+
+            string old = MapStorage.Directory;
+            MapStorage.Directory = mapDirectory;
+            if (old.StartsWith(TestMapRoot, StringComparison.Ordinal) && Directory.Exists(old)) Directory.Delete(old, true);
         }
 
         /// <summary>키나 마우스 단추를 한 번 눌렀다 뗀다. 누른 것이 한 프레임 동안 보이도록 사이에 프레임을 둔다.</summary>
