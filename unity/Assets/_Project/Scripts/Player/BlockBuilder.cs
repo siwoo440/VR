@@ -20,6 +20,7 @@ namespace AtelierVerse.Player
     /// 고른 부품을 조준한 자리에 놓고, 놓인 블록을 지우거나 고른 부품으로 칠하거나 잡아서 옮긴다. 놓일 자리는 반투명 블록으로 미리 보여 준다.
     /// 블록은 칸에 맞추지 않고 가리킨 면 위의 바로 그 자리에 놓인다(14일차). 다른 블록과는 겹쳐도 된다.
     /// 놓기 전에 좌우로 15도씩 돌릴 수 있고, 맞추기 도우미를 켜면 모눈이나 가리킨 블록에 나란히 붙는 자리로 당겨진다(15일차).
+    /// 부품은 모양과 크기가 다를 수 있다(16일차). 얹는 높이, 범위와 겹침 검사, 미리 보기가 부품의 크기와 모양을 따른다. 칠하기는 색만 바꾸고 모양은 그대로 둔다.
     /// 옮기기는 블록을 잡아(화면에서 잠시 감추고 미리 보기로 대신 보임) 새 자리를 가리켜 놓는 것이며, 한 번의 편집으로 기록된다.
     /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 블록이 아닌 물체와 겹치는 자리에는 놓지 않는다.
     /// 놓기·지우기·칠하기·옮기기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
@@ -31,12 +32,12 @@ namespace AtelierVerse.Player
     {
         public const int NoPart = -1;
         public const string PaintTargetMessage = "칠할 블록을 가리키세요";
-        public const string SamePartMessage = "이미 같은 부품입니다";
+        public const string SamePartMessage = "이미 같은 색입니다";
         public const string GrabTargetMessage = "옮길 블록을 가리키세요";
         public const string GrabbedMessage = "블록을 잡았습니다 · 놓을 자리를 가리켜 놓으세요";
         public const string GrabCancelledMessage = "옮기기를 그만두었습니다";
 
-        private const float OverlapMargin = 0.49f;
+        private const float OverlapMargin = 0.98f;
         private const float RotatePress = 0.6f;
         private const float RotateRelease = 0.3f;
         private const float RotateRepeatDelay = 0.4f;
@@ -55,6 +56,7 @@ namespace AtelierVerse.Player
         private LocalPlayer player;
         private BlockWorld world;
         private Renderer ghost;
+        private MeshFilter ghostMesh;
         private MaterialPropertyBlock ghostColor;
         private InputAction placeAction;
         private InputAction removeAction;
@@ -74,6 +76,9 @@ namespace AtelierVerse.Player
 
         /// <summary>놓을 부품의 번호. 고른 부품이 없으면 NoPart다.</summary>
         public int SelectedPart { get; set; } = NoPart;
+
+        /// <summary>놓거나 옮길 부품의 번호. 블록을 잡고 있으면 그 블록의 부품이고, 아니면 고른 부품이다.</summary>
+        public int TargetPart => IsCarrying && world != null && world.TryGet(carriedBlockId, out BlockRecord carried) ? carried.Part : SelectedPart;
 
         /// <summary>조준한 곳에 놓일 자리가 있는지.</summary>
         public bool HasTarget { get; private set; }
@@ -137,6 +142,7 @@ namespace AtelierVerse.Player
             {
                 ghost = Instantiate(ghostPrefab);
                 ghost.name = "BlockGhost";
+                ghostMesh = ghost.GetComponent<MeshFilter>();
                 ghost.gameObject.SetActive(false);
             }
         }
@@ -323,7 +329,7 @@ namespace AtelierVerse.Player
             return hasRemoveTarget && world.History.Remove(targetBlockId);
         }
 
-        /// <summary>조준한 블록을 고른 부품으로 바꾼다. 블록이 없거나 이미 같은 부품이면 알림만 올린다.</summary>
+        /// <summary>조준한 블록을 고른 부품의 색으로 칠한다. 모양은 그대로 둔다. 블록이 없거나 이미 같은 색이면 알림만 올린다.</summary>
         private bool PaintAtTarget()
         {
             if (!hasRemoveTarget)
@@ -332,13 +338,16 @@ namespace AtelierVerse.Player
                 return false;
             }
 
-            if (world.TryGet(targetBlockId, out BlockRecord current) && current.Part == SelectedPart)
+            if (!world.TryGet(targetBlockId, out BlockRecord current)) return false;
+
+            int painted = world.Catalog.Repaint(current.Part, SelectedPart);
+            if (painted == current.Part)
             {
                 Notice.Post(SamePartMessage);
                 return false;
             }
 
-            return world.History.Replace(targetBlockId, SelectedPart);
+            return world.History.Replace(targetBlockId, painted);
         }
 
         /// <summary>
@@ -424,11 +433,13 @@ namespace AtelierVerse.Player
             BlockRecord aimed = default;
             if (aimedAtBlock) aimedAtBlock = world.TryGet(block.Id, out aimed);
 
-            TargetPosition = world.ClampHeight(BlockMap.Quantize(RestPosition(hit, aimedAtBlock, aimed)));
+            int part = TargetPart;
+            Vector3 half = world.HalfSizeOf(part);
+            TargetPosition = world.ClampHeight(BlockMap.Quantize(RestPosition(hit, aimedAtBlock, aimed, half)), half.y);
             HasTarget = true;
 
-            PlaceResult check = IsCarrying ? world.CheckMove(carriedBlockId, TargetPosition) : world.CheckPlace(TargetPosition);
-            bool overlap = check == PlaceResult.Ok && OverlapsOther(TargetPosition, TargetRotation);
+            PlaceResult check = IsCarrying ? world.CheckMove(carriedBlockId, TargetPosition) : world.CheckPlace(part, TargetPosition);
+            bool overlap = check == PlaceResult.Ok && OverlapsOther(TargetPosition, TargetRotation, half);
             Blocked = ReasonOf(check, overlap);
             CanPlaceAtTarget = Blocked == BlockedReason.None;
 
@@ -439,22 +450,25 @@ namespace AtelierVerse.Player
             }
         }
 
-        /// <summary>가리킨 면 위에 블록을 얹은 자리. 맞추기 도우미가 켜져 있으면 놓인 블록에는 그 블록을 기준으로, 그 밖에는 모눈에 맞춘다.</summary>
-        private Vector3 RestPosition(RaycastHit hit, bool aimedAtBlock, BlockRecord aimed)
+        /// <summary>
+        /// 가리킨 면 위에 부품을 얹은 자리. half는 놓을 부품의 반 크기다. 면을 파고들지 않고 닿는 만큼 띄운다.
+        /// 맞추기 도우미가 켜져 있으면 놓인 블록에는 그 블록을 기준으로, 그 밖에는 모눈에 맞춘다.
+        /// </summary>
+        private Vector3 RestPosition(RaycastHit hit, bool aimedAtBlock, BlockRecord aimed, Vector3 half)
         {
             float step = SnapStep;
-            if (step <= 0f) return BlockMap.RestOn(hit.point, hit.normal);
-            if (aimedAtBlock) return PlacementMath.SnapToBlock(aimed.Position, aimed.Rotation, hit.point, hit.normal, step);
-            return PlacementMath.SnapToGrid(hit.point, hit.normal, step);
+            if (step <= 0f) return PlacementMath.RestOn(hit.point, hit.normal, half, TargetRotation);
+            if (aimedAtBlock) return PlacementMath.SnapToBlock(aimed.Position, aimed.Rotation, world.HalfSizeOf(aimed.Part), hit.point, hit.normal, step, half);
+            return PlacementMath.SnapToGrid(hit.point, hit.normal, step, PlacementMath.RestOffset(half, TargetRotation, hit.normal));
         }
 
         /// <summary>
-        /// 이 자리에 표준 블록을 놓으면 캐릭터나 블록이 아닌 물체와 겹치는지. 놓인 블록끼리는 겹쳐도 되므로 세지 않는다.
+        /// 이 자리에 부품을 놓으면 캐릭터나 블록이 아닌 물체와 겹치는지. 놓인 블록끼리는 겹쳐도 되므로 세지 않는다.
+        /// 부품을 둘러싸는 상자로 본다(경사와 계단도 상자로 본다). 면이 맞닿기만 한 것은 겹침으로 보지 않도록 조금 줄여서 잰다.
         /// </summary>
-        private static bool OverlapsOther(Vector3 center, Quaternion rotation)
+        private static bool OverlapsOther(Vector3 center, Quaternion rotation, Vector3 half)
         {
-            Vector3 half = Vector3.one * (GridMath.DefaultCellSize * OverlapMargin);
-            int count = Physics.OverlapBoxNonAlloc(center, half, OverlapBuffer, rotation, ~0, QueryTriggerInteraction.Ignore);
+            int count = Physics.OverlapBoxNonAlloc(center, half * OverlapMargin, OverlapBuffer, rotation, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 if (!OverlapBuffer[i].TryGetComponent(out PlacedBlock _)) return true;
@@ -482,16 +496,13 @@ namespace AtelierVerse.Player
             if (ghost.gameObject.activeSelf != HasTarget) ghost.gameObject.SetActive(HasTarget);
             if (!HasTarget) return;
 
-            // 잡은 블록은 그 블록의 색으로, 조금 더 진하게 보여 새로 놓는 블록과 구별한다.
-            int part = SelectedPart;
-            float alpha = ghostAlpha;
-            if (IsCarrying && world.TryGet(carriedBlockId, out BlockRecord carried))
-            {
-                part = carried.Part;
-                alpha = carriedAlpha;
-            }
+            // 잡은 블록은 그 블록의 색과 모양으로, 조금 더 진하게 보여 새로 놓는 블록과 구별한다.
+            int part = TargetPart;
+            float alpha = IsCarrying ? carriedAlpha : ghostAlpha;
+            PartCatalog.Part shown = world.Catalog.Get(part);
+            if (ghostMesh != null && shown.mesh != null && ghostMesh.sharedMesh != shown.mesh) ghostMesh.sharedMesh = shown.mesh;
 
-            Color color = CanPlaceAtTarget ? world.Catalog.Get(part).color : blockedColor;
+            Color color = CanPlaceAtTarget ? shown.color : blockedColor;
             color.a = alpha;
             ghostColor.SetColor(BaseColorId, color);
             ghost.SetPropertyBlock(ghostColor);

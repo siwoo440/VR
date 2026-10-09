@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using AtelierVerse.Core;
 using AtelierVerse.UI;
+using AtelierVerse.World;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace AtelierVerse.EditorTools
     /// VR에서는 같은 화면을 눈앞의 판으로 띄운다(XrUiPanel). 그때 늘 보이는 화면(Hud)과 메뉴 뒤의 어두운 막은 감추고,
     /// 알림 띠와 메뉴만 남긴다. 메뉴 안에서 한쪽 조작에만 맞는 안내는 DesktopOnly·VrOnly로 모아 QuickMenuView가 켜고 끈다.
     /// VR에서 만들 때 필요한 부품 칸과 상태 표시는 왼손 위에 뜨는 작은 판(HandPalette)에 따로 둔다.
+    /// 부품 칸에 넣을 부품을 고르는 창(PartPicker)은 메뉴처럼 화면 가운데에 뜨고, VR에서는 눈앞의 판에 뜬다(16일차).
     /// </summary>
     internal static class GameUiBuilder
     {
@@ -64,6 +66,8 @@ namespace AtelierVerse.EditorTools
         private const int SlotCount = 9;
         private const float SlotSize = 72f;
         private const float SlotGap = 8f;
+        private const int DefaultFilledSlots = 6;
+        private const string CatalogPath = "Assets/_Project/Data/PartCatalog.asset";
         private const float PanelWidth = 1040f;
         private const float PanelHeight = 664f;
         private const float PanelPadding = 36f;
@@ -80,7 +84,33 @@ namespace AtelierVerse.EditorTools
         private static readonly List<Object> DesktopOnly = new List<Object>();
         private static readonly List<Object> VrOnly = new List<Object>();
 
+        /// <summary>
+        /// 16일차의 셋업이 그려 둔 모양 그림(블록, 판, 기둥, 경사, 계단)을 불러온다. 하나라도 없으면 null이다.
+        /// 그림이 없으면 부품 칸은 둥근 네모로 그린다(앞 일차의 셋업만 적용된 상태).
+        /// </summary>
+        public static Sprite[] LoadShapeSprites()
+        {
+            var sprites = new Sprite[PartMeshes.ShapeCount];
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                sprites[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{UiFactory.ArtDir}/Shape_{(PartShape)i}.png");
+                if (sprites[i] == null) return null;
+            }
+
+            return sprites;
+        }
+
+        /// <summary>
+        /// 앞 일차의 셋업이 부르는 것. 부품의 이름과 색은 이제 부품 목록에서 읽으므로 items는 쓰지 않는다.
+        /// </summary>
         public static GameObject Build(InputActionAsset actions, Icons icons, Item[] items)
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<PartCatalog>(CatalogPath);
+            if (catalog == null) throw new System.InvalidOperationException($"부품 목록을 찾을 수 없습니다: {CatalogPath}. 3일차 셋업을 먼저 실행하세요.");
+            return Build(actions, icons, catalog, LoadShapeSprites());
+        }
+
+        public static GameObject Build(InputActionAsset actions, Icons icons, PartCatalog catalog, Sprite[] shapeSprites)
         {
             DesktopOnly.Clear();
             VrOnly.Clear();
@@ -95,7 +125,7 @@ namespace AtelierVerse.EditorTools
             Button menuButton = BuildMenuButton(hud, icons.Menu);
             TMP_Text roomLabel = BuildRoomChip(hud);
             PeopleListView peoplePanel = BuildPeoplePanel(hud);
-            HotbarView hotbar = BuildHotbar(hud, items);
+            HotbarView hotbar = BuildHotbar(hud, catalog, shapeSprites);
             GameObject buildHint = BuildBuildHint(hud, out TMP_Text blockCountLabel, out TMP_Text rotateLabel, out TMP_Text grabLabel, out TMP_Text snapLabel);
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
@@ -107,10 +137,13 @@ namespace AtelierVerse.EditorTools
             // 알림 띠는 VR에서도 보여야 하므로 늘 보이는 화면(Hud) 밖에 둔다. 메뉴보다 먼저 만들어 메뉴 아래에 그려지게 한다.
             BuildNoticeBar(canvas);
 
+            // 부품 고르는 창의 키 딱지도 메뉴가 조작 방식에 맞춰 켜고 끄므로 메뉴보다 먼저 만들고, 그리는 순서는 메뉴 위로 옮긴다.
+            PartPickerView picker = BuildPartPicker(canvas, catalog, shapeSprites, out GameObject pickerScrim);
             QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople, out GameObject scrim);
+            picker.transform.SetAsLastSibling();
             InputSystemUIInputModule inputModule = CreateEventSystem(root.transform, actions);
-            XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim);
-            XrHandPalette palette = BuildHandPalette(root.transform, items);
+            XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim, pickerScrim);
+            XrHandPalette palette = BuildHandPalette(root.transform, catalog, shapeSprites);
 
             var serialized = new SerializedObject(ui);
             serialized.FindProperty("actions").objectReferenceValue = actions;
@@ -118,6 +151,7 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("palette").objectReferenceValue = palette;
             serialized.FindProperty("hotbar").objectReferenceValue = hotbar;
             serialized.FindProperty("menu").objectReferenceValue = menu;
+            serialized.FindProperty("picker").objectReferenceValue = picker;
             serialized.FindProperty("peoplePanel").objectReferenceValue = peoplePanel.gameObject;
             serialized.FindProperty("crosshair").objectReferenceValue = crosshair;
             serialized.FindProperty("focusHint").objectReferenceValue = focusHint;
@@ -292,7 +326,7 @@ namespace AtelierVerse.EditorTools
             return localName;
         }
 
-        private static HotbarView BuildHotbar(RectTransform hud, Item[] items)
+        private static HotbarView BuildHotbar(RectTransform hud, PartCatalog catalog, Sprite[] shapeSprites)
         {
             float width = SlotCount * SlotSize + (SlotCount - 1) * SlotGap;
             RectTransform bar = UiFactory.Rect("Hotbar", hud);
@@ -300,7 +334,7 @@ namespace AtelierVerse.EditorTools
 
             var view = bar.gameObject.AddComponent<HotbarView>();
             var serialized = new SerializedObject(view);
-            AddSlots(serialized, bar, items, SlotSize, false);
+            AddSlots(serialized, bar, catalog, shapeSprites, SlotSize, false);
 
             Image pill = UiFactory.Box("SelectedPill", hud, Ink, 20f);
             UiFactory.Place(pill.rectTransform, UiFactory.BottomCenter, new Vector2(0f, Margin + SlotSize + 26f), new Vector2(240f, 40f));
@@ -317,12 +351,59 @@ namespace AtelierVerse.EditorTools
         }
 
         /// <summary>
-        /// 부품 칸의 칸 아홉 개를 만든다. 화면 아래의 부품 칸과 VR의 부품 판이 함께 쓴다.
-        /// size는 칸 한 변의 길이이며 안의 숫자와 색 네모는 그 크기에 맞춘다. clickable이면 칸을 눌러 고를 수 있다(VR의 부품 판).
+        /// 처음에 부품 칸에 넣어 두는 부품. 앞의 여섯 칸에 블록 여섯 색을 넣고 나머지는 비워 둔다.
+        /// 다른 모양은 부품 고르는 창에서 넣는다.
         /// </summary>
-        private static void AddSlots(SerializedObject serialized, RectTransform bar, Item[] items, float size, bool clickable)
+        private static int[] DefaultParts(PartCatalog catalog)
+        {
+            var parts = new int[SlotCount];
+            int next = 0;
+            for (int i = 0; i < parts.Length; i++) parts[i] = HotbarModel.None;
+
+            for (int part = 0; part < catalog.Count && next < DefaultFilledSlots; part++)
+            {
+                if (catalog.Get(part).shape == PartShape.Block) parts[next++] = part;
+            }
+
+            return parts;
+        }
+
+        /// <summary>
+        /// 부품의 모양과 색을 보이는 작은 그림. 모양 그림(16일차 셋업이 그린 것)이 있으면 그것에 색을 입히고,
+        /// 없으면 둥근 네모로 그린다. 부품이 없으면 꺼 둔 채로 만든다(실행 중에 PartSwatch가 켜고 바꾼다).
+        /// </summary>
+        private static Image Swatch(Transform parent, PartCatalog catalog, int part, Sprite[] shapeSprites, float size, Vector2 offset)
+        {
+            bool has = catalog != null && catalog.IsValid(part);
+            Color color = has ? catalog.Get(part).color : Paper;
+            Image image;
+
+            if (shapeSprites != null && shapeSprites.Length > 0)
+            {
+                int shape = has ? Mathf.Clamp((int)catalog.Get(part).shape, 0, shapeSprites.Length - 1) : 0;
+                image = UiFactory.Icon("Swatch", parent, shapeSprites[shape], color, size);
+                image.rectTransform.anchoredPosition = offset;
+            }
+            else
+            {
+                image = UiFactory.Box("Swatch", parent, color, 8f);
+                UiFactory.Place(image.rectTransform, UiFactory.Center, offset, new Vector2(size * 0.86f, size * 0.86f));
+                UiFactory.Outline(image, AtelierPalette.WithAlpha(Ink, 0.55f));
+            }
+
+            image.gameObject.SetActive(has);
+            return image;
+        }
+
+        /// <summary>
+        /// 부품 칸의 칸 아홉 개를 만든다. 화면 아래의 부품 칸과 VR의 부품 판이 함께 쓴다.
+        /// size는 칸 한 변의 길이이며 안의 숫자와 부품 그림은 그 크기에 맞춘다. clickable이면 칸을 눌러 고를 수 있다(VR의 부품 판).
+        /// 칸에 든 부품은 실행 중에 바뀌므로 모든 칸에 그림 자리를 두고, 무엇을 그릴지는 HotbarView가 정한다.
+        /// </summary>
+        private static void AddSlots(SerializedObject serialized, RectTransform bar, PartCatalog catalog, Sprite[] shapeSprites, float size, bool clickable)
         {
             float scale = size / SlotSize;
+            int[] defaults = DefaultParts(catalog);
             SerializedProperty slots = serialized.FindProperty("slots");
             slots.arraySize = SlotCount;
 
@@ -339,35 +420,35 @@ namespace AtelierVerse.EditorTools
                 TMP_Text number = UiFactory.Text("Number", slot.transform, (i + 1).ToString(), 16f, Muted, true);
                 UiFactory.Place(number.rectTransform, UiFactory.TopLeft, new Vector2(10f * scale, -4f * scale), new Vector2(20f, 22f));
 
-                Image swatch = null;
-                string itemName = string.Empty;
-                if (i < items.Length)
-                {
-                    itemName = items[i].Name;
-                    swatch = UiFactory.Box("Swatch", slot.transform, items[i].Color, 8f);
-                    UiFactory.Place(swatch.rectTransform, UiFactory.Center, new Vector2(0f, -5f * scale), new Vector2(38f * scale, 38f * scale));
-                    UiFactory.Outline(swatch, AtelierPalette.WithAlpha(Ink, 0.55f));
-                }
+                Image swatch = Swatch(slot.transform, catalog, defaults[i], shapeSprites, 44f * scale, new Vector2(0f, -5f * scale));
 
-                // 빈 칸은 눌러도 고를 것이 없으므로 단추를 두지 않는다.
-                Button button = clickable && i < items.Length ? UiFactory.Clickable(slot) : null;
+                // 빈 칸도 누를 수 있다. 누르면 부품 고르는 창이 그 칸에 넣도록 열린다.
+                Button button = clickable ? UiFactory.Clickable(slot) : null;
 
                 SerializedProperty element = slots.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("root").objectReferenceValue = slot.rectTransform;
                 element.FindPropertyRelative("frame").objectReferenceValue = frame;
                 element.FindPropertyRelative("swatch").objectReferenceValue = swatch;
-                element.FindPropertyRelative("itemName").stringValue = itemName;
                 element.FindPropertyRelative("button").objectReferenceValue = button;
+            }
+
+            serialized.FindProperty("catalog").objectReferenceValue = catalog;
+            SetObjects(serialized.FindProperty("shapeSprites"), shapeSprites ?? new Sprite[0]);
+            SerializedProperty defaultParts = serialized.FindProperty("defaultParts");
+            defaultParts.arraySize = defaults.Length;
+            for (int i = 0; i < defaults.Length; i++)
+            {
+                defaultParts.GetArrayElementAtIndex(i).intValue = defaults[i];
             }
         }
 
         /// <summary>
         /// VR에서 왼손 위에 뜨는 부품 판(13일차). 화가의 팔레트처럼 왼손에 들고 오른손 광선으로 가리켜 누른다.
-        /// 위에는 고른 부품의 이름과 블록 수, 가운데에는 부품 칸, 아래에는 되돌리기·다시 실행·맞추기 단추와 걷기·날기 표시,
-        /// 맨 아래 두 줄에는 놓기·지우기·칠하기와 돌리기·옮기기의 단추 안내가 있다. PC에서는 보이지 않는다.
-        /// 판은 월드 공간의 작은 캔버스이며 XrHandPalette가 크기와 자리를 정한다. 꺼 둔 채로 저장한다.
+        /// 위에는 고른 부품의 이름과 블록 수와 걷기·날기 표시, 가운데에는 부품 칸,
+        /// 아래에는 되돌리기·다시 실행·맞추기·부품 창 단추, 맨 아래 두 줄에는 놓기·지우기·칠하기와 돌리기·옮기기의 단추 안내가 있다.
+        /// PC에서는 보이지 않는다. 판은 월드 공간의 작은 캔버스이며 XrHandPalette가 크기와 자리를 정한다. 꺼 둔 채로 저장한다.
         /// </summary>
-        private static XrHandPalette BuildHandPalette(Transform parent, Item[] items)
+        private static XrHandPalette BuildHandPalette(Transform parent, PartCatalog catalog, Sprite[] shapeSprites)
         {
             const float slotSize = 64f;
             const float pad = 40f;
@@ -376,6 +457,7 @@ namespace AtelierVerse.EditorTools
             const float slotsTop = 70f;
             const float buttonsTop = slotsTop + slotSize + 18f;
             const float hintTop = buttonsTop + 46f + 14f;
+            const float modeWidth = 124f;
 
             var holder = new GameObject("HandPalette");
             holder.transform.SetParent(parent, false);
@@ -398,26 +480,34 @@ namespace AtelierVerse.EditorTools
             UiFactory.Fill(card.rectTransform);
 
             TMP_Text title = UiFactory.Text("PaletteTitle", card.transform, "부품을 고르세요", 26f, Ink, true);
-            UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(pad, -18f), new Vector2(400f, 38f));
+            UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(pad, -18f), new Vector2(300f, 38f));
+
+            // 위쪽 오른쪽: 블록 수와 걷기·날기 표시
+            Image modeChip = UiFactory.Box("PaletteMode", card.transform, DarkGlass, 20f);
+            UiFactory.Place(modeChip.rectTransform, UiFactory.TopRight, new Vector2(-pad, -16f), new Vector2(modeWidth, 40f));
+            Image modeDot = UiFactory.Box("Dot", modeChip.transform, AtelierPalette.Leaf, 6f);
+            UiFactory.Place(modeDot.rectTransform, UiFactory.MiddleLeft, new Vector2(18f, 0f), new Vector2(12f, 12f));
+            TMP_Text modeLabel = UiFactory.Text("Label", modeChip.transform, "걷기", 20f, Paper, true, TextAlignmentOptions.Center);
+            UiFactory.Fill(modeLabel.rectTransform, 32f, 0f, 12f, 0f);
 
             TMP_Text blockCount = UiFactory.Text("PaletteBlockCount", card.transform, "블록 0/500", 20f, Muted, true, TextAlignmentOptions.Right);
-            UiFactory.Place(blockCount.rectTransform, UiFactory.TopRight, new Vector2(-pad, -22f), new Vector2(220f, 30f));
+            UiFactory.Place(blockCount.rectTransform, UiFactory.TopRight, new Vector2(-pad - modeWidth - 14f, -22f), new Vector2(190f, 30f));
 
             RectTransform bar = UiFactory.Rect("PaletteHotbar", card.transform);
             UiFactory.Place(bar, UiFactory.TopLeft, new Vector2(pad, -slotsTop), new Vector2(width - pad * 2f, slotSize));
 
             var hotbar = bar.gameObject.AddComponent<HotbarView>();
             var hotbarSerialized = new SerializedObject(hotbar);
-            AddSlots(hotbarSerialized, bar, items, slotSize, true);
+            AddSlots(hotbarSerialized, bar, catalog, shapeSprites, slotSize, true);
             hotbarSerialized.FindProperty("frameColor").colorValue = Line;
             hotbarSerialized.FindProperty("selectedFrameColor").colorValue = Gold;
             hotbarSerialized.FindProperty("selectedLift").floatValue = 8f;
             hotbarSerialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // 단추 줄: 되돌리기, 다시 실행, 맞추기(누를 때마다 다음 단계), 걷기·날기 표시.
+            // 단추 줄: 되돌리기, 다시 실행, 맞추기(누를 때마다 다음 단계), 부품 창(부품 고르는 창 열기).
             const float historyWidth = 142f;
             const float snapWidth = 184f;
-            const float modeWidth = 124f;
+            const float partsWidth = 136f;
             const float buttonGap = 12f;
 
             Button undo = BigButton("Undo", card.transform, "되돌리기", null, Paper, Ink, out TMP_Text undoLabel);
@@ -432,12 +522,9 @@ namespace AtelierVerse.EditorTools
             UiFactory.Place((RectTransform)snap.transform, UiFactory.TopLeft, new Vector2(pad + (historyWidth + buttonGap) * 2f, -buttonsTop), new Vector2(snapWidth, 46f));
             snapLabel.fontSize = 22f;
 
-            Image modeChip = UiFactory.Box("PaletteMode", card.transform, DarkGlass, 22f);
-            UiFactory.Place(modeChip.rectTransform, UiFactory.TopRight, new Vector2(-pad, -buttonsTop), new Vector2(modeWidth, 46f));
-            Image modeDot = UiFactory.Box("Dot", modeChip.transform, AtelierPalette.Leaf, 6f);
-            UiFactory.Place(modeDot.rectTransform, UiFactory.MiddleLeft, new Vector2(18f, 0f), new Vector2(12f, 12f));
-            TMP_Text modeLabel = UiFactory.Text("Label", modeChip.transform, "걷기", 20f, Paper, true, TextAlignmentOptions.Center);
-            UiFactory.Fill(modeLabel.rectTransform, 32f, 0f, 12f, 0f);
+            Button parts = BigButton("Parts", card.transform, "부품 창", null, Gold, Ink, out TMP_Text partsLabel);
+            UiFactory.Place((RectTransform)parts.transform, UiFactory.TopRight, new Vector2(-pad, -buttonsTop), new Vector2(partsWidth, 46f));
+            partsLabel.fontSize = 22f;
 
             TMP_Text hint = UiFactory.Text("PaletteHint", card.transform, "오른손 방아쇠 놓기 · 옆 단추 지우기 · 왼손 방아쇠 칠하기", 18f, Muted);
             UiFactory.Place(hint.rectTransform, UiFactory.TopLeft, new Vector2(pad, -hintTop), new Vector2(width - pad * 2f, 26f));
@@ -458,8 +545,162 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("redoButton").objectReferenceValue = redo;
             serialized.FindProperty("snapButton").objectReferenceValue = snap;
             serialized.FindProperty("snapLabel").objectReferenceValue = snapLabel;
+            serialized.FindProperty("partsButton").objectReferenceValue = parts;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return palette;
+        }
+
+        /// <summary>
+        /// 부품 고르는 창(16일차). 위에는 넣을 칸을 고르는 줄, 아래에는 모양마다 한 줄씩 부품이 있다.
+        /// 부품을 누르면 넣을 칸에 들어간다. PC에서는 화면 가운데의 창으로, VR에서는 메뉴처럼 눈앞의 판에 뜬다.
+        /// 뒤의 어두운 막은 VR에서 감추도록 따로 돌려준다.
+        /// </summary>
+        private static PartPickerView BuildPartPicker(RectTransform canvas, PartCatalog catalog, Sprite[] shapeSprites, out GameObject scrimObject)
+        {
+            const float targetTop = 108f;
+            const float targetSize = 60f;
+            const float gridLeft = PanelPadding + 110f;
+            const float gridTop = targetTop + targetSize + 28f;
+            const float cellSize = 58f;
+            const float cellGap = 10f;
+            const float rowHeight = cellSize + 8f;
+
+            RectTransform holder = UiFactory.Rect("PartPicker", canvas);
+            UiFactory.Fill(holder);
+            var view = holder.gameObject.AddComponent<PartPickerView>();
+
+            RectTransform root = UiFactory.Rect("Root", holder);
+            UiFactory.Fill(root);
+
+            RectTransform scrimRect = UiFactory.Rect("Scrim", root);
+            UiFactory.Fill(scrimRect);
+            var scrim = scrimRect.gameObject.AddComponent<Image>();
+            scrim.color = AtelierPalette.Scrim;
+            scrim.raycastTarget = true;
+            scrimObject = scrimRect.gameObject;
+
+            Image panel = UiFactory.Card("Panel", root, Paper, Ink, 28f, 8f);
+            UiFactory.Place(panel.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(PanelWidth, PanelHeight));
+
+            TMP_Text title = UiFactory.Text("Title", panel.transform, "부품 고르기", 30f, Ink, true);
+            UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -24f), new Vector2(400f, 40f));
+
+            TMP_Text guide = UiFactory.Text("Guide", panel.transform, "넣을 칸을 고른 뒤 부품을 누르면 그 칸에 들어갑니다. 크기는 블록 한 변을 1로 적었습니다.", 20f, Muted);
+            UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f, 28f));
+
+            // 넣을 칸: 아래쪽 부품 칸과 같은 아홉 칸
+            TMP_Text targetTitle = UiFactory.Text("TargetTitle", panel.transform, "넣을 칸", 22f, Ink, true);
+            UiFactory.Place(targetTitle.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -targetTop - 15f), new Vector2(100f, 30f));
+
+            var targetButtons = new Button[SlotCount];
+            var targetFrames = new Image[SlotCount];
+            var targetSwatches = new Image[SlotCount];
+            for (int i = 0; i < SlotCount; i++)
+            {
+                Image slot = UiFactory.Box($"Target{i + 1}", panel.transform, Paper, 12f);
+                UiFactory.Place(slot.rectTransform, UiFactory.TopLeft, new Vector2(gridLeft + i * (targetSize + 8f), -targetTop), new Vector2(targetSize, targetSize));
+                targetFrames[i] = UiFactory.Outline(slot, Line);
+
+                TMP_Text number = UiFactory.Text("Number", slot.transform, (i + 1).ToString(), 14f, Muted, true);
+                UiFactory.Place(number.rectTransform, UiFactory.TopLeft, new Vector2(8f, -3f), new Vector2(18f, 20f));
+
+                targetSwatches[i] = Swatch(slot.transform, catalog, HotbarModel.None, shapeSprites, 36f, new Vector2(0f, -4f));
+                targetButtons[i] = UiFactory.Clickable(slot);
+            }
+
+            TMP_Text targetLabel = UiFactory.Text("TargetLabel", panel.transform, "1번 칸 · 비어 있음", 22f, Ink, true, TextAlignmentOptions.Right);
+            UiFactory.Place(targetLabel.rectTransform, UiFactory.TopRight, new Vector2(-PanelPadding, -targetTop - 15f), new Vector2(240f, 30f));
+
+            UiFactory.Divider(panel.transform, -targetTop - targetSize - 14f, PanelPadding, Line);
+
+            // 부품: 모양마다 한 줄, 줄 안에서는 부품 목록의 순서(색의 순서)대로
+            var cellButtons = new List<Button>();
+            var cellParts = new List<int>();
+            for (int shapeIndex = 0; shapeIndex < PartMeshes.ShapeCount; shapeIndex++)
+            {
+                var shape = (PartShape)shapeIndex;
+                float y = gridTop + shapeIndex * rowHeight;
+                int column = 0;
+
+                for (int part = 0; part < catalog.Count; part++)
+                {
+                    PartCatalog.Part entry = catalog.Get(part);
+                    if (entry.shape != shape) continue;
+
+                    Image cell = UiFactory.Box($"Part_{entry.id}", panel.transform, Surface, 12f);
+                    UiFactory.Place(cell.rectTransform, UiFactory.TopLeft, new Vector2(gridLeft + column * (cellSize + cellGap), -y), new Vector2(cellSize, cellSize));
+                    UiFactory.Outline(cell, Line);
+                    Swatch(cell.transform, catalog, part, shapeSprites, 42f, Vector2.zero);
+
+                    cellButtons.Add(UiFactory.Clickable(cell));
+                    cellParts.Add(part);
+                    column++;
+                }
+
+                if (column == 0) continue;
+
+                TMP_Text rowLabel = UiFactory.Text($"Row{shapeIndex}", panel.transform, PartMeshes.NameOf(shape), 24f, Ink, true);
+                UiFactory.Place(rowLabel.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -y - 13f), new Vector2(100f, 32f));
+
+                TMP_Text sizeLabel = UiFactory.Text($"Size{shapeIndex}", panel.transform, SizeText(shape), 20f, Muted);
+                UiFactory.Place(sizeLabel.rectTransform, UiFactory.TopLeft, new Vector2(gridLeft + column * (cellSize + cellGap) + 14f, -y - 15f), new Vector2(430f, 28f));
+            }
+
+            Button clear = BigButton("ClearSlot", panel.transform, "칸 비우기", null, Paper, Ink, out _);
+            UiFactory.Place((RectTransform)clear.transform, UiFactory.BottomLeft, new Vector2(PanelPadding, 34f), new Vector2(300f, 64f));
+
+            Button close = BigButton("ClosePicker", panel.transform, "돌아가기", "B", Gold, Ink, out _);
+            UiFactory.Place((RectTransform)close.transform, UiFactory.BottomRight, new Vector2(-PanelPadding, 34f), new Vector2(300f, 64f));
+
+            root.gameObject.SetActive(false);
+
+            var serialized = new SerializedObject(view);
+            serialized.FindProperty("root").objectReferenceValue = root.gameObject;
+            serialized.FindProperty("catalog").objectReferenceValue = catalog;
+            SetObjects(serialized.FindProperty("shapeSprites"), shapeSprites ?? new Sprite[0]);
+            serialized.FindProperty("targetLabel").objectReferenceValue = targetLabel;
+            serialized.FindProperty("clearButton").objectReferenceValue = clear;
+            serialized.FindProperty("closeButton").objectReferenceValue = close;
+            serialized.FindProperty("frameColor").colorValue = Line;
+            serialized.FindProperty("targetFrameColor").colorValue = Gold;
+
+            SerializedProperty cells = serialized.FindProperty("cells");
+            cells.arraySize = cellButtons.Count;
+            for (int i = 0; i < cellButtons.Count; i++)
+            {
+                SerializedProperty cell = cells.GetArrayElementAtIndex(i);
+                cell.FindPropertyRelative("button").objectReferenceValue = cellButtons[i];
+                cell.FindPropertyRelative("part").intValue = cellParts[i];
+            }
+
+            SerializedProperty targets = serialized.FindProperty("targets");
+            targets.arraySize = SlotCount;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                SerializedProperty target = targets.GetArrayElementAtIndex(i);
+                target.FindPropertyRelative("button").objectReferenceValue = targetButtons[i];
+                target.FindPropertyRelative("frame").objectReferenceValue = targetFrames[i];
+                target.FindPropertyRelative("swatch").objectReferenceValue = targetSwatches[i];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return view;
+        }
+
+        /// <summary>부품 고르는 창의 줄 끝에 적는 크기와 한마디. 크기는 가로 × 높이 × 세로이며 블록 한 변이 1이다.</summary>
+        private static string SizeText(PartShape shape)
+        {
+            Vector3 size = PartMeshes.SizeOf(shape);
+            string text = $"{size.x:0.##} × {size.y:0.##} × {size.z:0.##}";
+            switch (shape)
+            {
+                case PartShape.Block: return text + " · 길이의 표준";
+                case PartShape.Slab: return text + " · 반 높이";
+                case PartShape.Pillar: return text + " · 반 굵기";
+                case PartShape.Wedge: return text + " · 45도로 오름";
+                case PartShape.Stairs: return text + $" · {PartMeshes.StairSteps}단";
+                default: return text;
+            }
         }
 
         /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 칠하고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
@@ -515,11 +756,12 @@ namespace AtelierVerse.EditorTools
         {
             (string key, string label)[] hints =
             {
+                // 사람들 목록의 Tab은 그 목록의 머리말에 딱지로 적혀 있어 여기서는 뺀다. 줄이 부품 칸에 닿지 않게 하기 위해서다.
                 ("Esc", "메뉴"),
-                ("Tab", "사람들"),
                 ("휠", "시점"),
                 ("V", "날기"),
                 ("1~9", "부품"),
+                ("B", "부품 창"),
             };
 
             Image glass = UiFactory.Box("KeyHints", hud, DarkGlass, 22f);
@@ -922,7 +1164,7 @@ namespace AtelierVerse.EditorTools
                 ("Space · Shift", "점프 · 달리기 (날 때 위 · 아래)"),
                 ("V", "날기 켜고 끄기"),
                 ("휠", "1인칭·3인칭 바꾸기"),
-                ("1~9", "부품 고르기"),
+                ("1~9 · B", "부품 고르기 · 부품 창"),
                 ("왼쪽 누르기", "블록 놓기"),
                 ("오른쪽 누르기", "블록 지우기"),
                 ("가운데 · F", "블록 칠하기"),

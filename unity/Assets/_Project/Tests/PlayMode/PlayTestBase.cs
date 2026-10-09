@@ -31,6 +31,7 @@ namespace AtelierVerse.Tests
         private float savedFieldOfView;
         private bool savedPeopleList;
         private int savedSnapLevel;
+        private string savedHotbarParts;
         private Action savedExitHandler;
         private RenderTexture captureTarget;
         private Camera captureCamera;
@@ -68,6 +69,7 @@ namespace AtelierVerse.Tests
             savedFieldOfView = GameSettings.FieldOfView;
             savedPeopleList = GameSettings.ShowPeopleList;
             savedSnapLevel = GameSettings.SnapLevel;
+            savedHotbarParts = GameSettings.HotbarParts;
             GameSettings.ResetToDefaults();
 
             savedExitHandler = AppExit.Handler;
@@ -84,6 +86,7 @@ namespace AtelierVerse.Tests
             GameSettings.FieldOfView = savedFieldOfView;
             GameSettings.ShowPeopleList = savedPeopleList;
             GameSettings.SnapLevel = savedSnapLevel;
+            GameSettings.HotbarParts = savedHotbarParts;
             Application.targetFrameRate = previousFrameRate;
 
             // 아직 떠 있는 씬의 남은 변경을 지금 저장해 두어야, 다음 테스트가 씬을 바꿀 때 그 변경이 다음 테스트의 폴더로 새지 않는다.

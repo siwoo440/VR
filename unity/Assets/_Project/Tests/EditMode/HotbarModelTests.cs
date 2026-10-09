@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace AtelierVerse.Tests
 {
     /// <summary>
-    /// 부품 칸 선택 규칙 검사. 빈 칸과 같은 칸을 다시 고르는 경우, 끝에서 넘어가는 경우를 확인한다.
+    /// 부품 칸의 규칙 검사. 빈 칸과 같은 칸을 다시 고르는 경우, 끝에서 넘어가는 경우, 칸에 부품을 넣고 빼는 경우를 확인한다.
     /// </summary>
     public class HotbarModelTests
     {
@@ -13,7 +13,7 @@ namespace AtelierVerse.Tests
             var model = new HotbarModel(slotCount);
             foreach (int index in filled)
             {
-                model.SetFilled(index, true);
+                model.SetPart(index, index);
             }
 
             return model;
@@ -97,8 +97,81 @@ namespace AtelierVerse.Tests
         {
             HotbarModel model = CreateWithFilled(9, 3);
             model.Select(3);
-            model.SetFilled(3, false);
+            model.SetPart(3, HotbarModel.None);
             Assert.AreEqual(HotbarModel.None, model.SelectedIndex);
+        }
+
+        [Test]
+        public void 칸에_부품을_넣으면_그_칸의_부품이_되고_빼면_빈_칸이_된다()
+        {
+            var model = new HotbarModel(9);
+            Assert.AreEqual(HotbarModel.None, model.GetPart(4));
+            Assert.IsFalse(model.IsFilled(4));
+
+            model.SetPart(4, 17);
+            Assert.AreEqual(17, model.GetPart(4));
+            Assert.IsTrue(model.IsFilled(4));
+
+            model.SetPart(4, HotbarModel.None);
+            Assert.IsFalse(model.IsFilled(4));
+            Assert.AreEqual(HotbarModel.None, model.GetPart(99), "범위 밖의 칸은 빈 칸으로 봅니다.");
+        }
+
+        [Test]
+        public void 고른_부품은_칸의_번호가_아니라_칸에_든_부품이다()
+        {
+            var model = new HotbarModel(9);
+            model.SetPart(2, 23);
+            Assert.AreEqual(HotbarModel.None, model.SelectedPart);
+
+            model.Select(2);
+            Assert.AreEqual(2, model.SelectedIndex);
+            Assert.AreEqual(23, model.SelectedPart);
+
+            // 고른 칸의 부품을 바꾸면 고른 부품도 바뀐다. 선택은 그대로다.
+            model.SetPart(2, 8);
+            Assert.AreEqual(2, model.SelectedIndex);
+            Assert.AreEqual(8, model.SelectedPart);
+        }
+
+        [Test]
+        public void 칸에_든_부품이_바뀔_때만_알린다()
+        {
+            var model = new HotbarModel(9);
+            int changes = 0;
+            model.SlotsChanged += () => changes++;
+
+            model.SetPart(0, 5);
+            model.SetPart(0, 5);
+            model.SetPart(0, 6);
+            model.SetPart(-1, 6);
+            model.SetPart(0, HotbarModel.None);
+
+            Assert.AreEqual(3, changes);
+        }
+
+        [Test]
+        public void Choose는_이미_고른_칸이어도_선택을_풀지_않는다()
+        {
+            HotbarModel model = CreateWithFilled(9, 1);
+
+            model.Choose(1);
+            Assert.AreEqual(1, model.SelectedIndex);
+            model.Choose(1);
+            Assert.AreEqual(1, model.SelectedIndex, "부품을 넣은 칸을 바로 쓰게 하려는 것이므로 풀리면 안 됩니다.");
+
+            model.Choose(5);
+            Assert.AreEqual(1, model.SelectedIndex, "빈 칸은 고를 수 없습니다.");
+        }
+
+        [Test]
+        public void 가장_앞의_빈_칸을_찾는다()
+        {
+            HotbarModel model = CreateWithFilled(4, 0, 1, 3);
+            Assert.AreEqual(2, model.FirstEmpty());
+
+            model.SetPart(2, 9);
+            Assert.AreEqual(HotbarModel.None, model.FirstEmpty(), "빈 칸이 없으면 None입니다.");
         }
 
         [Test]

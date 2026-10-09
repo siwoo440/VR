@@ -17,23 +17,239 @@ MonoBehaviour:
     displayName: "\uACE8\uB4DC \uBE14\uB85D"
     material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
     color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
   - id: block.blue
     displayName: "\uBE14\uB8E8 \uBE14\uB85D"
     material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
     color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
   - id: block.clay
     displayName: "\uD14C\uB77C\uCF54\uD0C0 \uBE14\uB85D"
     material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
     color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
   - id: block.leaf
     displayName: "\uC78E \uBE14\uB85D"
     material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
     color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
   - id: block.ivory
     displayName: "\uD770 \uBE14\uB85D"
     material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
     color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
   - id: block.wood
     displayName: "\uB098\uBB34 \uBE14\uB85D"
     material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
     color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}
+    shape: 0
+    mesh: {fileID: 4300000, guid: 85b185924ffdd09409afa9a67602edaf, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 1
+  - id: slab.gold
+    displayName: "\uACE8\uB4DC \uD310"
+    material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
+    color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: slab.blue
+    displayName: "\uBE14\uB8E8 \uD310"
+    material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
+    color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: slab.clay
+    displayName: "\uD14C\uB77C\uCF54\uD0C0 \uD310"
+    material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
+    color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: slab.leaf
+    displayName: "\uC78E \uD310"
+    material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
+    color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: slab.ivory
+    displayName: "\uD770 \uD310"
+    material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
+    color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: slab.wood
+    displayName: "\uB098\uBB34 \uD310"
+    material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
+    color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}
+    shape: 1
+    mesh: {fileID: 4300000, guid: 091ad1e5887b2894a9eae6b63074b330, type: 2}
+    size: {x: 1, y: 0.5, z: 1}
+    boxCollider: 1
+  - id: pillar.gold
+    displayName: "\uACE8\uB4DC \uAE30\uB465"
+    material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
+    color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: pillar.blue
+    displayName: "\uBE14\uB8E8 \uAE30\uB465"
+    material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
+    color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: pillar.clay
+    displayName: "\uD14C\uB77C\uCF54\uD0C0 \uAE30\uB465"
+    material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
+    color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: pillar.leaf
+    displayName: "\uC78E \uAE30\uB465"
+    material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
+    color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: pillar.ivory
+    displayName: "\uD770 \uAE30\uB465"
+    material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
+    color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: pillar.wood
+    displayName: "\uB098\uBB34 \uAE30\uB465"
+    material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
+    color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}
+    shape: 2
+    mesh: {fileID: 4300000, guid: 578edf311b0f08a4c88e6fb21cbcd8a3, type: 2}
+    size: {x: 0.5, y: 1, z: 0.5}
+    boxCollider: 1
+  - id: wedge.gold
+    displayName: "\uACE8\uB4DC \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
+    color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: wedge.blue
+    displayName: "\uBE14\uB8E8 \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
+    color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: wedge.clay
+    displayName: "\uD14C\uB77C\uCF54\uD0C0 \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
+    color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: wedge.leaf
+    displayName: "\uC78E \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
+    color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: wedge.ivory
+    displayName: "\uD770 \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
+    color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: wedge.wood
+    displayName: "\uB098\uBB34 \uACBD\uC0AC"
+    material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
+    color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}
+    shape: 3
+    mesh: {fileID: 4300000, guid: d38fe6a9792bb8848b0637d3d450dd98, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.gold
+    displayName: "\uACE8\uB4DC \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: 58ed640cbe469704d82821a907a1a113, type: 2}
+    color: {r: 0.96862745, g: 0.654902, b: 0.11372549, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.blue
+    displayName: "\uBE14\uB8E8 \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: 51343eb42584ab141aa0b8abb99c02c9, type: 2}
+    color: {r: 0.007843138, g: 0.36862746, b: 0.90588236, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.clay
+    displayName: "\uD14C\uB77C\uCF54\uD0C0 \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: a39cc84929de84f4b85c30af80021cea, type: 2}
+    color: {r: 0.72156864, g: 0.26666668, b: 0.05882353, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.leaf
+    displayName: "\uC78E \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: 38c6d145c3d19644b88b23bd965d0a89, type: 2}
+    color: {r: 0.16862746, g: 0.47843137, b: 0.29411766, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.ivory
+    displayName: "\uD770 \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: 7e301c1fd5a415b4f80b208d73f31d4e, type: 2}
+    color: {r: 1, g: 0.99215686, b: 0.972549, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0
+  - id: stairs.wood
+    displayName: "\uB098\uBB34 \uACC4\uB2E8"
+    material: {fileID: 2100000, guid: 821b3ce6434cc594faa092c0c9146fdd, type: 2}
+    color: {r: 0.5568628, g: 0.49803922, b: 0.3882353, a: 1}
+    shape: 4
+    mesh: {fileID: 4300000, guid: 80d7a0ba66806034d8e8df8851e22b37, type: 2}
+    size: {x: 1, y: 1, z: 1}
+    boxCollider: 0

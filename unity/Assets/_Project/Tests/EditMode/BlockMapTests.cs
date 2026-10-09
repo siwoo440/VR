@@ -214,6 +214,72 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(2, map.Count, "확인만 하고 기록은 바꾸지 않습니다.");
         }
 
+        // 부품 0은 표준 블록, 1은 판(높이 반), 2는 기둥(굵기 반)인 기록.
+        private static BlockMap CreateSized(int capacity = 10)
+        {
+            return new BlockMap(new Vector3(-2f, 0f, -2f), new Vector3(3f, 4f, 3f), capacity, part =>
+            {
+                switch (part)
+                {
+                    case 1: return new Vector3(0.5f, 0.25f, 0.5f);
+                    case 2: return new Vector3(0.25f, 0.5f, 0.25f);
+                    default: return new Vector3(0.5f, 0.5f, 0.5f);
+                }
+            });
+        }
+
+        [Test]
+        public void 부품의_크기로_범위를_본다()
+        {
+            BlockMap map = CreateSized();
+
+            // 판은 바닥에 얹으면 가운데 높이가 0.25다. 표준 블록은 그 높이에 놓을 수 없다.
+            Assert.AreEqual(PlaceResult.Ok, map.Check(1, new Vector3(0f, 0.25f, 0f)));
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(0, new Vector3(0f, 0.25f, 0f)));
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(1, new Vector3(0f, 0.2f, 0f)), "판도 바닥 아래로 묻히면 안 됩니다.");
+
+            // 기둥은 가늘어서 범위의 가장자리에 더 가까이 놓인다.
+            Assert.AreEqual(PlaceResult.Ok, map.Check(2, new Vector3(2.75f, 0.5f, 0f)));
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(0, new Vector3(2.75f, 0.5f, 0f)));
+
+            Assert.AreEqual(PlaceResult.Ok, map.Add(1, new Vector3(0f, 0.25f, 0f), Quaternion.identity, out int slab));
+            Assert.IsTrue(map.TryGet(slab, out BlockRecord record));
+            Assert.AreEqual(0.25f, record.Position.y, 0.0001f);
+        }
+
+        [Test]
+        public void 옮기거나_부품을_바꿀_때도_그_부품의_크기로_범위를_본다()
+        {
+            BlockMap map = CreateSized();
+            Assert.AreEqual(PlaceResult.Ok, map.Add(1, new Vector3(0f, 0.25f, 0f), Quaternion.identity, out int slab));
+
+            Assert.AreEqual(PlaceResult.Ok, map.CheckMove(slab, new Vector3(1f, 0.25f, 1f)), "판은 바닥에 붙은 높이로 옮길 수 있어야 합니다.");
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.CheckMove(slab, new Vector3(1f, 0.1f, 1f)));
+
+            // 바닥에 붙은 판을 그 자리에서 표준 블록으로 바꾸면 블록이 바닥에 묻히므로 바꿀 수 없다.
+            Assert.IsFalse(map.Set(new BlockRecord(slab, 0, new Vector3(0f, 0.25f, 0f), Quaternion.identity)));
+            Assert.IsTrue(map.Set(new BlockRecord(slab, 1, new Vector3(1f, 0.25f, 1f), Quaternion.identity)));
+        }
+
+        [Test]
+        public void 크기를_알려_주지_않으면_모든_부품을_표준_블록으로_본다()
+        {
+            BlockMap map = Create();
+
+            Assert.AreEqual(new Vector3(0.5f, 0.5f, 0.5f), map.HalfOf(7));
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(1, new Vector3(0f, 0.25f, 0f)));
+        }
+
+        [Test]
+        public void 반_높이에_맞춰_높이를_범위_안으로_올린다()
+        {
+            BlockMap map = CreateSized();
+
+            Assert.AreEqual(0.25f, map.ClampHeight(new Vector3(1f, 0.05f, 1f), 0.25f).y, 0.0001f);
+            Assert.AreEqual(0.5f, map.ClampHeight(new Vector3(1f, 0.05f, 1f)).y, 0.0001f);
+            Assert.AreEqual(3.75f, map.ClampHeight(new Vector3(1f, 9f, 1f), 0.25f).y, 0.0001f);
+        }
+
         [Test]
         public void 모두_지우면_번호도_처음부터_다시_붙는다()
         {

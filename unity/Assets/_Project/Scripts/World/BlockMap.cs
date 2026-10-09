@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ namespace AtelierVerse.World
     /// 맵에 놓인 블록의 기록. 블록마다 고유 번호와 자리(가운데의 좌표), 방향, 부품을 다루고, 화면에 보이는 블록은 BlockWorld가 맡는다.
     /// 블록은 칸에 맞추지 않고 어디에나 놓을 수 있으며 서로 겹쳐도 된다. 다만 가운데가 정확히 같은 자리에는 둘을 두지 않는다.
     /// 놓을 수 있는 범위와 개수 상한을 여기서 지킨다. 자리는 1mm 단위로 다듬어 기록한다.
+    /// 부품마다 크기가 다를 수 있다(16일차). 부품의 반 크기는 만들 때 받은 함수에 묻고, 없으면 모두 표준 블록으로 본다.
     /// </summary>
     public class BlockMap : IBlockStore
     {
@@ -56,15 +58,22 @@ namespace AtelierVerse.World
         /// <summary>번호가 없음을 뜻하는 값. 블록의 번호는 1부터 시작한다.</summary>
         public const int NoId = 0;
 
+        private static readonly Vector3 StandardHalf = new Vector3(HalfSize, HalfSize, HalfSize);
+
         private readonly Dictionary<int, BlockRecord> blocks = new Dictionary<int, BlockRecord>();
         private readonly Dictionary<Vector3Int, int> centers = new Dictionary<Vector3Int, int>();
         private readonly Vector3 min;
         private readonly Vector3 max;
+        private readonly Func<int, Vector3> halfSizeOf;
         private int nextId = 1;
 
-        /// <summary>범위는 상자의 두 모서리로 준다. 블록은 이 상자 안에 다 들어와야 한다.</summary>
-        public BlockMap(Vector3 minCorner, Vector3 maxCorner, int capacity)
+        /// <summary>
+        /// 범위는 상자의 두 모서리로 준다. 블록은 이 상자 안에 다 들어와야 한다.
+        /// halfSizeOf는 부품 번호로 그 부품의 반 크기를 알려 주는 함수이며, 주지 않으면 모든 부품을 표준 블록으로 본다.
+        /// </summary>
+        public BlockMap(Vector3 minCorner, Vector3 maxCorner, int capacity, Func<int, Vector3> halfSizeOf = null)
         {
+            this.halfSizeOf = halfSizeOf;
             min = Vector3.Min(minCorner, maxCorner);
             max = Vector3.Max(minCorner, maxCorner);
             Capacity = Mathf.Max(0, capacity);
@@ -94,20 +103,46 @@ namespace AtelierVerse.World
             return blocks.TryGetValue(id, out record);
         }
 
+        /// <summary>부품의 반 크기. 크기를 알려 주는 함수가 없거나 값이 바르지 않으면 표준 블록이다.</summary>
+        public Vector3 HalfOf(int partIndex)
+        {
+            if (halfSizeOf == null) return StandardHalf;
+
+            Vector3 half = halfSizeOf(partIndex);
+            return half.x > 0f && half.y > 0f && half.z > 0f ? half : StandardHalf;
+        }
+
         /// <summary>표준 블록을 이 자리에 놓았을 때 범위 안에 다 들어오는지.</summary>
         public bool InBounds(Vector3 position)
         {
-            float slack = Precision * 0.5f;
-            return position.x >= min.x + HalfSize - slack && position.x <= max.x - HalfSize + slack
-                && position.y >= min.y + HalfSize - slack && position.y <= max.y - HalfSize + slack
-                && position.z >= min.z + HalfSize - slack && position.z <= max.z - HalfSize + slack;
+            return InBounds(position, StandardHalf);
         }
 
-        /// <summary>이 자리에 놓을 수 있는지 미리 확인한다. 기록은 바뀌지 않는다.</summary>
+        /// <summary>반 크기가 half인 부품을 이 자리에 놓았을 때 범위 안에 다 들어오는지. 방향은 보지 않는다.</summary>
+        public bool InBounds(Vector3 position, Vector3 half)
+        {
+            float slack = Precision * 0.5f;
+            return position.x >= min.x + half.x - slack && position.x <= max.x - half.x + slack
+                && position.y >= min.y + half.y - slack && position.y <= max.y - half.y + slack
+                && position.z >= min.z + half.z - slack && position.z <= max.z - half.z + slack;
+        }
+
+        /// <summary>표준 블록을 이 자리에 놓을 수 있는지 미리 확인한다. 기록은 바뀌지 않는다.</summary>
         public PlaceResult Check(Vector3 position)
         {
+            return CheckHalf(position, StandardHalf);
+        }
+
+        /// <summary>이 부품을 이 자리에 놓을 수 있는지 미리 확인한다. 부품의 크기로 범위를 본다.</summary>
+        public PlaceResult Check(int partIndex, Vector3 position)
+        {
+            return CheckHalf(position, HalfOf(partIndex));
+        }
+
+        private PlaceResult CheckHalf(Vector3 position, Vector3 half)
+        {
             position = Quantize(position);
-            if (!InBounds(position)) return PlaceResult.OutOfBounds;
+            if (!InBounds(position, half)) return PlaceResult.OutOfBounds;
             if (centers.ContainsKey(KeyOf(position))) return PlaceResult.Occupied;
             if (blocks.Count >= Capacity) return PlaceResult.Full;
             return PlaceResult.Ok;
@@ -119,7 +154,8 @@ namespace AtelierVerse.World
         public PlaceResult CheckMove(int id, Vector3 position)
         {
             position = Quantize(position);
-            if (!InBounds(position)) return PlaceResult.OutOfBounds;
+            Vector3 half = blocks.TryGetValue(id, out BlockRecord record) ? HalfOf(record.Part) : StandardHalf;
+            if (!InBounds(position, half)) return PlaceResult.OutOfBounds;
             if (centers.TryGetValue(KeyOf(position), out int owner) && owner != id) return PlaceResult.Occupied;
             return PlaceResult.Ok;
         }
@@ -130,7 +166,7 @@ namespace AtelierVerse.World
             id = NoId;
             if (partIndex < 0) return PlaceResult.UnknownPart;
 
-            PlaceResult result = Check(position);
+            PlaceResult result = Check(partIndex, position);
             if (result != PlaceResult.Ok) return result;
 
             id = nextId;
@@ -147,7 +183,7 @@ namespace AtelierVerse.World
             if (record.Part < 0) return PlaceResult.UnknownPart;
             if (record.Id < 1 || blocks.ContainsKey(record.Id)) return PlaceResult.Occupied;
 
-            PlaceResult result = Check(record.Position);
+            PlaceResult result = Check(record.Part, record.Position);
             if (result != PlaceResult.Ok) return result;
 
             Store(record);
@@ -172,7 +208,7 @@ namespace AtelierVerse.World
             if (record.Part < 0 || !blocks.TryGetValue(record.Id, out BlockRecord current)) return false;
 
             Vector3 position = Quantize(record.Position);
-            if (!InBounds(position)) return false;
+            if (!InBounds(position, HalfOf(record.Part))) return false;
 
             Vector3Int key = KeyOf(position);
             if (centers.TryGetValue(key, out int owner) && owner != record.Id) return false;
@@ -216,7 +252,13 @@ namespace AtelierVerse.World
         /// <summary>높이만 범위 안으로 맞춘다. 블록의 옆면 아래쪽을 가리켜도 바닥에 묻히지 않고 바닥 위에 놓이게 하는 데 쓴다.</summary>
         public Vector3 ClampHeight(Vector3 position)
         {
-            position.y = Mathf.Clamp(position.y, min.y + HalfSize, Mathf.Max(min.y + HalfSize, max.y - HalfSize));
+            return ClampHeight(position, HalfSize);
+        }
+
+        /// <summary>반 높이가 halfHeight인 부품의 높이를 범위 안으로 맞춘다.</summary>
+        public Vector3 ClampHeight(Vector3 position, float halfHeight)
+        {
+            position.y = Mathf.Clamp(position.y, min.y + halfHeight, Mathf.Max(min.y + halfHeight, max.y - halfHeight));
             return position;
         }
 

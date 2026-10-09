@@ -537,6 +537,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Parts",
+                    "type": "Button",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a6101",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -691,6 +700,17 @@
                     "processors": "",
                     "groups": "XR",
                     "action": "Menu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5c1d0a10-6c1e-4b7a-9a51-0c6f4e2a6201",
+                    "path": "<Keyboard>/b",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Parts",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -750,7 +750,7 @@ CharacterController:
   serializedVersion: 3
   m_Height: 1.7
   m_Radius: 0.3
-  m_SlopeLimit: 45
+  m_SlopeLimit: 50
   m_StepOffset: 0.35
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0
@@ -784,6 +784,7 @@ MonoBehaviour:
   ghostPrefab: {fileID: 8180261717995509615, guid: fe1c6860fa051df4e8fadc8d9bec5ec8, type: 3}
   reach: 6
   ghostAlpha: 0.55
+  carriedAlpha: 0.8
   blockedColor: {r: 0.72, g: 0.27, b: 0.06, a: 1}
 --- !u!114 &8260445308984378654
 MonoBehaviour:

@@ -86,13 +86,38 @@ namespace AtelierVerse.World
         }
 
         /// <summary>
+        /// 반 크기가 half이고 rotation만큼 돈 부품을 면에 얹을 때, 면에서 부품의 가운데까지의 거리.
+        /// 부품이 면을 파고들지 않고 닿기만 하는 거리다. 면과 나란한 블록은 반 변이고, 비스듬히 돈 블록은 모서리가 닿는 만큼 더 멀다.
+        /// </summary>
+        public static float RestOffset(Vector3 half, Quaternion rotation, Vector3 normal)
+        {
+            Vector3 outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            return Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.right)) * half.x
+                + Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.up)) * half.y
+                + Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.forward)) * half.z;
+        }
+
+        /// <summary>가리킨 면 위에 부품을 얹었을 때의 가운데 자리. 면 위에서는 가리킨 바로 그 자리다.</summary>
+        public static Vector3 RestOn(Vector3 point, Vector3 normal, Vector3 half, Quaternion rotation)
+        {
+            Vector3 outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            return point + outward * RestOffset(half, rotation, outward);
+        }
+
+        /// <summary>
         /// 바닥이나 블록이 아닌 물체의 면을 가리켰을 때의 자리. 면 위에 얹은 자리(면에서 반 변 바깥)를 모눈에 맞춘다.
         /// 면이 축과 나란하면 면에 닿는 쪽은 그대로 두어 면에 붙어 있게 하고, 나머지 두 쪽만 맞춘다.
         /// </summary>
         public static Vector3 SnapToGrid(Vector3 point, Vector3 normal, float step)
         {
+            return SnapToGrid(point, normal, step, GridMath.DefaultCellSize * 0.5f);
+        }
+
+        /// <summary>크기가 다른 부품을 위한 것. restOffset은 면에서 부품의 가운데까지의 거리(RestOffset)다.</summary>
+        public static Vector3 SnapToGrid(Vector3 point, Vector3 normal, float step, float restOffset)
+        {
             Vector3 outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
-            Vector3 rest = point + outward * (GridMath.DefaultCellSize * 0.5f);
+            Vector3 rest = point + outward * restOffset;
             if (step <= 0f) return rest;
 
             int axis = DominantAxis(outward);
@@ -110,7 +135,18 @@ namespace AtelierVerse.World
         /// </summary>
         public static Vector3 SnapToBlock(Vector3 blockPosition, Quaternion blockRotation, Vector3 point, Vector3 normal, float step)
         {
-            if (step <= 0f) return SnapToGrid(point, normal, 0f);
+            Vector3 standard = Vector3.one * (GridMath.DefaultCellSize * 0.5f);
+            return SnapToBlock(blockPosition, blockRotation, standard, point, normal, step, standard);
+        }
+
+        /// <summary>
+        /// 크기가 다른 부품을 위한 것. blockHalf는 가리킨 부품의 반 크기, placedHalf는 놓을 부품의 반 크기다.
+        /// 가리킨 면 쪽으로 두 부품의 반 크기를 더한 만큼 떨어져, 놓을 부품이 그 부품과 나란할 때 면이 딱 붙는다.
+        /// 경사면처럼 비스듬한 면은 가장 가까운 축의 면으로 본다.
+        /// </summary>
+        public static Vector3 SnapToBlock(Vector3 blockPosition, Quaternion blockRotation, Vector3 blockHalf, Vector3 point, Vector3 normal, float step, Vector3 placedHalf)
+        {
+            if (step <= 0f) return RestOn(point, normal, placedHalf, blockRotation);
 
             Quaternion inverse = Quaternion.Inverse(blockRotation);
             Vector3 local = inverse * (point - blockPosition);
@@ -121,7 +157,7 @@ namespace AtelierVerse.World
                 Mathf.Round(local.x / step) * step,
                 Mathf.Round(local.y / step) * step,
                 Mathf.Round(local.z / step) * step);
-            offset[axis] = Mathf.Sign(localNormal[axis]) * GridMath.DefaultCellSize;
+            offset[axis] = Mathf.Sign(localNormal[axis]) * (blockHalf[axis] + placedHalf[axis]);
 
             return blockPosition + blockRotation * offset;
         }

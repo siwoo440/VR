@@ -19,6 +19,7 @@ namespace AtelierVerse.Core
         private const string FieldOfViewKey = "settings.fieldOfView";
         private const string PeopleListKey = "settings.showPeopleList";
         private const string SnapLevelKey = "settings.snapLevel";
+        private const string HotbarPartsKey = "settings.hotbarParts";
 
         public static event Action Changed;
 
@@ -63,12 +64,29 @@ namespace AtelierVerse.Core
             }
         }
 
+        /// <summary>
+        /// 부품 칸에 넣어 둔 부품들. 부품의 저장용 이름을 칸의 순서대로 쉼표로 이어 적고, 빈 칸은 빈 글자다.
+        /// 값이 없으면(빈 문자열) 처음의 배치를 쓴다. 이름의 뜻은 부품 목록이 알고 여기서는 글자만 기억한다.
+        /// </summary>
+        public static string HotbarParts
+        {
+            get => PlayerPrefs.GetString(HotbarPartsKey, string.Empty);
+            set
+            {
+                value ??= string.Empty;
+                if (HotbarParts == value) return;
+                PlayerPrefs.SetString(HotbarPartsKey, value);
+                Changed?.Invoke();
+            }
+        }
+
         public static void ResetToDefaults()
         {
             PlayerPrefs.DeleteKey(LookKey);
             PlayerPrefs.DeleteKey(FieldOfViewKey);
             PlayerPrefs.DeleteKey(PeopleListKey);
             PlayerPrefs.DeleteKey(SnapLevelKey);
+            PlayerPrefs.DeleteKey(HotbarPartsKey);
             Changed?.Invoke();
         }
 

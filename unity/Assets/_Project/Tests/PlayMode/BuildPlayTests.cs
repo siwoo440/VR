@@ -42,11 +42,20 @@ namespace AtelierVerse.Tests
         {
             yield return LoadBuildScene();
 
+            // 처음에는 앞의 여섯 칸에 블록 여섯 색이 들어 있고 나머지 칸은 비어 있다. 다른 모양은 부품 고르는 창에서 넣는다.
             PartCatalog catalog = world.Catalog;
-            Assert.AreEqual(6, catalog.Count);
-            for (int i = 0; i < catalog.Count; i++)
+            Assert.GreaterOrEqual(catalog.Count, 6);
+            for (int i = 0; i < 6; i++)
             {
+                Assert.AreEqual(PartShape.Block, catalog.ShapeOf(i), "부품 목록의 앞 여섯은 블록이어야 합니다.");
                 Assert.AreEqual(catalog.Get(i).displayName, ui.Hotbar.GetItemName(i));
+                Assert.AreEqual(i, ui.Hotbar.Model.GetPart(i));
+            }
+
+            for (int i = 6; i < ui.Hotbar.SlotCount; i++)
+            {
+                Assert.IsFalse(ui.Hotbar.Model.IsFilled(i), "처음에는 일곱째 칸부터 비어 있어야 합니다.");
+                Assert.AreEqual(string.Empty, ui.Hotbar.GetItemName(i));
             }
         }
 

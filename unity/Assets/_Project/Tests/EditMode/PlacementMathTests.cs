@@ -179,6 +179,72 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 면에_얹는_거리는_부품의_크기와_방향을_따른다()
+        {
+            var block = new Vector3(0.5f, 0.5f, 0.5f);
+            var slab = new Vector3(0.5f, 0.25f, 0.5f);
+            var pillar = new Vector3(0.25f, 0.5f, 0.25f);
+
+            Assert.AreEqual(0.5f, PlacementMath.RestOffset(block, Quaternion.identity, Vector3.up), Close);
+            Assert.AreEqual(0.25f, PlacementMath.RestOffset(slab, Quaternion.identity, Vector3.up), Close, "판은 바닥에서 반 높이의 반만큼 뜹니다.");
+            Assert.AreEqual(0.5f, PlacementMath.RestOffset(slab, Quaternion.identity, Vector3.right), Close);
+            Assert.AreEqual(0.25f, PlacementMath.RestOffset(pillar, Quaternion.identity, Vector3.forward), Close);
+
+            // 좌우로 돌려도 바닥에 얹는 높이는 그대로다.
+            Assert.AreEqual(0.25f, PlacementMath.RestOffset(slab, Quaternion.Euler(0f, 30f, 0f), Vector3.up), Close);
+
+            // 45도 돌린 블록을 벽에 대면 모서리가 닿으므로 반 변보다 멀다.
+            Assert.AreEqual(0.5f * Mathf.Sqrt(2f), PlacementMath.RestOffset(block, Quaternion.Euler(0f, 45f, 0f), Vector3.right), Close);
+        }
+
+        [Test]
+        public void 부품을_면에_얹으면_파고들지_않고_닿는다()
+        {
+            var slab = new Vector3(0.5f, 0.25f, 0.5f);
+            var point = new Vector3(1.3f, 0f, -0.7f);
+
+            AssertNear(new Vector3(1.3f, 0.25f, -0.7f), PlacementMath.RestOn(point, Vector3.up, slab, Quaternion.identity));
+            AssertNear(new Vector3(1.3f, 0.25f, -0.7f), PlacementMath.RestOn(point, Vector3.up, slab, Quaternion.Euler(0f, 75f, 0f)));
+        }
+
+        [Test]
+        public void 크기가_다른_부품도_모눈에_맞춘다()
+        {
+            // 판을 바닥에: 높이는 바닥에 붙고(0.25), 가로세로는 칸의 가운데.
+            Vector3 snapped = PlacementMath.SnapToGrid(new Vector3(0.83f, 0f, -2.37f), Vector3.up, 1f, 0.25f);
+
+            AssertNear(new Vector3(0.5f, 0.25f, -2.5f), snapped);
+        }
+
+        [Test]
+        public void 블록_위에_판을_맞춰_얹으면_두_부품의_반_높이를_더한_만큼_올라간다()
+        {
+            var block = new Vector3(2.3f, 0.5f, -1.7f);
+            var blockHalf = new Vector3(0.5f, 0.5f, 0.5f);
+            var slabHalf = new Vector3(0.5f, 0.25f, 0.5f);
+
+            Vector3 snapped = PlacementMath.SnapToBlock(block, Quaternion.identity, blockHalf, new Vector3(2.6f, 1f, -1.9f), Vector3.up, 1f, slabHalf);
+
+            AssertNear(new Vector3(2.3f, 1.25f, -1.7f), snapped, "판의 아랫면이 블록의 윗면에 딱 붙어야 합니다.");
+        }
+
+        [Test]
+        public void 판_위에_블록을_맞춰_얹거나_기둥을_옆에_붙인다()
+        {
+            var slab = new Vector3(0f, 0.25f, 0f);
+            var slabHalf = new Vector3(0.5f, 0.25f, 0.5f);
+            var blockHalf = new Vector3(0.5f, 0.5f, 0.5f);
+            var pillarHalf = new Vector3(0.25f, 0.5f, 0.25f);
+
+            Vector3 onTop = PlacementMath.SnapToBlock(slab, Quaternion.identity, slabHalf, new Vector3(0.2f, 0.5f, 0.1f), Vector3.up, 1f, blockHalf);
+            AssertNear(new Vector3(0f, 1f, 0f), onTop);
+
+            // 기둥을 판의 옆면에: 반 굵기(0.25)만큼만 떨어진다. 높이는 간격의 배수로만 맞추므로 판의 가운데 높이다.
+            Vector3 beside = PlacementMath.SnapToBlock(slab, Quaternion.identity, slabHalf, new Vector3(0.5f, 0.3f, 0.1f), Vector3.right, 1f, pillarHalf);
+            AssertNear(new Vector3(0.75f, 0.25f, 0f), beside);
+        }
+
+        [Test]
         public void 블록에_맞추기를_끄면_면_위의_그_자리다()
         {
             var block = new Vector3(2.3f, 0.5f, -1.7f);

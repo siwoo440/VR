@@ -76,10 +76,16 @@ namespace AtelierVerse.World
             return Map.TryFindNear(position, radius, out nearest);
         }
 
-        /// <summary>이 자리에 놓을 수 있는지 미리 확인한다. 캐릭터나 다른 물체와 겹치는지는 보지 않는다.</summary>
+        /// <summary>표준 블록을 이 자리에 놓을 수 있는지 미리 확인한다. 캐릭터나 다른 물체와 겹치는지는 보지 않는다.</summary>
         public PlaceResult CheckPlace(Vector3 position)
         {
             return Map.Check(position);
+        }
+
+        /// <summary>이 부품을 이 자리에 놓을 수 있는지 미리 확인한다. 부품의 크기로 범위를 본다.</summary>
+        public PlaceResult CheckPlace(int partIndex, Vector3 position)
+        {
+            return Map.Check(partIndex, position);
         }
 
         /// <summary>있는 블록을 이 자리로 옮길 수 있는지 미리 확인한다. 블록 수의 상한은 보지 않는다.</summary>
@@ -110,6 +116,18 @@ namespace AtelierVerse.World
         public Vector3 ClampHeight(Vector3 position)
         {
             return Map.ClampHeight(position);
+        }
+
+        /// <summary>반 높이가 halfHeight인 부품의 높이를 범위 안으로 맞춘다.</summary>
+        public Vector3 ClampHeight(Vector3 position, float halfHeight)
+        {
+            return Map.ClampHeight(position, halfHeight);
+        }
+
+        /// <summary>부품을 둘러싸는 상자의 반 크기. 부품 목록이 없으면 표준 블록이다.</summary>
+        public Vector3 HalfSizeOf(int partIndex)
+        {
+            return catalog != null ? catalog.HalfSizeOf(partIndex) : PartCatalog.StandardHalfSize;
         }
 
         public PlaceResult Add(int partIndex, Vector3 position, Quaternion rotation, out int id)
@@ -214,6 +232,37 @@ namespace AtelierVerse.World
             block.transform.SetPositionAndRotation(record.Position, record.Rotation);
             block.Initialize(record.Id, record.Part);
             if (block.TryGetComponent(out Renderer blockRenderer)) blockRenderer.sharedMaterial = catalog.Get(record.Part).material;
+            ApplyShape(block.gameObject, record.Part);
+        }
+
+        /// <summary>
+        /// 화면의 블록을 부품의 모양으로 맞춘다: 메시와 충돌체. 상자 모양(블록, 판, 기둥)은 상자 충돌체의 크기를 맞추고,
+        /// 경사와 계단은 메시 충돌체를 쓴다. 모양 정보가 없는 부품은 프리팹의 정육면체 그대로 둔다.
+        /// </summary>
+        private void ApplyShape(GameObject view, int partIndex)
+        {
+            PartCatalog.Part part = catalog.Get(partIndex);
+            if (part.mesh == null) return;
+
+            if (view.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != part.mesh) filter.sharedMesh = part.mesh;
+
+            view.TryGetComponent(out BoxCollider box);
+            view.TryGetComponent(out MeshCollider meshCollider);
+
+            if (part.boxCollider)
+            {
+                if (meshCollider != null) meshCollider.enabled = false;
+                if (box == null) box = view.AddComponent<BoxCollider>();
+                box.center = Vector3.zero;
+                box.size = catalog.SizeOf(partIndex);
+                box.enabled = true;
+                return;
+            }
+
+            if (box != null) box.enabled = false;
+            if (meshCollider == null) meshCollider = view.AddComponent<MeshCollider>();
+            if (meshCollider.sharedMesh != part.mesh) meshCollider.sharedMesh = part.mesh;
+            meshCollider.enabled = true;
         }
 
         private void DestroyView(int id)
@@ -244,7 +293,7 @@ namespace AtelierVerse.World
         /// <summary>씬에 미리 놓인 블록을 그 자리와 방향 그대로 기록에 올리고 번호를 붙인다.</summary>
         private void RegisterSceneBlocks()
         {
-            map = new BlockMap(BoundsMin, BoundsMax, maxBlocks);
+            map = new BlockMap(BoundsMin, BoundsMax, maxBlocks, HalfSizeOf);
 
             foreach (PlacedBlock block in GetComponentsInChildren<PlacedBlock>())
             {
