@@ -27,6 +27,8 @@ namespace AtelierVerse.UI
         public const string WalkLabel = "걷기";
         public const string FlyLabel = "날기";
         public const string BrandName = "Atelier | Verse";
+        public const string GrabLabel = "옮기기";
+        public const string CarryingLabel = "옮기는 중";
 
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
@@ -48,6 +50,11 @@ namespace AtelierVerse.UI
         [SerializeField] private GameObject focusHint;
         [SerializeField] private GameObject buildHint;
         [SerializeField] private TMP_Text blockCountLabel;
+        [SerializeField] private TMP_Text rotateLabel;
+        [SerializeField] private TMP_Text grabLabel;
+        [SerializeField] private TMP_Text snapLabel;
+        [SerializeField] private Color hintTextColor = Color.white;
+        [SerializeField] private Color hintActiveColor = Color.yellow;
         [SerializeField] private Button menuButton;
         [SerializeField] private TMP_Text roomLabel;
         [SerializeField] private TMP_Text menuRoomLabel;
@@ -143,7 +150,10 @@ namespace AtelierVerse.UI
                 if (hotbar != null && palette.Hotbar != null) palette.Hotbar.Bind(hotbar.Model);
                 palette.UndoRequested += Undo;
                 palette.RedoRequested += Redo;
+                palette.SnapRequested += CycleSnap;
             }
+
+            if (builder != null) builder.StateChanged += ShowBuildState;
 
             if (world != null) world.Changed += ShowBlockCount;
             if (autoSave != null) autoSave.Changed += ShowSaveState;
@@ -155,8 +165,10 @@ namespace AtelierVerse.UI
             GameSettings.Changed -= ApplySettings;
             if (autoSave != null) autoSave.Changed -= ShowSaveState;
             if (world != null) world.Changed -= ShowBlockCount;
+            if (builder != null) builder.StateChanged -= ShowBuildState;
             if (palette != null)
             {
+                palette.SnapRequested -= CycleSnap;
                 palette.RedoRequested -= Redo;
                 palette.UndoRequested -= Undo;
             }
@@ -188,6 +200,7 @@ namespace AtelierVerse.UI
             ApplySettings();
             ShowSelectedPart(hotbar != null ? hotbar.SelectedIndex : HotbarModel.None);
             ShowBlockCount();
+            ShowBuildState();
             ShowSaveState();
             ShowFlyMode(player != null && player.Motor.IsFlying);
             RefreshHud();
@@ -328,6 +341,19 @@ namespace AtelierVerse.UI
             if (world != null && !world.History.Redo()) Notice.Post(NothingToRedoMessage);
         }
 
+        /// <summary>맞추기 도우미를 다음 단계로 바꾼다. 부품 판의 단추가 부른다(PC에서는 블록 놓기가 키를 직접 읽는다).</summary>
+        public void CycleSnap()
+        {
+            if (builder != null) builder.CycleSnap();
+        }
+
+        /// <summary>돌리기·옮기기·맞추기 안내에 적힌 글자. 차례로 돌린 각도, 잡고 있는지, 맞추기 단계다.</summary>
+        public string RotateText => rotateLabel != null ? rotateLabel.text : string.Empty;
+
+        public string GrabText => grabLabel != null ? grabLabel.text : string.Empty;
+
+        public string SnapText => snapLabel != null ? snapLabel.text : string.Empty;
+
         private void RespawnAndClose()
         {
             if (player != null) player.Motor.Respawn();
@@ -408,6 +434,31 @@ namespace AtelierVerse.UI
             if (palette != null) palette.ShowBlockCount(text);
         }
 
+        /// <summary>
+        /// 놓기 안내의 돌리기·옮기기·맞추기 자리에 지금 상태를 적는다: 돌린 각도, 블록을 잡고 있는지, 맞추기 단계.
+        /// VR에서는 맞추기 단계를 부품 판의 단추에 적는다.
+        /// </summary>
+        private void ShowBuildState()
+        {
+            if (builder == null) return;
+
+            if (rotateLabel != null) rotateLabel.text = $"돌리기 {builder.Yaw:0}°";
+            if (grabLabel != null)
+            {
+                grabLabel.text = builder.IsCarrying ? CarryingLabel : GrabLabel;
+                grabLabel.color = builder.IsCarrying ? hintActiveColor : hintTextColor;
+            }
+
+            string snap = $"맞추기 {builder.SnapText}";
+            if (snapLabel != null)
+            {
+                snapLabel.text = snap;
+                snapLabel.color = builder.SnapLevel != 0 ? hintActiveColor : hintTextColor;
+            }
+
+            if (palette != null) palette.ShowSnap(snap);
+        }
+
         /// <summary>날기를 켜고 끌 때 표시를 바꾸고 조작법을 알린다.</summary>
         private void OnFlyModeChanged(bool flying)
         {
@@ -443,6 +494,8 @@ namespace AtelierVerse.UI
         private void ApplySettings()
         {
             if (peoplePanel != null) peoplePanel.SetActive(GameSettings.ShowPeopleList);
+            // 맞추기 단계도 개인 설정에 저장되므로, 설정이 바뀌면 표시를 다시 맞춘다.
+            ShowBuildState();
         }
 
         private void RefreshHud()

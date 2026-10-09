@@ -82,6 +82,30 @@ namespace AtelierVerse.World
             return Map.Check(position);
         }
 
+        /// <summary>있는 블록을 이 자리로 옮길 수 있는지 미리 확인한다. 블록 수의 상한은 보지 않는다.</summary>
+        public PlaceResult CheckMove(int id, Vector3 position)
+        {
+            return Map.CheckMove(id, position);
+        }
+
+        /// <summary>
+        /// 화면의 블록을 잠시 감추거나 다시 보인다. 기록은 바뀌지 않는다. 옮기려고 잡은 블록을 미리 보기로 대신 보일 때 쓴다.
+        /// 감춘 블록은 조준에도 걸리지 않는다.
+        /// </summary>
+        public void SetShown(int id, bool shown)
+        {
+            if (views.TryGetValue(id, out PlacedBlock block) && block != null && block.gameObject.activeSelf != shown)
+            {
+                block.gameObject.SetActive(shown);
+            }
+        }
+
+        /// <summary>화면의 블록이 보이는지. 블록이 없으면 false다.</summary>
+        public bool IsShown(int id)
+        {
+            return views.TryGetValue(id, out PlacedBlock block) && block != null && block.gameObject.activeSelf;
+        }
+
         /// <summary>높이만 범위 안으로 맞춘다. 바닥에 묻히는 자리를 바닥 위로 올리는 데 쓴다.</summary>
         public Vector3 ClampHeight(Vector3 position)
         {

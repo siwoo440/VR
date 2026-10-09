@@ -7,7 +7,7 @@ namespace AtelierVerse.UI
 {
     /// <summary>
     /// VR에서 왼손 위에 떠 있는 부품 판. 화가의 팔레트처럼 왼손에 들고 오른손 광선으로 가리켜 부품을 고른다.
-    /// 부품 칸, 고른 부품의 이름, 블록 수, 걷기·날기 표시, 되돌리기와 다시 실행 단추가 있다.
+    /// 부품 칸, 고른 부품의 이름, 블록 수, 걷기·날기 표시, 되돌리기와 다시 실행 단추, 맞추기 단계를 바꾸는 단추가 있다.
     /// PC의 화면 아래에 있는 것들을 VR에서 볼 수 있게 한곳에 모은 것이며, 무엇을 보일지는 GameUi가 알려 준다.
     /// 판은 왼손 위에 떠서 늘 머리 쪽을 본다(컨트롤러마다 손의 각도가 달라도 읽을 수 있게).
     /// 이 스크립트는 늘 켜져 있는 바깥 오브젝트에 붙고, 보이고 감추는 것은 안쪽의 판이다.
@@ -22,6 +22,8 @@ namespace AtelierVerse.UI
         [SerializeField] private Image modeDot;
         [SerializeField] private Button undoButton;
         [SerializeField] private Button redoButton;
+        [SerializeField] private Button snapButton;
+        [SerializeField] private TMP_Text snapLabel;
         [SerializeField] private string emptyTitle = "부품을 고르세요";
         [SerializeField] private float metersPerPixel = 0.00045f;
         [SerializeField] private float lift = 0.14f;
@@ -32,6 +34,9 @@ namespace AtelierVerse.UI
 
         public event Action UndoRequested;
         public event Action RedoRequested;
+
+        /// <summary>맞추기 단추를 눌렀다. 누를 때마다 다음 단계로 바꾼다.</summary>
+        public event Action SnapRequested;
 
         /// <summary>판에 든 부품 칸. 화면 아래의 부품 칸과 선택 상태를 함께 쓰도록 GameUi가 잇는다.</summary>
         public HotbarView Hotbar => hotbar;
@@ -48,6 +53,9 @@ namespace AtelierVerse.UI
 
         public string ModeText => modeLabel != null ? modeLabel.text : string.Empty;
 
+        /// <summary>맞추기 단추에 적힌 글자(지금 단계).</summary>
+        public string SnapText => snapLabel != null ? snapLabel.text : string.Empty;
+
         /// <summary>왼손에서 판의 가운데까지의 높이.</summary>
         public float Lift => lift;
 
@@ -55,6 +63,7 @@ namespace AtelierVerse.UI
         {
             if (undoButton != null) undoButton.onClick.AddListener(() => UndoRequested?.Invoke());
             if (redoButton != null) redoButton.onClick.AddListener(() => RedoRequested?.Invoke());
+            if (snapButton != null) snapButton.onClick.AddListener(() => SnapRequested?.Invoke());
             Apply();
         }
 
@@ -109,6 +118,12 @@ namespace AtelierVerse.UI
         {
             if (modeLabel != null) modeLabel.text = text;
             if (modeDot != null) modeDot.color = dotColor;
+        }
+
+        /// <summary>맞추기 단추에 지금 단계를 적는다.</summary>
+        public void ShowSnap(string text)
+        {
+            if (snapLabel != null) snapLabel.text = text;
         }
 
         /// <summary>

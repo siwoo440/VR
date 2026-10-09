@@ -138,10 +138,11 @@ namespace AtelierVerse.Tests
             Assert.IsNotNull(Find<Transform>(hint, "Key_다시 실행"), "놓기 안내에 다시 실행 키가 없습니다.");
 
             Transform help = Find<Transform>(ui.Menu, "HelpPage");
+            // 도움말에서는 되돌리기와 다시 실행을 한 줄에 적는다(15일차에 줄을 줄임).
             bool undoListed = false;
             foreach (TMP_Text text in help.GetComponentsInChildren<TMP_Text>(true))
             {
-                if (text.text == "되돌리기") undoListed = true;
+                if (text.text == "되돌리기 · 다시 실행") undoListed = true;
             }
 
             Assert.IsTrue(undoListed, "도움말에 되돌리기 줄이 없습니다.");

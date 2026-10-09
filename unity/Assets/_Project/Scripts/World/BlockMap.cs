@@ -113,6 +113,17 @@ namespace AtelierVerse.World
             return PlaceResult.Ok;
         }
 
+        /// <summary>
+        /// 있는 블록을 이 자리로 옮길 수 있는지 미리 확인한다. 블록 수가 늘지 않으므로 상한은 보지 않고, 제자리는 막지 않는다.
+        /// </summary>
+        public PlaceResult CheckMove(int id, Vector3 position)
+        {
+            position = Quantize(position);
+            if (!InBounds(position)) return PlaceResult.OutOfBounds;
+            if (centers.TryGetValue(KeyOf(position), out int owner) && owner != id) return PlaceResult.Occupied;
+            return PlaceResult.Ok;
+        }
+
         /// <summary>블록을 새로 놓는다. 놓였으면 새 번호가 id에 담긴다.</summary>
         public PlaceResult Add(int partIndex, Vector3 position, Quaternion rotation, out int id)
         {

@@ -96,7 +96,7 @@ namespace AtelierVerse.EditorTools
             TMP_Text roomLabel = BuildRoomChip(hud);
             PeopleListView peoplePanel = BuildPeoplePanel(hud);
             HotbarView hotbar = BuildHotbar(hud, items);
-            GameObject buildHint = BuildBuildHint(hud, out TMP_Text blockCountLabel);
+            GameObject buildHint = BuildBuildHint(hud, out TMP_Text blockCountLabel, out TMP_Text rotateLabel, out TMP_Text grabLabel, out TMP_Text snapLabel);
             BuildKeyHints(hud);
             TMP_Text viewLabel = BuildViewChip(hud);
             TMP_Text saveLabel = BuildSaveChip(hud);
@@ -123,6 +123,11 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("focusHint").objectReferenceValue = focusHint;
             serialized.FindProperty("buildHint").objectReferenceValue = buildHint;
             serialized.FindProperty("blockCountLabel").objectReferenceValue = blockCountLabel;
+            serialized.FindProperty("rotateLabel").objectReferenceValue = rotateLabel;
+            serialized.FindProperty("grabLabel").objectReferenceValue = grabLabel;
+            serialized.FindProperty("snapLabel").objectReferenceValue = snapLabel;
+            serialized.FindProperty("hintTextColor").colorValue = Paper;
+            serialized.FindProperty("hintActiveColor").colorValue = Gold;
             serialized.FindProperty("menuButton").objectReferenceValue = menuButton;
             serialized.FindProperty("roomLabel").objectReferenceValue = roomLabel;
             serialized.FindProperty("menuRoomLabel").objectReferenceValue = menuRoomLabel;
@@ -358,8 +363,8 @@ namespace AtelierVerse.EditorTools
 
         /// <summary>
         /// VR에서 왼손 위에 뜨는 부품 판(13일차). 화가의 팔레트처럼 왼손에 들고 오른손 광선으로 가리켜 누른다.
-        /// 위에는 고른 부품의 이름과 블록 수, 가운데에는 부품 칸, 아래에는 되돌리기·다시 실행 단추와 걷기·날기 표시,
-        /// 맨 아래에는 놓기·지우기·칠하기의 단추 안내가 있다. PC에서는 보이지 않는다.
+        /// 위에는 고른 부품의 이름과 블록 수, 가운데에는 부품 칸, 아래에는 되돌리기·다시 실행·맞추기 단추와 걷기·날기 표시,
+        /// 맨 아래 두 줄에는 놓기·지우기·칠하기와 돌리기·옮기기의 단추 안내가 있다. PC에서는 보이지 않는다.
         /// 판은 월드 공간의 작은 캔버스이며 XrHandPalette가 크기와 자리를 정한다. 꺼 둔 채로 저장한다.
         /// </summary>
         private static XrHandPalette BuildHandPalette(Transform parent, Item[] items)
@@ -367,7 +372,7 @@ namespace AtelierVerse.EditorTools
             const float slotSize = 64f;
             const float pad = 40f;
             const float width = pad * 2f + SlotCount * slotSize + (SlotCount - 1) * SlotGap;
-            const float height = 262f;
+            const float height = 290f;
             const float slotsTop = 70f;
             const float buttonsTop = slotsTop + slotSize + 18f;
             const float hintTop = buttonsTop + 46f + 14f;
@@ -409,14 +414,26 @@ namespace AtelierVerse.EditorTools
             hotbarSerialized.FindProperty("selectedLift").floatValue = 8f;
             hotbarSerialized.ApplyModifiedPropertiesWithoutUndo();
 
-            Button undo = BigButton("Undo", card.transform, "되돌리기", null, Paper, Ink, out _);
-            UiFactory.Place((RectTransform)undo.transform, UiFactory.TopLeft, new Vector2(pad, -buttonsTop), new Vector2(170f, 46f));
+            // 단추 줄: 되돌리기, 다시 실행, 맞추기(누를 때마다 다음 단계), 걷기·날기 표시.
+            const float historyWidth = 142f;
+            const float snapWidth = 184f;
+            const float modeWidth = 124f;
+            const float buttonGap = 12f;
 
-            Button redo = BigButton("Redo", card.transform, "다시 실행", null, Paper, Ink, out _);
-            UiFactory.Place((RectTransform)redo.transform, UiFactory.TopLeft, new Vector2(pad + 170f + 12f, -buttonsTop), new Vector2(170f, 46f));
+            Button undo = BigButton("Undo", card.transform, "되돌리기", null, Paper, Ink, out TMP_Text undoLabel);
+            UiFactory.Place((RectTransform)undo.transform, UiFactory.TopLeft, new Vector2(pad, -buttonsTop), new Vector2(historyWidth, 46f));
+            undoLabel.fontSize = 22f;
+
+            Button redo = BigButton("Redo", card.transform, "다시 실행", null, Paper, Ink, out TMP_Text redoLabel);
+            UiFactory.Place((RectTransform)redo.transform, UiFactory.TopLeft, new Vector2(pad + historyWidth + buttonGap, -buttonsTop), new Vector2(historyWidth, 46f));
+            redoLabel.fontSize = 22f;
+
+            Button snap = BigButton("Snap", card.transform, "맞추기 끔", null, Paper, Ink, out TMP_Text snapLabel);
+            UiFactory.Place((RectTransform)snap.transform, UiFactory.TopLeft, new Vector2(pad + (historyWidth + buttonGap) * 2f, -buttonsTop), new Vector2(snapWidth, 46f));
+            snapLabel.fontSize = 22f;
 
             Image modeChip = UiFactory.Box("PaletteMode", card.transform, DarkGlass, 22f);
-            UiFactory.Place(modeChip.rectTransform, UiFactory.TopRight, new Vector2(-pad, -buttonsTop), new Vector2(130f, 46f));
+            UiFactory.Place(modeChip.rectTransform, UiFactory.TopRight, new Vector2(-pad, -buttonsTop), new Vector2(modeWidth, 46f));
             Image modeDot = UiFactory.Box("Dot", modeChip.transform, AtelierPalette.Leaf, 6f);
             UiFactory.Place(modeDot.rectTransform, UiFactory.MiddleLeft, new Vector2(18f, 0f), new Vector2(12f, 12f));
             TMP_Text modeLabel = UiFactory.Text("Label", modeChip.transform, "걷기", 20f, Paper, true, TextAlignmentOptions.Center);
@@ -424,6 +441,9 @@ namespace AtelierVerse.EditorTools
 
             TMP_Text hint = UiFactory.Text("PaletteHint", card.transform, "오른손 방아쇠 놓기 · 옆 단추 지우기 · 왼손 방아쇠 칠하기", 18f, Muted);
             UiFactory.Place(hint.rectTransform, UiFactory.TopLeft, new Vector2(pad, -hintTop), new Vector2(width - pad * 2f, 26f));
+
+            TMP_Text hint2 = UiFactory.Text("PaletteHint2", card.transform, "왼손 첫째 단추 돌리기 · 오른쪽 스틱 누르기 반대로 · 왼손 옆 단추 옮기기", 18f, Muted);
+            UiFactory.Place(hint2.rectTransform, UiFactory.TopLeft, new Vector2(pad, -hintTop - 28f), new Vector2(width - pad * 2f, 26f));
 
             canvasObject.SetActive(false);
 
@@ -436,35 +456,49 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("modeDot").objectReferenceValue = modeDot;
             serialized.FindProperty("undoButton").objectReferenceValue = undo;
             serialized.FindProperty("redoButton").objectReferenceValue = redo;
+            serialized.FindProperty("snapButton").objectReferenceValue = snap;
+            serialized.FindProperty("snapLabel").objectReferenceValue = snapLabel;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return palette;
         }
 
         /// <summary>부품을 골랐을 때만 부품 칸 위에 보이는 안내. 놓고 지우고 칠하고 되돌리는 방법과 지금까지 놓인 블록 수를 보여 준다.</summary>
-        private static GameObject BuildBuildHint(RectTransform hud, out TMP_Text countLabel)
+        private static GameObject BuildBuildHint(RectTransform hud, out TMP_Text countLabel, out TMP_Text rotateLabel, out TMP_Text grabLabel, out TMP_Text snapLabel)
         {
-            (string key, string label)[] hints =
+            // 돌리기·옮기기·맞추기의 글자는 실행 중에 지금 상태로 바뀐다(15일차). 자리는 가장 긴 글자(widest)에 맞춰 잡는다.
+            (string key, string name, string label, string widest)[] hints =
             {
-                ("왼쪽 누르기", "놓기"),
-                ("오른쪽 누르기", "지우기"),
-                ("가운데·F", "칠하기"),
-                ("Ctrl+Z", "되돌리기"),
-                ("Ctrl+Y", "다시 실행"),
+                ("왼쪽 누르기", "놓기", "놓기", null),
+                ("오른쪽 누르기", "지우기", "지우기", null),
+                ("가운데·F", "칠하기", "칠하기", null),
+                ("R·T", "돌리기", "돌리기 0°", "돌리기 345°"),
+                ("G", "옮기기", "옮기기", "옮기는 중"),
+                ("C", "맞추기", "맞추기 끔", "맞추기 1/4칸"),
+                ("Ctrl+Z", "되돌리기", "되돌리기", null),
+                ("Ctrl+Y", "다시 실행", "다시 실행", null),
             };
 
             Image glass = UiFactory.Box("BuildHint", hud, DarkGlass, 22f);
             float x = 14f;
+            rotateLabel = null;
+            grabLabel = null;
+            snapLabel = null;
 
-            foreach ((string key, string label) in hints)
+            foreach ((string key, string name, string label, string widest) in hints)
             {
-                RectTransform badge = UiFactory.Badge($"Key_{label}", glass.transform, key, AtelierPalette.WithAlpha(Paper, 0.94f), Ink);
+                RectTransform badge = UiFactory.Badge($"Key_{name}", glass.transform, key, AtelierPalette.WithAlpha(Paper, 0.94f), Ink);
                 UiFactory.Place(badge, UiFactory.MiddleLeft, new Vector2(x, 0f), badge.sizeDelta);
                 x += badge.sizeDelta.x + 8f;
 
-                TMP_Text text = UiFactory.Text($"Label_{label}", glass.transform, label, 18f, Paper);
+                TMP_Text text = UiFactory.Text($"Label_{name}", glass.transform, widest ?? label, 18f, Paper);
                 float width = UiFactory.WidthOf(text);
+                text.text = label;
                 UiFactory.Place(text.rectTransform, UiFactory.MiddleLeft, new Vector2(x, 0f), new Vector2(width + 2f, 28f));
                 x += width + 18f;
+
+                if (name == "돌리기") rotateLabel = text;
+                else if (name == "옮기기") grabLabel = text;
+                else if (name == "맞추기") snapLabel = text;
             }
 
             const float countWidth = 150f;
@@ -892,8 +926,10 @@ namespace AtelierVerse.EditorTools
                 ("왼쪽 누르기", "블록 놓기"),
                 ("오른쪽 누르기", "블록 지우기"),
                 ("가운데 · F", "블록 칠하기"),
-                ("Ctrl+Z", "되돌리기"),
-                ("Ctrl+Y", "다시 실행"),
+                ("R · T", "놓을 블록 돌리기 (15도씩)"),
+                ("G", "블록 잡아서 옮기기"),
+                ("C", "맞추기 도우미 단계 바꾸기"),
+                ("Ctrl+Z · Y", "되돌리기 · 다시 실행"),
                 ("Tab · Esc", "사람들 목록 · 메뉴"),
             };
 
@@ -907,15 +943,18 @@ namespace AtelierVerse.EditorTools
                 ("오른손 첫째 단추", "점프"),
                 ("오른손 둘째 단추", "날기 켜고 끄기"),
                 ("왼손 메뉴 단추", "메뉴 열고 닫기"),
-                ("왼손 위의 부품 판", "부품 고르기 · 되돌리기"),
+                ("왼손 위의 부품 판", "부품·되돌리기·맞추기"),
                 ("오른손 방아쇠", "누르기 · 블록 놓기"),
                 ("오른손 옆 단추", "블록 지우기"),
                 ("왼손 방아쇠", "블록 칠하기"),
+                ("왼손 첫째 단추", "블록 돌리기"),
+                ("오른쪽 스틱 누르기", "반대로 돌리기"),
+                ("왼손 옆 단추", "블록 옮기기"),
             };
 
-            // 한 줄에 54px씩 여섯 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.
-            const int rowsPerColumn = 6;
-            const float rowHeight = 54f;
+            // 한 줄에 46px씩 일곱 줄이면 쪽 높이(360px) 안에 안내 문장까지 들어간다.
+            const int rowsPerColumn = 7;
+            const float rowHeight = 46f;
 
             RectTransform desktopKeys = UiFactory.Rect("KeysDesktop", page);
             UiFactory.Fill(desktopKeys);

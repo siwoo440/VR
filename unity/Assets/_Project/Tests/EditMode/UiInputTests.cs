@@ -69,6 +69,52 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 돌리기와_옮기기는_PC와_VR의_묶음에_같은_이름으로_있다()
+        {
+            InputActionAsset actions = LoadActions();
+            foreach (string name in new[] { "Rotate", "Grab" })
+            {
+                Assert.IsNotNull(actions.FindAction("Player/" + name), $"PC의 묶음에 {name}이 없습니다.");
+                Assert.IsNotNull(actions.FindAction("XR/" + name), $"VR의 묶음에 {name}이 없습니다.");
+            }
+
+            // 맞추기 단계는 PC에서는 키로, VR에서는 부품 판의 단추로 바꾼다.
+            Assert.IsNotNull(actions.FindAction("Player/Snap"));
+            Assert.IsNull(actions.FindAction("XR/Snap"), "VR에는 맞추기 단추를 따로 두지 않습니다.");
+        }
+
+        [Test]
+        public void PC에서는_R과_T로_돌리고_G로_잡고_C로_맞추기를_바꾼다()
+        {
+            string[] rotate = Paths("Player/Rotate");
+
+            CollectionAssert.Contains(rotate, "<Keyboard>/r");
+            CollectionAssert.Contains(rotate, "<Keyboard>/t");
+            CollectionAssert.Contains(Paths("Player/Grab"), "<Keyboard>/g");
+            CollectionAssert.Contains(Paths("Player/Snap"), "<Keyboard>/c");
+        }
+
+        [Test]
+        public void VR에서는_왼손_첫째_단추와_오른쪽_스틱_누르기로_돌리고_왼손_옆_단추로_잡는다()
+        {
+            string[] rotate = Paths("XR/Rotate");
+
+            CollectionAssert.Contains(rotate, "<XRController>{LeftHand}/{PrimaryButton}");
+            CollectionAssert.Contains(rotate, "<XRController>{RightHand}/{Primary2DAxisClick}");
+            CollectionAssert.AreEqual(new[] { "<XRController>{LeftHand}/{GripButton}" }, Paths("XR/Grab"));
+
+            // 걷기·돌기·날기·놓기에 이미 쓰는 단추와 겹치면 안 된다.
+            foreach (string taken in new[] { "XR/Jump", "XR/Fly", "XR/Sprint", "XR/Place", "XR/Remove", "XR/Paint", "Game/Menu" })
+            {
+                foreach (string path in Paths(taken))
+                {
+                    CollectionAssert.DoesNotContain(rotate, path, $"돌리기의 단추가 {taken}과 겹칩니다.");
+                    CollectionAssert.DoesNotContain(Paths("XR/Grab"), path, $"옮기기의 단추가 {taken}과 겹칩니다.");
+                }
+            }
+        }
+
+        [Test]
         public void 게임_화면은_이_프로젝트의_입력_자산으로_누르고_손_광선_부품은_꺼_둔다()
         {
             InputActionAsset actions = LoadActions();

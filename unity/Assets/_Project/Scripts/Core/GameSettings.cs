@@ -18,6 +18,7 @@ namespace AtelierVerse.Core
         private const string LookKey = "settings.lookSensitivity";
         private const string FieldOfViewKey = "settings.fieldOfView";
         private const string PeopleListKey = "settings.showPeopleList";
+        private const string SnapLevelKey = "settings.snapLevel";
 
         public static event Action Changed;
 
@@ -47,11 +48,27 @@ namespace AtelierVerse.Core
             }
         }
 
+        /// <summary>
+        /// 블록을 놓을 때의 맞추기 도우미 단계(0은 끔). 단계의 뜻은 PlacementMath가 정하며 여기서는 번호만 기억한다.
+        /// </summary>
+        public static int SnapLevel
+        {
+            get => Mathf.Max(0, PlayerPrefs.GetInt(SnapLevelKey, 0));
+            set
+            {
+                value = Mathf.Max(0, value);
+                if (SnapLevel == value) return;
+                PlayerPrefs.SetInt(SnapLevelKey, value);
+                Changed?.Invoke();
+            }
+        }
+
         public static void ResetToDefaults()
         {
             PlayerPrefs.DeleteKey(LookKey);
             PlayerPrefs.DeleteKey(FieldOfViewKey);
             PlayerPrefs.DeleteKey(PeopleListKey);
+            PlayerPrefs.DeleteKey(SnapLevelKey);
             Changed?.Invoke();
         }
 

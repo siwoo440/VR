@@ -200,6 +200,21 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 옮길_수_있는지는_제자리를_막지_않고_상한도_보지_않는다()
+        {
+            BlockMap map = Create(2);
+            int first = Add(map, new Vector3(0f, 0.5f, 0f));
+            int second = Add(map, new Vector3(1f, 0.5f, 0f));
+
+            Assert.AreEqual(PlaceResult.Full, map.Check(new Vector3(2f, 0.5f, 0f)), "상한에 닿았으면 새로 놓을 수는 없습니다.");
+            Assert.AreEqual(PlaceResult.Ok, map.CheckMove(first, new Vector3(2f, 0.5f, 0f)), "옮기기는 블록 수가 늘지 않으므로 상한에 걸리지 않습니다.");
+            Assert.AreEqual(PlaceResult.Ok, map.CheckMove(first, new Vector3(0f, 0.5f, 0f)), "제자리는 막지 않습니다.");
+            Assert.AreEqual(PlaceResult.Occupied, map.CheckMove(first, new Vector3(1f, 0.5f, 0f)), "다른 블록의 가운데와 같은 자리로는 옮길 수 없습니다.");
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.CheckMove(second, new Vector3(9f, 0.5f, 0f)));
+            Assert.AreEqual(2, map.Count, "확인만 하고 기록은 바꾸지 않습니다.");
+        }
+
+        [Test]
         public void 모두_지우면_번호도_처음부터_다시_붙는다()
         {
             BlockMap map = Create();
