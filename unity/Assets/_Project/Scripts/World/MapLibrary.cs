@@ -15,18 +15,31 @@ namespace AtelierVerse.World
         /// <summary>보이는 이름. 비어 있으면 화면에서 "이름 없는 맵"으로 보인다.</summary>
         public string Name;
 
+        /// <summary>맵의 설명. 없으면 빈 문자열이다.</summary>
+        public string Description;
+
         public int BlockCount;
+
+        /// <summary>처음 만든 시각(UTC). 알 수 없으면 DateTime.MinValue다.</summary>
+        public DateTime CreatedAt;
 
         /// <summary>마지막으로 저장한 시각(UTC). 알 수 없으면 DateTime.MinValue다.</summary>
         public DateTime UpdatedAt;
 
         /// <summary>파일을 읽을 수 있는지. 읽지 못하는 파일도 목록에는 보이되 열 수 없다.</summary>
         public bool Readable;
+
+        /// <summary>시작 위치를 따로 정했는지.</summary>
+        public bool HasSpawn;
+
+        /// <summary>대표 그림이 있는지.</summary>
+        public bool HasThumbnail;
     }
 
     /// <summary>
     /// 이 기기에 저장된 맵들(17일차). 맵 파일의 폴더(MapStorage.Directory)에서 맵마다 파일 하나(번호표.map.json)를 다룬다.
-    /// 목록 보기, 새 맵 만들기, 이름 바꾸기, 지우기(휴지통 폴더로 옮기기), 마지막으로 연 맵 기억하기를 맡는다.
+    /// 목록 보기, 새 맵 만들기, 이름과 설명 바꾸기, 지우기(휴지통 폴더로 옮기기), 마지막으로 연 맵 기억하기를 맡는다.
+    /// 맵의 대표 그림은 맵 파일 옆에 그림 파일(번호표.png)로 둔다(18일차).
     /// 지금 열려 있는 맵의 내용을 읽고 쓰는 일은 MapAutoSave가 맡는다. 파일만 다루므로 편집 모드 테스트로 검사한다.
     /// </summary>
     public static class MapLibrary
@@ -35,6 +48,7 @@ namespace AtelierVerse.World
         public const string DefaultId = "local";
 
         public const string Extension = ".map.json";
+        public const string ThumbnailExtension = ".png";
         public const string CurrentFileName = "current.txt";
         public const string TrashFolderName = "trash";
         public const string DefaultName = "새 맵";
@@ -50,6 +64,12 @@ namespace AtelierVerse.World
         public static string PathOf(string id)
         {
             return Path.Combine(MapStorage.Directory, id + Extension);
+        }
+
+        /// <summary>맵의 대표 그림 파일의 경로. 맵 파일 옆에 번호표.png로 둔다.</summary>
+        public static string ThumbnailPathOf(string id)
+        {
+            return Path.Combine(MapStorage.Directory, id + ThumbnailExtension);
         }
 
         public static string TrashDirectory => Path.Combine(MapStorage.Directory, TrashFolderName);
@@ -103,13 +123,17 @@ namespace AtelierVerse.World
 
         private static MapInfo Describe(string id, string path)
         {
-            var info = new MapInfo { Id = id, Name = string.Empty, UpdatedAt = DateTime.MinValue };
+            var info = new MapInfo { Id = id, Name = string.Empty, Description = string.Empty, UpdatedAt = DateTime.MinValue, CreatedAt = DateTime.MinValue };
+            info.HasThumbnail = File.Exists(ThumbnailPathOf(id));
             if (!MapStorage.TryLoad(path, out MapDocument document, out _)) return info;
 
             info.Readable = true;
             info.Name = document.name ?? string.Empty;
+            info.Description = document.description ?? string.Empty;
             info.BlockCount = document.blocks != null ? document.blocks.Count : 0;
             info.UpdatedAt = ParseTime(document.updatedAt, path);
+            info.CreatedAt = ParseTime(document.createdAt, path);
+            info.HasSpawn = document.spawn != null && document.spawn.custom;
             return info;
         }
 
@@ -216,6 +240,15 @@ namespace AtelierVerse.World
         /// <summary>맵의 이름을 바꾼다. 번호표와 블록은 그대로다. 파일이 없거나 읽고 쓰지 못하면 false다.</summary>
         public static bool Rename(string id, string name)
         {
+            return UpdateInfo(id, name, null);
+        }
+
+        /// <summary>
+        /// 맵의 이름과 설명을 바꾼다. 번호표와 블록은 그대로다. description이 null이면 설명은 그대로 둔다.
+        /// 이름이 비어 있거나, 파일이 없거나, 읽고 쓰지 못하면 false다. 옛 판의 파일이면 원래 파일의 사본을 남기고 지금 판으로 쓴다.
+        /// </summary>
+        public static bool UpdateInfo(string id, string name, string description)
+        {
             string cleaned = CleanName(name);
             if (!IsValidId(id) || cleaned.Length == 0) return false;
 
@@ -223,6 +256,8 @@ namespace AtelierVerse.World
             if (!MapStorage.TryLoad(path, out MapDocument document, out _)) return false;
 
             document.name = cleaned;
+            if (description != null) document.description = CleanDescription(description);
+            if (document.WasUpgraded) MapStorage.Backup(path, $".v{document.LoadedVersion}.bak");
             try
             {
                 MapStorage.Save(document, path);
@@ -255,6 +290,7 @@ namespace AtelierVerse.World
                 }
 
                 File.Move(path, moved);
+                MoveThumbnailToTrash(id, moved);
                 return moved;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
@@ -264,11 +300,79 @@ namespace AtelierVerse.World
             }
         }
 
+        /// <summary>지운 맵의 대표 그림도 휴지통의 맵 파일 옆으로 옮긴다. 그림은 없어도 되는 것이라 옮기지 못해도 넘어간다.</summary>
+        private static void MoveThumbnailToTrash(string id, string movedMapPath)
+        {
+            string thumbnail = ThumbnailPathOf(id);
+            if (!File.Exists(thumbnail)) return;
+
+            try
+            {
+                string stem = movedMapPath.Substring(0, movedMapPath.Length - Extension.Length);
+                File.Move(thumbnail, stem + ThumbnailExtension);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 대표 그림을 휴지통 폴더로 옮기지 못했습니다: {exception.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 맵의 대표 그림(PNG)을 맵 파일 옆에 쓴다. 임시 파일에 먼저 쓰고 이름을 바꾼다. 쓰지 못하면 false다.
+        /// </summary>
+        public static bool SaveThumbnail(string id, byte[] png)
+        {
+            if (!IsValidId(id) || png == null || png.Length == 0) return false;
+
+            string path = ThumbnailPathOf(id);
+            string temp = path + ".tmp";
+            try
+            {
+                Directory.CreateDirectory(MapStorage.Directory);
+                File.WriteAllBytes(temp, png);
+                if (File.Exists(path)) File.Replace(temp, path, null);
+                else File.Move(temp, path);
+                return true;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 대표 그림을 저장하지 못했습니다: {exception.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>맵의 대표 그림(PNG)을 읽는다. 없거나 읽지 못하면 null이다.</summary>
+        public static byte[] LoadThumbnail(string id)
+        {
+            if (!IsValidId(id)) return null;
+
+            string path = ThumbnailPathOf(id);
+            try
+            {
+                return File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
         /// <summary>
         /// 이름을 다듬는다: 앞뒤의 빈칸을 떼고, 줄 바꿈 같은 보이지 않는 글자를 빈칸으로 바꾸고, 이어진 빈칸을 하나로 줄이고,
         /// 너무 길면 자른다. 남는 글자가 없으면 빈 문자열이다.
         /// </summary>
         public static string CleanName(string name)
+        {
+            return Clean(name, MaxNameLength);
+        }
+
+        /// <summary>설명을 이름과 같은 방법으로 다듬는다. 설명은 비어 있어도 된다.</summary>
+        public static string CleanDescription(string description)
+        {
+            return Clean(description, MapDocument.MaxDescriptionLength);
+        }
+
+        private static string Clean(string name, int maxLength)
         {
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;
 
@@ -289,7 +393,7 @@ namespace AtelierVerse.World
             }
 
             string result = cleaned.ToString().Trim();
-            return result.Length > MaxNameLength ? result.Substring(0, MaxNameLength).Trim() : result;
+            return result.Length > maxLength ? result.Substring(0, maxLength).Trim() : result;
         }
 
         /// <summary>목록에 같은 이름이 있으면 뒤에 번호를 붙인다("새 맵", "새 맵 2", "새 맵 3" …). 이름이 비어 있으면 "새 맵"으로 짓는다.</summary>

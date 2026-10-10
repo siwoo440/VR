@@ -8,12 +8,18 @@ namespace AtelierVerse.Player
     /// 키보드나 마우스를 읽지 않고, 조작 스크립트가 정해 준 의도(가려는 방향, 달리기, 오르내리기)대로만 움직인다.
     /// PC 조작(DesktopPlayerController)뿐 아니라 VR 조작과 다른 사람의 캐릭터도 이 모터를 쓴다.
     /// 조작 스크립트가 같은 프레임에 의도를 먼저 정할 수 있도록 다른 스크립트보다 늦게 실행한다.
+    /// 시작 위치는 씬에 놓인 처음 자리이며, 맵마다 따로 정한 자리로 바꿀 수 있다(18일차). 그 자리가 블록에 막혀 있으면 위쪽의 빈 자리에 선다.
     /// </summary>
     [DefaultExecutionOrder(50)]
     [RequireComponent(typeof(CharacterController))]
     public class CharacterMotor : MonoBehaviour
     {
         private const float FallLimit = -10f;
+
+        // 시작 위치가 막혀 있을 때 위로 올려 보는 간격과 횟수(가장 높이 16까지), 바닥에 닿은 것을 막힌 것으로 보지 않게 띄우는 높이.
+        private const float LiftStep = 0.25f;
+        private const int MaxLiftSteps = 64;
+        private const float FloorSkin = 0.06f;
 
         [SerializeField] private AvatarView avatar;
         [SerializeField] private float walkSpeed = 3.5f;
@@ -25,6 +31,8 @@ namespace AtelierVerse.Player
         private CharacterController controller;
         private Vector3 startPosition;
         private Quaternion startRotation;
+        private Vector3 spawnPosition;
+        private Quaternion spawnRotation;
         private float verticalVelocity;
         private bool jumpRequested;
 
@@ -48,6 +56,15 @@ namespace AtelierVerse.Player
 
         public AvatarView Avatar => avatar;
 
+        /// <summary>시작 위치(발이 닿는 자리). 시작 위치로 돌아갈 때 이 자리에 선다.</summary>
+        public Vector3 SpawnPosition => spawnPosition;
+
+        /// <summary>시작할 때 바라보는 좌우 각도.</summary>
+        public float SpawnYaw => spawnRotation.eulerAngles.y;
+
+        /// <summary>시작 위치를 따로 정했는지. 정하지 않았으면 씬에 놓인 처음 자리다.</summary>
+        public bool HasCustomSpawn { get; private set; }
+
         /// <summary>가려는 방향(월드 기준의 수평 방향, 길이 1 이하). 바꿀 때까지 그 방향으로 계속 간다.</summary>
         public Vector3 MoveDirection { get; set; }
 
@@ -65,6 +82,8 @@ namespace AtelierVerse.Player
             controller = GetComponent<CharacterController>();
             startPosition = transform.position;
             startRotation = transform.rotation;
+            spawnPosition = startPosition;
+            spawnRotation = startRotation;
         }
 
         private void Update()
@@ -103,17 +122,60 @@ namespace AtelierVerse.Player
             transform.Rotate(0f, degrees, 0f, Space.World);
         }
 
-        /// <summary>시작 위치로 되돌린다. 바닥 밖으로 떨어졌을 때와 메뉴의 단추가 부른다. 날고 있었으면 걷기로 돌아온다.</summary>
+        /// <summary>시작 위치를 정한다. position은 발이 닿는 자리, yaw는 바라보는 좌우 각도다. 몸은 다음에 시작 위치로 돌아갈 때 옮겨진다.</summary>
+        public void SetSpawn(Vector3 position, float yaw)
+        {
+            spawnPosition = position;
+            spawnRotation = Quaternion.Euler(0f, yaw, 0f);
+            HasCustomSpawn = true;
+        }
+
+        /// <summary>시작 위치를 씬에 놓인 처음 자리로 되돌린다.</summary>
+        public void ResetSpawn()
+        {
+            spawnPosition = startPosition;
+            spawnRotation = startRotation;
+            HasCustomSpawn = false;
+        }
+
+        /// <summary>
+        /// 시작 위치로 되돌린다. 바닥 밖으로 떨어졌을 때, 메뉴의 단추, 다른 맵을 열었을 때 부른다. 날고 있었으면 걷기로 돌아온다.
+        /// 시작 위치가 블록 같은 것에 막혀 있으면 그 위쪽의 빈 자리에 선다.
+        /// </summary>
         public void Respawn()
         {
             if (controller == null) controller = GetComponent<CharacterController>();
 
             controller.enabled = false;
-            transform.SetPositionAndRotation(startPosition, startRotation);
+            transform.SetPositionAndRotation(FreeSpotAbove(spawnPosition), spawnRotation);
             verticalVelocity = 0f;
             grounded = false;
             controller.enabled = true;
             SetFlying(false);
+        }
+
+        /// <summary>
+        /// feet에 섰을 때 몸이 무엇인가에 겹치면, 겹치지 않을 때까지 조금씩 위로 올린 자리를 돌려준다. 끝까지 막혀 있으면 feet 그대로다.
+        /// 방금 놓인 블록도 보이도록 물리의 자리를 먼저 맞춘다. 자기 몸은 세지 않는다.
+        /// </summary>
+        private Vector3 FreeSpotAbove(Vector3 feet)
+        {
+            Physics.SyncTransforms();
+
+            float radius = controller.radius * 0.95f;
+            float half = Mathf.Max(0f, controller.height * 0.5f - controller.radius);
+            int others = ~(1 << gameObject.layer);
+
+            for (int i = 0; i <= MaxLiftSteps; i++)
+            {
+                Vector3 candidate = feet + Vector3.up * (LiftStep * i);
+                Vector3 center = candidate + controller.center;
+                Vector3 bottom = center - Vector3.up * half + Vector3.up * FloorSkin;
+                Vector3 top = center + Vector3.up * half;
+                if (!Physics.CheckCapsule(bottom, top, radius, others, QueryTriggerInteraction.Ignore)) return candidate;
+            }
+
+            return feet;
         }
 
         /// <summary>

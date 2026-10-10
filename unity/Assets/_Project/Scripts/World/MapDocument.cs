@@ -17,6 +17,23 @@ namespace AtelierVerse.World
         public Vector3 rotation;
     }
 
+    /// <summary>
+    /// 맵에 들어온 캐릭터가 처음 서는 자리(3판). custom이 false이면 정한 것이 없으며 씬의 처음 자리를 쓴다.
+    /// position은 발이 닿는 자리이고 yaw는 바라보는 좌우 각도(도, 위에서 보아 시계 방향)다.
+    /// </summary>
+    [Serializable]
+    public class MapSpawn
+    {
+        public bool custom;
+        public Vector3 position;
+        public float yaw;
+
+        public MapSpawn Clone()
+        {
+            return new MapSpawn { custom = custom, position = position, yaw = yaw };
+        }
+    }
+
     /// <summary>놓을 수 있는 범위. 상자의 두 모서리다.</summary>
     [Serializable]
     public class MapBounds
@@ -49,15 +66,19 @@ namespace AtelierVerse.World
     }
 
     /// <summary>
-    /// 맵 파일의 구조(형식 2판). 자세한 설명은 docs/MAP-FORMAT.md에 있다.
+    /// 맵 파일의 구조(형식 3판). 자세한 설명은 docs/MAP-FORMAT.md에 있다.
     /// JSON으로 바꾸는 것과 읽은 문서를 검사하는 것만 맡고, 파일을 다루는 일은 MapStorage가 맡는다.
-    /// 1판(블록을 칸으로 적던 형식)의 파일은 읽을 때 2판으로 올린다. 조립품과 동작 규칙은 자리만 두었으며 지금은 항상 비어 있다.
+    /// 옛 판의 파일은 읽을 때 지금 판으로 올린다: 1판은 블록을 칸으로 적었고, 2판에는 설명과 시작 위치가 없었다.
+    /// 조립품과 동작 규칙은 자리만 두었으며 지금은 항상 비어 있다.
     /// </summary>
     [Serializable]
     public class MapDocument
     {
         public const string FormatName = "atelier-verse-map";
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
+
+        /// <summary>설명의 가장 긴 길이(글자 수).</summary>
+        public const int MaxDescriptionLength = 80;
         public const string TimeFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
         // 1판의 방향은 0~3(90도씩)이었다.
@@ -67,9 +88,11 @@ namespace AtelierVerse.World
         public string format;
         public int version;
         public string name;
+        public string description;
         public string createdAt;
         public string updatedAt;
         public MapBounds bounds = new MapBounds();
+        public MapSpawn spawn = new MapSpawn();
         public List<MapBlock> blocks = new List<MapBlock>();
         public string[] assemblies = Array.Empty<string>();
         public string[] rules = Array.Empty<string>();
@@ -89,13 +112,17 @@ namespace AtelierVerse.World
                 format = FormatName,
                 version = CurrentVersion,
                 name = mapName ?? string.Empty,
+                description = string.Empty,
                 createdAt = now,
                 updatedAt = now,
                 bounds = new MapBounds { min = Vector3.Min(minCorner, maxCorner), max = Vector3.Max(minCorner, maxCorner) },
             };
         }
 
-        /// <summary>블록 기록을 문서로 옮긴다. 부품 번호는 partIdOf로 저장용 이름이 된다. 블록은 번호 순으로 적는다.</summary>
+        /// <summary>
+        /// 블록 기록을 문서로 옮긴다. 부품 번호는 partIdOf로 저장용 이름이 된다. 블록은 번호 순으로 적는다.
+        /// 이름, 설명, 만든 시각, 범위, 시작 위치는 header의 것을 이어받는다.
+        /// </summary>
         public static MapDocument FromBlocks(MapDocument header, IEnumerable<BlockRecord> blocks, Func<int, string> partIdOf)
         {
             var document = new MapDocument
@@ -103,6 +130,8 @@ namespace AtelierVerse.World
                 format = FormatName,
                 version = CurrentVersion,
                 name = header?.name ?? string.Empty,
+                description = header?.description ?? string.Empty,
+                spawn = header?.spawn != null ? header.spawn.Clone() : new MapSpawn(),
                 createdAt = string.IsNullOrEmpty(header?.createdAt) ? Now() : header.createdAt,
                 updatedAt = Now(),
                 bounds = new MapBounds { min = header?.bounds?.min ?? Vector3.zero, max = header?.bounds?.max ?? Vector3.zero },
@@ -183,6 +212,8 @@ namespace AtelierVerse.World
             parsed.LoadedVersion = header.version;
             parsed.version = CurrentVersion;
             parsed.name ??= string.Empty;
+            parsed.description ??= string.Empty;
+            parsed.spawn = Sanitize(parsed.spawn);
             parsed.createdAt ??= string.Empty;
             parsed.updatedAt ??= string.Empty;
             parsed.bounds ??= new MapBounds();
@@ -236,6 +267,26 @@ namespace AtelierVerse.World
             return report;
         }
 
+        /// <summary>
+        /// 읽은 시작 위치를 다듬는다. 없거나 정하지 않은 것이거나 숫자가 아닌 값이 들어 있으면 "정하지 않음"으로 본다.
+        /// 각도는 0 이상 360 미만으로 맞춘다.
+        /// </summary>
+        public static MapSpawn Sanitize(MapSpawn spawn)
+        {
+            if (spawn == null || !spawn.custom) return new MapSpawn();
+
+            Vector3 position = spawn.position;
+            bool finite = IsFinite(position.x) && IsFinite(position.y) && IsFinite(position.z) && IsFinite(spawn.yaw);
+            if (!finite) return new MapSpawn();
+
+            return new MapSpawn { custom = true, position = position, yaw = Mathf.Repeat(spawn.yaw, 360f) };
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
         public static string Now()
         {
             return DateTime.UtcNow.ToString(TimeFormat, System.Globalization.CultureInfo.InvariantCulture);
@@ -277,9 +328,10 @@ namespace AtelierVerse.World
         }
 
         /// <summary>
-        /// 1판의 문서를 2판으로 올린다. 1판은 블록을 모눈의 칸으로 적었다. 칸의 가운데가 블록의 자리가 되고,
+        /// 1판의 문서를 올린다. 1판은 블록을 모눈의 칸으로 적었다. 칸의 가운데가 블록의 자리가 되고,
         /// 방향(0~3)은 위에서 보아 시계 방향으로 90도씩 돈 각도가 된다. 번호는 파일에 적힌 순서대로 1부터 붙인다.
         /// 범위는 가장 작은 칸의 아래 모서리부터 가장 큰 칸의 위 모서리까지의 상자가 된다.
+        /// 2판에서 3판으로 올릴 때는 바꿀 것이 없다. 3판에 새로 생긴 설명과 시작 위치는 빈 값(정하지 않음)이 된다.
         /// </summary>
         private static MapDocument UpgradeFromV1(MapDocumentV1 old)
         {
@@ -349,7 +401,7 @@ namespace AtelierVerse.World
             public Vector3Int max;
         }
 
-        /// <summary>1판의 문서 구조. 읽어서 2판으로 올리는 데만 쓴다.</summary>
+        /// <summary>1판의 문서 구조. 읽어서 지금 판으로 올리는 데만 쓴다.</summary>
         [Serializable]
         private class MapDocumentV1
         {

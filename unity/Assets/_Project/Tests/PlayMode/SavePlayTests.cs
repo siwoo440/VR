@@ -81,7 +81,7 @@ namespace AtelierVerse.Tests
             yield return new WaitForSeconds(SaveWait);
             Assert.AreEqual(SaveState.Saved, autoSave.State, autoSave.Message);
             string saved = File.ReadAllText(autoSave.FilePath);
-            StringAssert.Contains("\"version\": 2", saved);
+            StringAssert.Contains($"\"version\": {MapDocument.CurrentVersion}", saved);
             StringAssert.DoesNotContain("\"cell\"", saved);
             Assert.IsTrue(MapStorage.TryLoad(autoSave.FilePath, out MapDocument document, out MapFileError error), error.ToString());
             Assert.IsFalse(document.WasUpgraded);

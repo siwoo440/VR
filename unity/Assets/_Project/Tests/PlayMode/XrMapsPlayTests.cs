@@ -11,7 +11,7 @@ namespace AtelierVerse.Tests
 {
     /// <summary>
     /// VR에서 여러 맵 다루기를 가상 기기로 실행해 확인한다(17일차): 메뉴의 "내 작업실" 타일로 맵 목록 창을 열고,
-    /// 오른손 광선으로 새 맵과 열기를 누른다. VR에는 글자판이 없어 이름 단추는 보이지 않는다.
+    /// 오른손 광선으로 새 맵과 열기를 누른다. 맵 정보 창은 XrMapInfoPlayTests가 본다.
     /// 창의 크기와 글자가 헤드셋에서 읽히는지는 이 테스트로 확인되지 않는다.
     /// </summary>
     public class XrMapsPlayTests : XrPlayTestBase
@@ -35,7 +35,7 @@ namespace AtelierVerse.Tests
             Assert.IsFalse(ui.XrPanel.Follow, "창은 메뉴처럼 열린 자리에 머물러야 가리켜 누를 수 있습니다.");
             Assert.IsTrue(xrControl.InputBlocked);
             Assert.IsFalse(ui.Palette.IsShown, "창이 열려 있는 동안에는 부품 판을 감춥니다.");
-            Assert.IsFalse(ui.MapList.GetRow(0).renameButton.gameObject.activeSelf, "VR에는 글자판이 없으므로 이름 단추를 감춥니다.");
+            Assert.IsTrue(ui.MapList.GetRow(0).infoButton.gameObject.activeSelf, "정보 단추는 VR에서도 보입니다(시작 위치와 대표 그림을 정할 수 있다).");
             Assert.IsTrue(ui.MapList.GetRow(0).deleteButton.gameObject.activeSelf);
             yield return Frames(3);
 

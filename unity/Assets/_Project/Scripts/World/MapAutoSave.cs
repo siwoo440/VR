@@ -19,12 +19,14 @@ namespace AtelierVerse.World
     /// 블록이 바뀌면 잠시 뒤에 저장하고, 앱을 끝내거나 씬을 떠날 때 남은 변경을 저장한다.
     /// 맵은 여럿일 수 있다(17일차). 다른 맵을 열고, 새 맵을 만들고, 이름을 바꾸고, 지우는 일을 여기서 하며,
     /// 맵을 바꿀 때는 지금 맵의 남은 변경을 먼저 저장한다. 파일의 목록과 이름은 MapLibrary가 다룬다.
+    /// 지금 맵의 설명과 시작 위치(캐릭터가 처음 서는 자리)도 여기서 고친다(18일차).
     /// </summary>
     public class MapAutoSave : MonoBehaviour
     {
         public const string OpenedMessage = "맵을 열었습니다";
         public const string CreatedMessage = "새 맵을 만들었습니다";
         public const string RenamedMessage = "맵의 이름을 바꿨습니다";
+        public const string InfoSavedMessage = "맵 정보를 저장했습니다";
         public const string DeletedMessage = "맵을 지웠습니다 · 파일은 휴지통 폴더에 남아 있습니다";
         public const string TooManyMessage = "맵을 더 만들 수 없습니다";
         public const string SaveFirstFailedMessage = "지금 맵을 저장하지 못해 다른 맵으로 바꾸지 않았습니다";
@@ -64,6 +66,18 @@ namespace AtelierVerse.World
 
         /// <summary>지금 열려 있는 맵의 이름. 화면에는 MapLibrary.DisplayName을 거쳐 보인다.</summary>
         public string MapName => header != null ? header.name ?? string.Empty : mapName;
+
+        /// <summary>지금 열려 있는 맵의 설명.</summary>
+        public string Description => header != null ? header.description ?? string.Empty : string.Empty;
+
+        /// <summary>지금 맵에 시작 위치를 따로 정했는지. 정하지 않았으면 씬의 처음 자리에서 시작한다.</summary>
+        public bool HasSpawn => header != null && header.spawn != null && header.spawn.custom;
+
+        /// <summary>지금 맵의 시작 위치(발이 닿는 자리). HasSpawn일 때만 뜻이 있다.</summary>
+        public Vector3 SpawnPosition => HasSpawn ? header.spawn.position : Vector3.zero;
+
+        /// <summary>지금 맵의 시작 방향(좌우 각도). HasSpawn일 때만 뜻이 있다.</summary>
+        public float SpawnYaw => HasSpawn ? header.spawn.yaw : 0f;
 
         public string FilePath => MapLibrary.PathOf(MapId);
 
@@ -242,21 +256,80 @@ namespace AtelierVerse.World
         /// <summary>맵의 이름을 바꾼다. 지금 열려 있는 맵이면 바로 저장한다. 이름이 비어 있거나 바꾸지 못하면 false다.</summary>
         public bool Rename(string id, string name)
         {
+            return UpdateInfo(id, name, null);
+        }
+
+        /// <summary>
+        /// 맵의 이름과 설명을 바꾼다. 지금 열려 있는 맵이면 바로 저장한다. description이 null이면 설명은 그대로 둔다.
+        /// 이름이 비어 있거나 바꾸지 못하면 false다.
+        /// </summary>
+        public bool UpdateInfo(string id, string name, string description)
+        {
             string cleaned = MapLibrary.CleanName(name);
             if (!MapLibrary.IsValidId(id) || cleaned.Length == 0) return false;
 
-            if (id != MapId) return MapLibrary.Rename(id, cleaned);
+            if (id != MapId) return MapLibrary.UpdateInfo(id, cleaned, description);
 
-            string before = header.name;
+            string nameBefore = header.name;
+            string descriptionBefore = header.description;
             header.name = cleaned;
+            if (description != null) header.description = MapLibrary.CleanDescription(description);
             if (!SaveNow())
             {
-                header.name = before;
+                header.name = nameBefore;
+                header.description = descriptionBefore;
                 return false;
             }
 
             MapChanged?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// 지금 맵의 시작 위치를 정하고 바로 저장한다. position은 발이 닿는 자리, yaw는 바라보는 좌우 각도다.
+        /// 맵의 범위(블록을 놓을 수 있는 상자) 밖이면 정하지 않고 false를 돌려준다.
+        /// </summary>
+        public bool SetSpawn(Vector3 position, float yaw)
+        {
+            if (world == null || header == null || !InsideBounds(position)) return false;
+
+            MapSpawn before = header.spawn;
+            header.spawn = MapDocument.Sanitize(new MapSpawn { custom = true, position = BlockMap.Quantize(position), yaw = Mathf.Round(yaw * 10f) / 10f });
+            return SaveSpawn(before);
+        }
+
+        /// <summary>지금 맵의 시작 위치를 정하지 않은 상태(씬의 처음 자리)로 되돌리고 바로 저장한다.</summary>
+        public bool ClearSpawn()
+        {
+            if (world == null || header == null) return false;
+            if (!HasSpawn) return true;
+
+            MapSpawn before = header.spawn;
+            header.spawn = new MapSpawn();
+            return SaveSpawn(before);
+        }
+
+        private bool SaveSpawn(MapSpawn before)
+        {
+            if (!SaveNow())
+            {
+                header.spawn = before;
+                return false;
+            }
+
+            MapChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>자리가 맵의 범위(상자) 안인지. 바닥의 높이와 꼭대기의 높이도 안으로 본다.</summary>
+        private bool InsideBounds(Vector3 position)
+        {
+            Vector3 min = world.BoundsMin;
+            Vector3 max = world.BoundsMax;
+            const float slack = 0.01f;
+            return position.x >= min.x - slack && position.x <= max.x + slack
+                && position.y >= min.y - slack && position.y <= max.y + slack
+                && position.z >= min.z - slack && position.z <= max.z + slack;
         }
 
         /// <summary>

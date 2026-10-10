@@ -16,7 +16,8 @@ namespace AtelierVerse.UI
     /// 캐릭터는 이 기기의 캐릭터(LocalPlayer)로만 알고, 키보드·마우스인지 VR인지는 그쪽에 묻는다.
     /// VR에서는 화면을 눈앞의 판(XrUiPanel)으로 띄우고, 부품 칸과 상태 표시는 왼손 위의 부품 판(XrHandPalette)에 보인다.
     /// 부품 고르는 창(PartPickerView)을 열고 닫으며, 창에서 고른 부품을 부품 칸에 넣고 그 배치를 이 기기에 저장한다.
-    /// 맵 목록 창(MapListView)을 열고 닫으며, 창의 요청(열기, 새 맵, 이름 바꾸기, 지우기)을 자동 저장(MapAutoSave)에 전한다.
+    /// 맵 목록 창(MapListView)을 열고 닫으며, 창의 요청(열기, 새 맵, 지우기)을 자동 저장(MapAutoSave)에 전한다.
+    /// 맵 정보 창(MapInfoView)에서는 이름과 설명을 저장하고, 지금 보는 장면을 대표 그림으로 찍고, 지금 선 자리를 시작 위치로 정한다.
     /// 오른손 광선은 가리킨 화면이나 블록을 놓을 자리에서 끝나게 한다.
     /// </summary>
     public class GameUi : MonoBehaviour
@@ -34,6 +35,12 @@ namespace AtelierVerse.UI
 
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
+
+        public const string SnapshotMessage = "지금 보는 장면을 대표 그림으로 찍었습니다";
+        public const string OtherSpawnText = "시작 위치 · 정한 자리";
+
+        // 화면 요소가 놓인 층. 대표 그림을 찍을 때 이 층은 빼고 찍는다(VR의 판과 시작 위치 표식이 여기에 있다).
+        private const int UiLayer = 5;
 
         // 방 이름 칸: 글자 양옆의 여백과 칸의 가장 좁은·넓은 너비. 넓은 쪽은 위 가운데의 알림 띠에 닿지 않는 값이다.
         private const float RoomChipPadding = 80f;
@@ -53,6 +60,7 @@ namespace AtelierVerse.UI
         [SerializeField] private QuickMenuView menu;
         [SerializeField] private PartPickerView picker;
         [SerializeField] private MapListView mapList;
+        [SerializeField] private MapInfoView mapInfo;
         [SerializeField] private PeopleListView[] peopleLists;
         [SerializeField] private GameObject peoplePanel;
         [SerializeField] private GameObject crosshair;
@@ -89,6 +97,8 @@ namespace AtelierVerse.UI
         private InputAction redoAction;
         private InputAction partsAction;
         private InputAction mapsAction;
+        private PlayerSpawn playerSpawn;
+        private int mapListPage;
         private BlockBuilder builder;
         private BlockWorld world;
         private MapAutoSave autoSave;
@@ -101,10 +111,13 @@ namespace AtelierVerse.UI
         public bool IsPickerOpen => picker != null && picker.IsOpen;
 
         /// <summary>메뉴나 부품 고르는 창처럼 조작을 막는 창이 열려 있는지.</summary>
-        public bool IsModalOpen => IsMenuOpen || IsPickerOpen || IsMapListOpen;
+        public bool IsModalOpen => IsMenuOpen || IsPickerOpen || IsMapListOpen || IsMapInfoOpen;
 
         /// <summary>맵 목록 창이 열려 있는지.</summary>
         public bool IsMapListOpen => mapList != null && mapList.IsOpen;
+
+        /// <summary>맵 정보 창이 열려 있는지. 맵 목록 창에서 넘어와 열리며, 그동안 맵 목록 창은 닫혀 있다.</summary>
+        public bool IsMapInfoOpen => mapInfo != null && mapInfo.IsOpen;
 
         public bool IsPeopleListVisible => peoplePanel != null && peoplePanel.activeSelf;
 
@@ -115,6 +128,8 @@ namespace AtelierVerse.UI
         public PartPickerView Picker => picker;
 
         public MapListView MapList => mapList;
+
+        public MapInfoView MapInfo => mapInfo;
 
         /// <summary>화면 위쪽의 방 이름 자리에 적힌 글자. 지금 열려 있는 맵의 이름과 인원이다.</summary>
         public string RoomText => roomLabel != null ? roomLabel.text : string.Empty;
@@ -132,6 +147,7 @@ namespace AtelierVerse.UI
         private void Awake()
         {
             if (player == null) player = FindAnyObjectByType<LocalPlayer>();
+            if (player != null) playerSpawn = player.GetComponent<PlayerSpawn>();
             builder = FindAnyObjectByType<BlockBuilder>();
             world = FindAnyObjectByType<BlockWorld>();
             autoSave = FindAnyObjectByType<MapAutoSave>();
@@ -170,9 +186,18 @@ namespace AtelierVerse.UI
             {
                 mapList.OpenRequested += OpenMap;
                 mapList.CreateRequested += CreateMap;
-                mapList.RenameRequested += RenameMap;
+                mapList.InfoRequested += OpenMapInfo;
                 mapList.DeleteRequested += DeleteMap;
                 mapList.CloseRequested += CloseMapList;
+            }
+
+            if (mapInfo != null)
+            {
+                mapInfo.SaveRequested += SaveMapInfo;
+                mapInfo.SnapshotRequested += TakeMapSnapshot;
+                mapInfo.SetSpawnRequested += SetMapSpawn;
+                mapInfo.ClearSpawnRequested += ClearMapSpawn;
+                mapInfo.BackRequested += BackToMapList;
             }
 
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
@@ -272,9 +297,18 @@ namespace AtelierVerse.UI
             {
                 mapList.CloseRequested -= CloseMapList;
                 mapList.DeleteRequested -= DeleteMap;
-                mapList.RenameRequested -= RenameMap;
+                mapList.InfoRequested -= OpenMapInfo;
                 mapList.CreateRequested -= CreateMap;
                 mapList.OpenRequested -= OpenMap;
+            }
+
+            if (mapInfo != null)
+            {
+                mapInfo.BackRequested -= BackToMapList;
+                mapInfo.ClearSpawnRequested -= ClearMapSpawn;
+                mapInfo.SetSpawnRequested -= SetMapSpawn;
+                mapInfo.SnapshotRequested -= TakeMapSnapshot;
+                mapInfo.SaveRequested -= SaveMapInfo;
             }
 
             map?.Disable();
@@ -298,18 +332,24 @@ namespace AtelierVerse.UI
         {
             if (menuAction.WasPressedThisFrame())
             {
-                // 맵 목록 창이나 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다. 이름을 고치는 중이면 고치기만 그만둔다.
-                if (IsMapListOpen)
+                // 맵 정보 창에서는 메뉴 키로 맵 목록으로 돌아간다. 글자를 쓰는 중이면 쓰기만 그만둔다.
+                // 맵 목록 창이나 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다.
+                if (IsMapInfoOpen)
                 {
-                    if (mapList.IsEditingName) mapList.CancelRename();
-                    else CloseMapList();
+                    if (mapInfo.IsEditingText) mapInfo.StopEditing();
+                    else BackToMapList();
                 }
+                else if (IsMapListOpen) CloseMapList();
                 else if (IsPickerOpen) ClosePicker();
                 else ToggleMenu();
             }
             else if (IsMenuOpen)
             {
                 ReadMenuKeys();
+            }
+            else if (IsMapInfoOpen)
+            {
+                ReadMapInfoKeys();
             }
             else if (IsMapListOpen)
             {
@@ -341,6 +381,7 @@ namespace AtelierVerse.UI
 
             if (IsPickerOpen) picker.Close();
             if (IsMapListOpen) mapList.Close();
+            if (IsMapInfoOpen) mapInfo.Close();
 
             if (player != null)
             {
@@ -381,7 +422,7 @@ namespace AtelierVerse.UI
         /// <summary>부품 고르는 창을 열고 slot 칸에 넣게 한다. 메뉴처럼 창이 열려 있는 동안 캐릭터 조작을 막는다.</summary>
         public void OpenPickerFor(int slot)
         {
-            if (picker == null || IsMenuOpen || IsMapListOpen) return;
+            if (picker == null || IsMenuOpen || IsMapListOpen || IsMapInfoOpen) return;
 
             if (!picker.IsOpen)
             {
@@ -415,6 +456,7 @@ namespace AtelierVerse.UI
             bool wasModal = IsModalOpen;
             if (IsMenuOpen) menu.Close();
             if (IsPickerOpen) picker.Close();
+            if (IsMapInfoOpen) mapInfo.Close();
 
             if (!wasModal)
             {
@@ -472,18 +514,104 @@ namespace AtelierVerse.UI
         /// <summary>맵을 바꾼 뒤: 창을 닫고 캐릭터를 시작 위치로 보내고 어느 맵인지 알린다.</summary>
         private void EnterMap(string message)
         {
+            // 캐릭터는 맵이 바뀔 때 시작 위치로 간다(PlayerSpawn). 그 부품이 없는 캐릭터면 여기서 보낸다.
             CloseMapList();
-            if (player != null) player.Motor.Respawn();
+            if (playerSpawn == null && player != null) player.Motor.Respawn();
             Notice.Post($"{MapLibrary.DisplayName(autoSave.MapName)} · {message}");
         }
 
-        private void RenameMap(string id, string name)
+        /// <summary>맵 목록 창에서 맵 하나의 정보 창으로 넘어간다. 조작은 계속 막혀 있고, 돌아가면 보던 쪽이 그대로다.</summary>
+        public void OpenMapInfo(string id)
+        {
+            if (mapInfo == null || autoSave == null || !IsMapListOpen) return;
+
+            mapListPage = mapList.Page;
+            mapList.Close();
+            mapInfo.Open();
+            if (!ShowMapInfo(id)) BackToMapList();
+        }
+
+        /// <summary>맵 정보 창에서 맵 목록 창으로 돌아간다. 저장하지 않은 글자는 버린다.</summary>
+        public void BackToMapList()
+        {
+            if (mapInfo == null || !mapInfo.IsOpen) return;
+
+            mapInfo.Close();
+            mapList.Open();
+            RefreshMapList();
+            mapList.ShowPage(mapListPage);
+        }
+
+        /// <summary>맵 정보 창을 닫고 바로 조작으로 돌아간다.</summary>
+        public void CloseMapInfo()
+        {
+            if (mapInfo == null || !mapInfo.IsOpen) return;
+
+            mapInfo.Close();
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+
+            if (player != null) player.ResumeControl();
+            ShowVrMenu(false);
+        }
+
+        /// <summary>맵 정보 창에 그 맵의 지금 값을 채운다. 맵이 없으면 false다.</summary>
+        private bool ShowMapInfo(string id)
+        {
+            foreach (MapInfo map in autoSave.ListMaps())
+            {
+                if (map.Id != id) continue;
+
+                bool isCurrent = id == autoSave.MapId;
+                string spawn = isCurrent
+                    ? MapInfoView.DescribeSpawn(autoSave.HasSpawn, autoSave.SpawnPosition, autoSave.SpawnYaw)
+                    : (map.HasSpawn ? OtherSpawnText : MapInfoView.DefaultSpawnText);
+                mapInfo.Show(map, isCurrent, spawn);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshMapInfo()
+        {
+            if (IsMapInfoOpen && !ShowMapInfo(mapInfo.MapId)) BackToMapList();
+        }
+
+        private void SaveMapInfo(string id, string name, string description)
         {
             if (autoSave == null) return;
 
-            if (autoSave.Rename(id, name)) Notice.Post(MapAutoSave.RenamedMessage);
-            else Notice.Post("맵의 이름을 바꾸지 못했습니다", NoticeKind.Warning);
-            RefreshMapList();
+            if (autoSave.UpdateInfo(id, name, description)) Notice.Post(MapAutoSave.InfoSavedMessage);
+            else Notice.Post("맵 정보를 저장하지 못했습니다", NoticeKind.Warning);
+            RefreshMapInfo();
+        }
+
+        /// <summary>지금 보는 장면을 지금 맵의 대표 그림으로 찍는다. 화면 요소는 빼고 장면만 찍는다.</summary>
+        private void TakeMapSnapshot()
+        {
+            if (autoSave == null || player == null || mapInfo.MapId != autoSave.MapId) return;
+
+            byte[] png = SceneSnapshot.CapturePng(player.ViewCamera, SceneSnapshot.DefaultWidth, SceneSnapshot.DefaultHeight, 1 << UiLayer);
+            if (png != null && MapLibrary.SaveThumbnail(autoSave.MapId, png)) Notice.Post(SnapshotMessage);
+            else Notice.Post("대표 그림을 저장하지 못했습니다", NoticeKind.Error);
+            RefreshMapInfo();
+        }
+
+        /// <summary>지금 선 자리를 지금 맵의 시작 위치로 정한다. 알림은 시작 위치를 다루는 쪽(PlayerSpawn)이 올린다.</summary>
+        private void SetMapSpawn()
+        {
+            if (autoSave == null || playerSpawn == null || mapInfo.MapId != autoSave.MapId) return;
+
+            playerSpawn.SetHere();
+            RefreshMapInfo();
+        }
+
+        private void ClearMapSpawn()
+        {
+            if (autoSave == null || playerSpawn == null || mapInfo.MapId != autoSave.MapId) return;
+
+            playerSpawn.Clear();
+            RefreshMapInfo();
         }
 
         private void DeleteMap(string id)
@@ -498,8 +626,8 @@ namespace AtelierVerse.UI
                 return;
             }
 
-            // 지금 맵을 지웠으면 다른 맵이 열려 있다. 캐릭터를 시작 위치로 보낸다.
-            if (wasCurrent && player != null) player.Motor.Respawn();
+            // 지금 맵을 지웠으면 다른 맵이 열려 있고, 캐릭터는 그 맵의 시작 위치로 가 있다(PlayerSpawn).
+            if (wasCurrent && playerSpawn == null && player != null) player.Motor.Respawn();
             Notice.Post(MapAutoSave.DeletedMessage);
             RefreshMapList();
         }
@@ -509,6 +637,7 @@ namespace AtelierVerse.UI
         {
             ShowRoomInfo();
             ShowBlockCount();
+            RefreshMapInfo();
         }
 
         public void TogglePicker()
@@ -589,6 +718,8 @@ namespace AtelierVerse.UI
             XrRig rig = player != null ? player.XrRig : null;
 
             if (menu != null) menu.ShowControlMode(vr);
+            // VR에는 글자판이 없어 맵의 이름과 설명을 고칠 수 없다.
+            if (mapInfo != null) mapInfo.SetEditable(!vr);
 
             if (xrPanel != null)
             {
@@ -685,11 +816,17 @@ namespace AtelierVerse.UI
         }
 
         /// <summary>부품 고르는 창이 열려 있을 때의 키: 부품 창 키로 닫고, 숫자 키로 넣을 칸을 고른다.</summary>
-        /// <summary>맵 목록 창이 열려 있을 때의 키: 맵 목록 키로 닫는다. 이름을 고치는 중에는 글자를 치는 키가 듣지 않게 한다.</summary>
+        /// <summary>맵 목록 창이 열려 있을 때의 키: 맵 목록 키로 닫는다.</summary>
         private void ReadMapListKeys()
         {
-            if (mapList.IsEditingName) return;
             if (mapsAction.WasPressedThisFrame()) CloseMapList();
+        }
+
+        /// <summary>맵 정보 창이 열려 있을 때의 키: 맵 목록 키로 닫는다. 글자를 쓰는 중에는 글자를 치는 키가 게임의 키로 듣지 않게 한다.</summary>
+        private void ReadMapInfoKeys()
+        {
+            if (mapInfo.IsEditingText) return;
+            if (mapsAction.WasPressedThisFrame()) CloseMapInfo();
         }
 
         private void ReadPickerKeys()

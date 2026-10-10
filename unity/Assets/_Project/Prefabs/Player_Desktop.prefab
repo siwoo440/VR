@@ -704,6 +704,7 @@ GameObject:
   - component: {fileID: 3369843703940587227}
   - component: {fileID: 7913404465494433329}
   - component: {fileID: 3604955318864638075}
+  - component: {fileID: 228596762764150187}
   m_Layer: 2
   m_Name: Player_Desktop
   m_TagString: Untagged
@@ -894,6 +895,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 011b6f043ebfcb34c9c3c2423cbfae64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.Player.LocalPlayer
+--- !u!114 &228596762764150187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3823877252223735148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c93314a18d904b4da809a9d0b4d847b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AtelierVerse.Runtime::AtelierVerse.Player.PlayerSpawn
 --- !u!1 &3878414935886083504
 GameObject:
   m_ObjectHideFlags: 0

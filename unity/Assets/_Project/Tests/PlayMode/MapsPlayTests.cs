@@ -13,9 +13,8 @@ using UnityEngine.UI;
 namespace AtelierVerse.Tests
 {
     /// <summary>
-    /// 여러 맵 다루기를 실제로 실행해 확인한다(17일차): 맵 목록 창, 새 맵, 맵을 오가기, 이름 바꾸기, 지우기, 다시 켰을 때.
-    /// 창의 단추는 누름 동작을 직접 부르고, 이름은 글자 칸에 글자를 직접 넣는다.
-    /// 실제 글자판으로 한글 이름을 치는 것은 이 테스트로 확인되지 않는다.
+    /// 여러 맵 다루기를 실제로 실행해 확인한다(17일차): 맵 목록 창, 새 맵, 맵을 오가기, 지우기, 다시 켰을 때.
+    /// 창의 단추는 누름 동작을 직접 부른다. 이름과 설명을 고치는 것은 맵 정보 창의 테스트(MapInfoPlayTests)가 본다.
     /// </summary>
     public class MapsPlayTests : PlayTestBase
     {
@@ -175,85 +174,6 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(2, record.Part);
             Assert.Less(Quaternion.Angle(Quaternion.Euler(0f, 30f, 0f), record.Rotation), 0.1f);
             Assert.AreEqual("탑", autoSave.MapName);
-        }
-
-        [UnityTest]
-        public IEnumerator 이름을_바꾸면_파일과_화면에_반영되고_고치는_동안_키가_게임에_듣지_않는다()
-        {
-            yield return LoadMapsScene();
-            player.CaptureLook(true);
-            yield return Tap(keyboard.mKey);
-
-            ui.MapList.GetRow(0).renameButton.onClick.Invoke();
-            yield return Frames(2);
-            Assert.IsTrue(ui.MapList.IsEditingName);
-            Assert.IsTrue(Find<Transform>(ui.MapList, "RenameBar").gameObject.activeSelf);
-            Assert.AreEqual(FirstMapName, ui.MapList.NameText, "글자 칸에는 지금 이름이 들어 있어야 합니다.");
-
-            // 이름에 들어갈 수 있는 글자의 키는 창을 닫거나 다른 창을 열지 않는다.
-            yield return Tap(keyboard.mKey);
-            Assert.IsTrue(ui.IsMapListOpen, "이름을 고치는 중에 M으로 창이 닫혔습니다.");
-            yield return Tap(keyboard.bKey);
-            Assert.IsFalse(ui.IsPickerOpen, "이름을 고치는 중에 B로 부품 고르는 창이 열렸습니다.");
-
-            // Esc는 고치기만 그만둔다.
-            yield return Tap(keyboard.escapeKey);
-            Assert.IsFalse(ui.MapList.IsEditingName);
-            Assert.IsTrue(ui.IsMapListOpen, "고치기를 그만두는 Esc로 창까지 닫혔습니다.");
-            Assert.AreEqual(FirstMapName, autoSave.MapName);
-
-            ui.MapList.GetRow(0).renameButton.onClick.Invoke();
-            ui.MapList.SetNameText("  우리   집 ");
-            Find<Button>(ui.MapList, "RenameConfirm").onClick.Invoke();
-            yield return Frames(2);
-
-            Assert.IsFalse(ui.MapList.IsEditingName);
-            Assert.AreEqual("우리 집", autoSave.MapName, "이름은 빈칸을 다듬어 넣어야 합니다.");
-            Assert.AreEqual(MapLibrary.DefaultId, autoSave.MapId, "이름을 바꿔도 번호표는 그대로여야 합니다.");
-            Assert.AreEqual("우리 집", ui.MapList.GetRow(0).nameLabel.text);
-            StringAssert.StartsWith("우리 집", ui.RoomText);
-            Assert.AreEqual(MapAutoSave.RenamedMessage, notice.Message);
-            Assert.IsTrue(MapStorage.TryLoad(autoSave.FilePath, out MapDocument saved, out _));
-            Assert.AreEqual("우리 집", saved.name);
-            Assert.AreEqual(SceneBlockCount, saved.blocks.Count);
-
-            // 화면 위쪽의 이름 칸은 이름의 길이에 맞게 넓어지고, 아주 긴 이름에서도 정해 둔 너비를 넘지 않는다.
-            var chip = (RectTransform)Find<Transform>(ui, "RoomChip");
-            float shortWidth = chip.sizeDelta.x;
-            Assert.IsTrue(autoSave.Rename(autoSave.MapId, "아주아주 길게 지은 우리 마을의 이름입니다"));
-            Assert.Greater(chip.sizeDelta.x, shortWidth, "긴 이름인데 이름 칸이 넓어지지 않았습니다.");
-            Assert.LessOrEqual(chip.sizeDelta.x, 560.5f);
-            Assert.IsTrue(autoSave.Rename(autoSave.MapId, "우리 집"));
-            Assert.AreEqual(shortWidth, chip.sizeDelta.x, 0.5f);
-            ui.OpenMapList();
-            yield return Frames(2);
-
-            // 빈 이름으로는 바뀌지 않고 고치기가 이어진다.
-            ui.MapList.GetRow(0).renameButton.onClick.Invoke();
-            ui.MapList.SetNameText("   ");
-            Find<Button>(ui.MapList, "RenameConfirm").onClick.Invoke();
-            Assert.IsTrue(ui.MapList.IsEditingName);
-            Assert.AreEqual("우리 집", autoSave.MapName);
-        }
-
-        [UnityTest]
-        public IEnumerator 열려_있지_않은_맵의_이름도_바꾼다()
-        {
-            yield return LoadMapsScene();
-            string other = MapLibrary.Create("탑", world.BoundsMin, world.BoundsMax);
-
-            ui.OpenMapList();
-            yield return Frames(2);
-            int row = ui.MapList.RowOf(other);
-            ui.MapList.GetRow(row).renameButton.onClick.Invoke();
-            ui.MapList.SetNameText("높은 탑");
-            ui.MapList.ConfirmRename();
-            yield return Frames(2);
-
-            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf(other), out MapDocument document, out _));
-            Assert.AreEqual("높은 탑", document.name);
-            Assert.AreEqual(FirstMapName, autoSave.MapName, "지금 맵의 이름은 그대로여야 합니다.");
-            Assert.AreEqual("높은 탑", ui.MapList.GetRow(ui.MapList.RowOf(other)).nameLabel.text);
         }
 
         [UnityTest]
@@ -455,9 +375,6 @@ namespace AtelierVerse.Tests
             yield return Frames(3);
             SaveCapture(Path.Combine(directory, "maps-list.png"));
 
-            ui.MapList.GetRow(ui.MapList.RowOf(tower)).renameButton.onClick.Invoke();
-            yield return Frames(3);
-            SaveCapture(Path.Combine(directory, "maps-rename.png"));
         }
 
         private static GameObject Scenery()

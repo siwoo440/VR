@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using AtelierVerse.Core;
 using AtelierVerse.UI;
 using AtelierVerse.World;
 using NUnit.Framework;
@@ -206,6 +207,131 @@ namespace AtelierVerse.Tests
             Assert.IsFalse(MapLibrary.Rename("map-a", "   "), "빈 이름으로는 바꾸지 않습니다.");
             Assert.IsFalse(MapLibrary.Rename("no-such-map", "이름"));
             Assert.IsFalse(MapLibrary.Rename("../map-a", "이름"));
+        }
+
+        [Test]
+        public void 이름과_설명을_함께_바꾸고_설명만_그대로_둘_수도_있다()
+        {
+            Save("map-a", "탑", 5, "2026-10-09T01:00:00Z");
+
+            Assert.IsTrue(MapLibrary.UpdateInfo("map-a", " 높은 탑 ", "  친구들과   올라가 보는 탑 "));
+            MapInfo info = MapLibrary.List()[0];
+            Assert.AreEqual("높은 탑", info.Name);
+            Assert.AreEqual("친구들과 올라가 보는 탑", info.Description, "설명도 빈칸을 다듬어 넣습니다.");
+            Assert.AreEqual(5, info.BlockCount);
+
+            // 설명을 주지 않으면(null) 그대로 두고, 빈 글자를 주면 지운다.
+            Assert.IsTrue(MapLibrary.UpdateInfo("map-a", "탑", null));
+            Assert.AreEqual("친구들과 올라가 보는 탑", MapLibrary.List()[0].Description);
+            Assert.IsTrue(MapLibrary.UpdateInfo("map-a", "탑", string.Empty));
+            Assert.AreEqual(string.Empty, MapLibrary.List()[0].Description);
+
+            Assert.IsTrue(MapLibrary.UpdateInfo("map-a", "탑", new string('가', 200)));
+            Assert.AreEqual(MapDocument.MaxDescriptionLength, MapLibrary.List()[0].Description.Length, "설명이 너무 길면 자릅니다.");
+            Assert.IsFalse(MapLibrary.UpdateInfo("map-a", "  ", "설명"), "빈 이름으로는 바꾸지 않습니다.");
+        }
+
+        [Test]
+        public void 목록은_만든_때와_시작_위치를_정했는지와_대표_그림이_있는지를_안다()
+        {
+            MapDocument document = MapDocument.Create("탑", Min, Max);
+            document.createdAt = "2026-10-08T03:00:00Z";
+            document.updatedAt = "2026-10-10T09:30:00Z";
+            document.spawn = new MapSpawn { custom = true, position = new Vector3(1f, 0f, 2f), yaw = 90f };
+            MapStorage.Save(document, MapLibrary.PathOf("map-a"));
+            Save("map-b", "성", 0, "2026-10-09T01:00:00Z");
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", SceneSnapshot.PngSignature));
+
+            List<MapInfo> maps = MapLibrary.List();
+            MapInfo tower = maps.Find(map => map.Id == "map-a");
+            MapInfo castle = maps.Find(map => map.Id == "map-b");
+
+            Assert.AreEqual(new DateTime(2026, 10, 8, 3, 0, 0, DateTimeKind.Utc), tower.CreatedAt);
+            Assert.IsTrue(tower.HasSpawn);
+            Assert.IsTrue(tower.HasThumbnail);
+            Assert.IsFalse(castle.HasSpawn);
+            Assert.IsFalse(castle.HasThumbnail);
+            Assert.AreEqual(2, maps.Count, "대표 그림 파일을 맵으로 세면 안 됩니다.");
+        }
+
+        [Test]
+        public void 대표_그림은_맵_파일_옆에_쓰고_다시_읽으며_지운_맵의_그림은_휴지통으로_따라간다()
+        {
+            Save("map-a", "탑", 1, "2026-10-09T01:00:00Z");
+            byte[] first = { 0x89, 0x50, 0x4E, 0x47, 1, 2, 3 };
+            byte[] second = { 0x89, 0x50, 0x4E, 0x47, 9, 9 };
+
+            Assert.IsNull(MapLibrary.LoadThumbnail("map-a"), "찍기 전에는 그림이 없습니다.");
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", first));
+            CollectionAssert.AreEqual(first, MapLibrary.LoadThumbnail("map-a"));
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", second), "다시 찍으면 덮어씁니다.");
+            CollectionAssert.AreEqual(second, MapLibrary.LoadThumbnail("map-a"));
+            Assert.IsFalse(File.Exists(MapLibrary.ThumbnailPathOf("map-a") + ".tmp"), "임시 파일이 남으면 안 됩니다.");
+
+            Assert.IsFalse(MapLibrary.SaveThumbnail("map-a", null));
+            Assert.IsFalse(MapLibrary.SaveThumbnail("../map-a", first));
+            Assert.IsNull(MapLibrary.LoadThumbnail("../map-a"));
+
+            string moved = MapLibrary.Trash("map-a");
+            Assert.IsNotNull(moved);
+            Assert.IsFalse(File.Exists(MapLibrary.ThumbnailPathOf("map-a")), "지운 맵의 그림이 맵 폴더에 남았습니다.");
+            string movedThumbnail = moved.Substring(0, moved.Length - MapLibrary.Extension.Length) + MapLibrary.ThumbnailExtension;
+            Assert.IsTrue(File.Exists(movedThumbnail), "그림이 휴지통의 맵 파일 옆으로 가지 않았습니다.");
+        }
+
+        [Test]
+        public void 옛_판의_맵은_정보를_고칠_때_사본을_남기고_지금_판으로_쓴다()
+        {
+            Directory.CreateDirectory(directory);
+            string old = "{\"format\":\"atelier-verse-map\",\"version\":2,\"name\":\"옛 맵\",\"createdAt\":\"2026-10-09T01:00:00Z\",\"updatedAt\":\"2026-10-09T02:00:00Z\","
+                + "\"bounds\":{\"min\":{\"x\":-8.0,\"y\":0.0,\"z\":-8.0},\"max\":{\"x\":8.0,\"y\":12.0,\"z\":8.0}},"
+                + "\"blocks\":[{\"id\":1,\"part\":\"block.gold\",\"position\":{\"x\":0.5,\"y\":0.5,\"z\":0.5},\"rotation\":{\"x\":0.0,\"y\":0.0,\"z\":0.0}}],"
+                + "\"assemblies\":[],\"rules\":[]}";
+            File.WriteAllText(MapLibrary.PathOf("old"), old);
+
+            Assert.IsTrue(MapLibrary.UpdateInfo("old", "고친 맵", "설명"));
+
+            string backup = MapLibrary.PathOf("old") + ".v2.bak";
+            Assert.IsTrue(File.Exists(backup), "옛 판의 파일을 남겨 두지 않았습니다.");
+            Assert.AreEqual(old, File.ReadAllText(backup));
+            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf("old"), out MapDocument document, out _));
+            Assert.IsFalse(document.WasUpgraded);
+            Assert.AreEqual("고친 맵", document.name);
+            Assert.AreEqual(1, document.blocks.Count);
+            Assert.AreEqual(1, MapLibrary.List().Count, "사본을 맵으로 세면 안 됩니다.");
+        }
+
+        [Test]
+        public void 찍은_그림이_PNG인지_머리로_알아본다()
+        {
+            Assert.IsTrue(SceneSnapshot.IsPng(SceneSnapshot.PngSignature));
+            Assert.IsTrue(SceneSnapshot.IsPng(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0 }));
+            Assert.IsFalse(SceneSnapshot.IsPng(null));
+            Assert.IsFalse(SceneSnapshot.IsPng(new byte[] { 0x89, 0x50 }));
+            Assert.IsFalse(SceneSnapshot.IsPng(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0 }));
+        }
+
+        [Test]
+        public void 맵_정보_창에_적는_글자를_만든다()
+        {
+            var map = new MapInfo
+            {
+                Id = "a", Name = "탑", BlockCount = 12, Readable = true,
+                CreatedAt = new DateTime(2026, 10, 8, 3, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 10, 10, 9, 30, 0, DateTimeKind.Utc),
+            };
+
+            string facts = MapInfoView.Facts(map);
+            StringAssert.StartsWith("블록 12개 · 만든 날 ", facts);
+            StringAssert.Contains(map.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd"), facts);
+            StringAssert.Contains("고친 때 " + map.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), facts);
+
+            Assert.AreEqual(MapInfoView.DefaultSpawnText, MapInfoView.DescribeSpawn(false, new Vector3(3f, 0f, 2f), 90f));
+            Assert.AreEqual("시작 위치 · 정한 자리 (3, 0, 2.5) · 방향 90°", MapInfoView.DescribeSpawn(true, new Vector3(3f, 0f, 2.5f), 90f));
+
+            // 목록의 줄에는 설명이 있으면 뒤에 붙는다.
+            map.Description = "친구들과 올라가 보는 탑";
+            StringAssert.EndsWith(" · 친구들과 올라가 보는 탑", MapListView.Describe(map));
         }
 
         [Test]

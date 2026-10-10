@@ -7,8 +7,8 @@ using UnityEngine;
 namespace AtelierVerse.Tests
 {
     /// <summary>
-    /// 맵 파일 형식(2판)의 검사. 저장하고 다시 읽은 문서가 같은지, 잘못된 파일을 거르는지, 문제 있는 블록을 건너뛰는지,
-    /// 블록을 칸으로 적던 1판의 파일을 올려 읽는지 확인한다.
+    /// 맵 파일 형식(3판)의 검사. 저장하고 다시 읽은 문서가 같은지, 잘못된 파일을 거르는지, 문제 있는 블록을 건너뛰는지,
+    /// 블록을 칸으로 적던 1판과 설명·시작 위치가 없던 2판의 파일을 올려 읽는지 확인한다.
     /// </summary>
     public class MapDocumentTests
     {
@@ -87,7 +87,7 @@ namespace AtelierVerse.Tests
 
             string json = MapDocument.ToJson(MapDocument.FromBlocks(null, source.Blocks, IdOf));
 
-            StringAssert.Contains("\"version\": 2", json);
+            StringAssert.Contains($"\"version\": {MapDocument.CurrentVersion}", json);
             StringAssert.Contains("\"id\": 1", json);
             StringAssert.Contains("\"part\"", json);
             StringAssert.Contains("\"block.blue\"", json);
@@ -237,10 +237,90 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(3, map.Count);
         }
 
+        // 2판의 파일. 블록은 3판과 같게 적지만 설명과 시작 위치가 없다.
+        private const string VersionTwoJson = "{\"format\":\"atelier-verse-map\",\"version\":2,\"name\":\"둘째 판의 맵\",\"createdAt\":\"2026-10-09T01:00:00Z\",\"updatedAt\":\"2026-10-09T02:00:00Z\","
+            + "\"bounds\":{\"min\":{\"x\":-2.0,\"y\":0.0,\"z\":-2.0},\"max\":{\"x\":3.0,\"y\":4.0,\"z\":3.0}},"
+            + "\"blocks\":[{\"id\":4,\"part\":\"block.blue\",\"position\":{\"x\":1.37,\"y\":0.5,\"z\":-0.82},\"rotation\":{\"x\":0.0,\"y\":30.0,\"z\":0.0}}],"
+            + "\"assemblies\":[],\"rules\":[]}";
+
+        [Test]
+        public void 설명과_시작_위치가_없던_2판의_파일은_빈_값으로_올려_읽는다()
+        {
+            Assert.IsTrue(MapDocument.TryParse(VersionTwoJson, out MapDocument document, out MapFileError error), error.ToString());
+
+            Assert.AreEqual(MapDocument.CurrentVersion, document.version);
+            Assert.AreEqual(2, document.LoadedVersion);
+            Assert.IsTrue(document.WasUpgraded, "옛 판을 읽었으면 사본을 남기고 다시 저장하도록 알려야 합니다.");
+            Assert.AreEqual("둘째 판의 맵", document.name);
+            Assert.AreEqual(string.Empty, document.description);
+            Assert.IsFalse(document.spawn.custom, "2판에는 시작 위치가 없으므로 정하지 않은 것으로 읽어야 합니다.");
+
+            // 블록은 번호, 자리, 방향까지 그대로다.
+            Assert.AreEqual(1, document.blocks.Count);
+            Assert.AreEqual(4, document.blocks[0].id);
+            Assert.AreEqual("block.blue", document.blocks[0].part);
+            Assert.Less(Vector3.Distance(new Vector3(1.37f, 0.5f, -0.82f), document.blocks[0].position), 0.0001f);
+            Assert.AreEqual(30f, document.blocks[0].rotation.y, 0.001f);
+        }
+
+        [Test]
+        public void 설명과_시작_위치를_저장하고_다시_읽는다()
+        {
+            MapDocument header = MapDocument.Create("언덕 위의 탑", new Vector3(-2f, 0f, -2f), new Vector3(3f, 4f, 3f));
+            header.description = "친구들과 올라가 보는 탑";
+            header.spawn = new MapSpawn { custom = true, position = new Vector3(1.5f, 0f, -1.25f), yaw = 90f };
+
+            string json = MapDocument.ToJson(MapDocument.FromBlocks(header, CreateMap().Blocks, IdOf));
+            StringAssert.Contains("\"description\"", json);
+            StringAssert.Contains("\"spawn\"", json);
+
+            Assert.IsTrue(MapDocument.TryParse(json, out MapDocument loaded, out MapFileError error), error.ToString());
+            Assert.IsFalse(loaded.WasUpgraded);
+            Assert.AreEqual("친구들과 올라가 보는 탑", loaded.description);
+            Assert.IsTrue(loaded.spawn.custom);
+            Assert.Less(Vector3.Distance(new Vector3(1.5f, 0f, -1.25f), loaded.spawn.position), 0.0001f);
+            Assert.AreEqual(90f, loaded.spawn.yaw, 0.001f);
+        }
+
+        [Test]
+        public void 블록_기록을_문서로_옮길_때_설명과_시작_위치를_이어받되_원래_것을_건드리지_않는다()
+        {
+            MapDocument header = MapDocument.Create("맵", Vector3.zero, Vector3.one);
+            header.description = "설명";
+            header.spawn = new MapSpawn { custom = true, position = new Vector3(1f, 0f, 2f), yaw = 45f };
+
+            MapDocument saved = MapDocument.FromBlocks(header, CreateMap().Blocks, IdOf);
+            Assert.AreEqual("설명", saved.description);
+            Assert.IsTrue(saved.spawn.custom);
+            Assert.AreNotSame(header.spawn, saved.spawn, "시작 위치를 그대로 물려주면 한쪽을 고칠 때 다른 쪽도 바뀝니다.");
+
+            saved.spawn.position = Vector3.zero;
+            Assert.AreEqual(new Vector3(1f, 0f, 2f), header.spawn.position);
+
+            MapDocument plain = MapDocument.FromBlocks(null, CreateMap().Blocks, IdOf);
+            Assert.AreEqual(string.Empty, plain.description);
+            Assert.IsFalse(plain.spawn.custom);
+        }
+
+        [Test]
+        public void 시작_위치의_값이_바르지_않으면_정하지_않은_것으로_본다()
+        {
+            Assert.IsFalse(MapDocument.Sanitize(null).custom);
+            Assert.IsFalse(MapDocument.Sanitize(new MapSpawn { custom = false, position = Vector3.one }).custom);
+            Assert.AreEqual(Vector3.zero, MapDocument.Sanitize(new MapSpawn { custom = false, position = Vector3.one }).position);
+            Assert.IsFalse(MapDocument.Sanitize(new MapSpawn { custom = true, position = new Vector3(float.NaN, 0f, 0f) }).custom);
+            Assert.IsFalse(MapDocument.Sanitize(new MapSpawn { custom = true, yaw = float.PositiveInfinity }).custom);
+
+            MapSpawn turned = MapDocument.Sanitize(new MapSpawn { custom = true, position = new Vector3(1f, 0f, 2f), yaw = -90f });
+            Assert.IsTrue(turned.custom);
+            Assert.AreEqual(270f, turned.yaw, 0.001f, "각도는 0 이상 360 미만으로 맞춥니다.");
+            Assert.AreEqual(new Vector3(1f, 0f, 2f), turned.position);
+        }
+
         [Test]
         public void 항목이_빠진_파일도_빈_값으로_읽힌다()
         {
-            foreach (int version in new[] { 1, 2 })
+            foreach (int version in new[] { 1, 2, 3 })
             {
                 string json = $"{{\"format\":\"atelier-verse-map\",\"version\":{version}}}";
 
@@ -250,6 +330,9 @@ namespace AtelierVerse.Tests
                 Assert.IsNotNull(document.assemblies);
                 Assert.IsNotNull(document.rules);
                 Assert.AreEqual(string.Empty, document.name);
+                Assert.AreEqual(string.Empty, document.description);
+                Assert.IsNotNull(document.spawn);
+                Assert.IsFalse(document.spawn.custom);
                 Assert.AreEqual(MapDocument.CurrentVersion, document.version);
             }
         }

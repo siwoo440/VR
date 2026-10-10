@@ -22,6 +22,7 @@ namespace AtelierVerse.EditorTools
     /// VR에서 만들 때 필요한 부품 칸과 상태 표시는 왼손 위에 뜨는 작은 판(HandPalette)에 따로 둔다.
     /// 부품 칸에 넣을 부품을 고르는 창(PartPicker)은 메뉴처럼 화면 가운데에 뜨고, VR에서는 눈앞의 판에 뜬다(16일차).
     /// 맵 목록 창(MapList)도 같은 방식이며, 메뉴의 "내 작업실" 타일로 연다(17일차).
+    /// 맵 목록의 줄에서 맵 정보 창(MapInfo)으로 넘어가 이름·설명·대표 그림·시작 위치를 고친다(18일차).
     /// </summary>
     internal static class GameUiBuilder
     {
@@ -141,11 +142,13 @@ namespace AtelierVerse.EditorTools
             // 부품 고르는 창의 키 딱지도 메뉴가 조작 방식에 맞춰 켜고 끄므로 메뉴보다 먼저 만들고, 그리는 순서는 메뉴 위로 옮긴다.
             PartPickerView picker = BuildPartPicker(canvas, catalog, shapeSprites, out GameObject pickerScrim);
             MapListView mapList = BuildMapList(canvas, out GameObject mapListScrim);
+            MapInfoView mapInfo = BuildMapInfo(canvas, out GameObject mapInfoScrim);
             QuickMenuView menu = BuildQuickMenu(canvas, icons, out TMP_Text menuRoomLabel, out TMP_Text menuNameLabel, out TMP_Text brandLabel, out PeopleListView menuPeople, out GameObject scrim);
             picker.transform.SetAsLastSibling();
             mapList.transform.SetAsLastSibling();
+            mapInfo.transform.SetAsLastSibling();
             InputSystemUIInputModule inputModule = CreateEventSystem(root.transform, actions);
-            XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim, pickerScrim, mapListScrim);
+            XrUiPanel xrPanel = AddXrPanel(canvas, trackedRaycaster, inputModule, hud.gameObject, scrim, pickerScrim, mapListScrim, mapInfoScrim);
             XrHandPalette palette = BuildHandPalette(root.transform, catalog, shapeSprites);
 
             var serialized = new SerializedObject(ui);
@@ -156,6 +159,7 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("menu").objectReferenceValue = menu;
             serialized.FindProperty("picker").objectReferenceValue = picker;
             serialized.FindProperty("mapList").objectReferenceValue = mapList;
+            serialized.FindProperty("mapInfo").objectReferenceValue = mapInfo;
             serialized.FindProperty("peoplePanel").objectReferenceValue = peoplePanel.gameObject;
             serialized.FindProperty("crosshair").objectReferenceValue = crosshair;
             serialized.FindProperty("focusHint").objectReferenceValue = focusHint;
@@ -694,9 +698,9 @@ namespace AtelierVerse.EditorTools
         }
 
         /// <summary>
-        /// 맵 목록 창(17일차). 이 기기에 저장된 맵을 한 줄씩 보이고, 줄마다 열기·이름·지우기 단추가 있다.
-        /// 아래에는 새 맵, 쪽 넘기기, 돌아가기가 있다. 이름을 고칠 때는 위쪽 오른쪽에 글자 칸이 나타난다.
-        /// PC에서는 화면 가운데의 창으로, VR에서는 메뉴처럼 눈앞의 판에 뜬다. VR에는 글자판이 없어 이름 단추를 감춘다.
+        /// 맵 목록 창(17일차). 이 기기에 저장된 맵을 한 줄씩 보이고, 줄마다 작은 대표 그림과 열기·정보·지우기 단추가 있다.
+        /// 아래에는 새 맵, 쪽 넘기기, 돌아가기가 있다. 이름과 설명은 "정보"로 여는 맵 정보 창에서 고친다(18일차).
+        /// PC에서는 화면 가운데의 창으로, VR에서는 메뉴처럼 눈앞의 판에 뜬다.
         /// 뒤의 어두운 막은 VR에서 감추도록 따로 돌려준다.
         /// </summary>
         private static MapListView BuildMapList(RectTransform canvas, out GameObject scrimObject)
@@ -706,6 +710,7 @@ namespace AtelierVerse.EditorTools
             const float rowHeight = 62f;
             const float rowGap = 8f;
             const float buttonHeight = 44f;
+            const float textLeft = 116f;
 
             RectTransform holder = UiFactory.Rect("MapList", canvas);
             UiFactory.Fill(holder);
@@ -730,29 +735,14 @@ namespace AtelierVerse.EditorTools
             TMP_Text guide = UiFactory.Text("Guide", panel.transform, "이 기기에 저장된 맵입니다. 다른 맵을 열면 지금 맵은 저장됩니다.", 20f, Muted);
             UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f, 28f));
 
-            // 이름을 고칠 때만 보이는 글자 칸. 머리말의 오른쪽에 둔다.
-            RectTransform renameBar = UiFactory.Rect("RenameBar", panel.transform);
-            UiFactory.Place(renameBar, UiFactory.TopRight, new Vector2(-PanelPadding, -14f), new Vector2(560f, 46f));
-
-            TMP_InputField nameField = InputField("NameField", renameBar, "맵의 이름");
-            UiFactory.Place((RectTransform)nameField.transform, UiFactory.MiddleLeft, Vector2.zero, new Vector2(352f, 46f));
-
-            Button renameConfirm = BigButton("RenameConfirm", renameBar, "확인", null, Gold, Ink, out TMP_Text confirmLabel);
-            UiFactory.Place((RectTransform)renameConfirm.transform, UiFactory.MiddleRight, new Vector2(-104f, 0f), new Vector2(96f, 44f));
-            confirmLabel.fontSize = 20f;
-
-            Button renameCancel = BigButton("RenameCancel", renameBar, "취소", null, Paper, Ink, out TMP_Text cancelLabel);
-            UiFactory.Place((RectTransform)renameCancel.transform, UiFactory.MiddleRight, Vector2.zero, new Vector2(96f, 44f));
-            cancelLabel.fontSize = 20f;
-            renameBar.gameObject.SetActive(false);
-
-            // 맵 한 줄: 이름과 블록 수·저장한 때, 오른쪽에 열기·이름·지우기
+            // 맵 한 줄: 작은 대표 그림, 이름, 블록 수·저장한 때·설명, 오른쪽에 열기·정보·지우기
             var rowRoots = new GameObject[rowCount];
+            var rowThumbnails = new RawImage[rowCount];
             var rowNames = new TMP_Text[rowCount];
             var rowInfos = new TMP_Text[rowCount];
             var rowBadges = new GameObject[rowCount];
             var rowOpens = new Button[rowCount];
-            var rowRenames = new Button[rowCount];
+            var rowInfoButtons = new Button[rowCount];
             var rowDeletes = new Button[rowCount];
             var rowDeleteLabels = new TMP_Text[rowCount];
 
@@ -762,25 +752,28 @@ namespace AtelierVerse.EditorTools
                 UiFactory.StretchTop(row.rectTransform, -rowsTop - i * (rowHeight + rowGap), rowHeight, PanelPadding);
                 UiFactory.Outline(row, Line);
 
+                rowThumbnails[i] = Thumbnail("Thumbnail", row.transform, new Vector2(96f, 54f), 10f, out _);
+                UiFactory.Place((RectTransform)rowThumbnails[i].transform.parent, UiFactory.MiddleLeft, new Vector2(8f, 0f), new Vector2(96f, 54f));
+
                 rowNames[i] = UiFactory.Text("Name", row.transform, "맵", 24f, Ink, true);
-                UiFactory.Place(rowNames[i].rectTransform, UiFactory.TopLeft, new Vector2(20f, -5f), new Vector2(430f, 30f));
+                UiFactory.Place(rowNames[i].rectTransform, UiFactory.TopLeft, new Vector2(textLeft, -5f), new Vector2(340f, 30f));
                 rowNames[i].overflowMode = TextOverflowModes.Ellipsis;
 
                 rowInfos[i] = UiFactory.Text("Info", row.transform, "블록 0개", 18f, Muted);
-                UiFactory.Place(rowInfos[i].rectTransform, UiFactory.TopLeft, new Vector2(20f, -34f), new Vector2(430f, 24f));
+                UiFactory.Place(rowInfos[i].rectTransform, UiFactory.TopLeft, new Vector2(textLeft, -34f), new Vector2(514f, 24f));
+                rowInfos[i].overflowMode = TextOverflowModes.Ellipsis;
 
-                RectTransform badge = UiFactory.Badge("Current", row.transform, "지금 맵", Gold, Ink, 30f);
-                UiFactory.Place(badge, UiFactory.MiddleLeft, new Vector2(466f, 0f), badge.sizeDelta);
+                RectTransform badge = UiFactory.Badge("Current", row.transform, "지금 맵", Gold, Ink, 26f);
+                UiFactory.Place(badge, UiFactory.TopLeft, new Vector2(textLeft + 348f, -6f), badge.sizeDelta);
                 rowBadges[i] = badge.gameObject;
 
                 rowDeletes[i] = BigButton("Delete", row.transform, "지우기", null, Paper, AtelierPalette.Clay, out rowDeleteLabels[i]);
                 UiFactory.Place((RectTransform)rowDeletes[i].transform, UiFactory.MiddleRight, new Vector2(-14f, 0f), new Vector2(112f, buttonHeight));
                 rowDeleteLabels[i].fontSize = 20f;
 
-                rowRenames[i] = BigButton("Rename", row.transform, "이름", null, Paper, Ink, out TMP_Text renameLabel);
-                UiFactory.Place((RectTransform)rowRenames[i].transform, UiFactory.MiddleRight, new Vector2(-14f - 112f - 8f, 0f), new Vector2(92f, buttonHeight));
-                renameLabel.fontSize = 20f;
-                DesktopOnly.Add(rowRenames[i].gameObject);
+                rowInfoButtons[i] = BigButton("Info", row.transform, "정보", null, Paper, Ink, out TMP_Text infoLabel);
+                UiFactory.Place((RectTransform)rowInfoButtons[i].transform, UiFactory.MiddleRight, new Vector2(-14f - 112f - 8f, 0f), new Vector2(92f, buttonHeight));
+                infoLabel.fontSize = 20f;
 
                 rowOpens[i] = BigButton("Open", row.transform, "열기", null, Gold, Ink, out TMP_Text openLabel);
                 UiFactory.Place((RectTransform)rowOpens[i].transform, UiFactory.MiddleRight, new Vector2(-14f - 112f - 8f - 92f - 8f, 0f), new Vector2(92f, buttonHeight));
@@ -816,10 +809,6 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("nextButton").objectReferenceValue = next;
             serialized.FindProperty("createButton").objectReferenceValue = create;
             serialized.FindProperty("closeButton").objectReferenceValue = close;
-            serialized.FindProperty("renameBar").objectReferenceValue = renameBar.gameObject;
-            serialized.FindProperty("nameField").objectReferenceValue = nameField;
-            serialized.FindProperty("renameConfirmButton").objectReferenceValue = renameConfirm;
-            serialized.FindProperty("renameCancelButton").objectReferenceValue = renameCancel;
 
             SerializedProperty rows = serialized.FindProperty("rows");
             rows.arraySize = rowCount;
@@ -827,17 +816,157 @@ namespace AtelierVerse.EditorTools
             {
                 SerializedProperty row = rows.GetArrayElementAtIndex(i);
                 row.FindPropertyRelative("root").objectReferenceValue = rowRoots[i];
+                row.FindPropertyRelative("thumbnail").objectReferenceValue = rowThumbnails[i];
                 row.FindPropertyRelative("nameLabel").objectReferenceValue = rowNames[i];
                 row.FindPropertyRelative("infoLabel").objectReferenceValue = rowInfos[i];
                 row.FindPropertyRelative("currentBadge").objectReferenceValue = rowBadges[i];
                 row.FindPropertyRelative("openButton").objectReferenceValue = rowOpens[i];
-                row.FindPropertyRelative("renameButton").objectReferenceValue = rowRenames[i];
+                row.FindPropertyRelative("infoButton").objectReferenceValue = rowInfoButtons[i];
                 row.FindPropertyRelative("deleteButton").objectReferenceValue = rowDeletes[i];
                 row.FindPropertyRelative("deleteLabel").objectReferenceValue = rowDeleteLabels[i];
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
+        }
+
+        /// <summary>
+        /// 맵 정보 창(18일차). 왼쪽에는 대표 그림과 그림 찍기, 오른쪽에는 이름·설명의 글자 칸과 블록 수·날짜, 시작 위치와 그것을 정하는 단추가 있다.
+        /// 아래에는 목록으로 돌아가기와 저장이 있다. 맵 목록 창의 줄에 있는 "정보"로 열며, 열려 있는 동안 맵 목록 창은 닫혀 있다.
+        /// VR에는 글자판이 없어 저장 단추를 감추고 글자 칸은 MapInfoView가 잠근다.
+        /// 뒤의 어두운 막은 VR에서 감추도록 따로 돌려준다.
+        /// </summary>
+        private static MapInfoView BuildMapInfo(RectTransform canvas, out GameObject scrimObject)
+        {
+            const float top = 108f;
+            const float leftWidth = 400f;
+            const float rightLeft = PanelPadding + leftWidth + 32f;
+            const float rightWidth = PanelWidth - PanelPadding - rightLeft;
+            const float fieldHeight = 46f;
+
+            RectTransform holder = UiFactory.Rect("MapInfo", canvas);
+            UiFactory.Fill(holder);
+            var view = holder.gameObject.AddComponent<MapInfoView>();
+
+            RectTransform root = UiFactory.Rect("Root", holder);
+            UiFactory.Fill(root);
+
+            RectTransform scrimRect = UiFactory.Rect("Scrim", root);
+            UiFactory.Fill(scrimRect);
+            var scrim = scrimRect.gameObject.AddComponent<Image>();
+            scrim.color = AtelierPalette.Scrim;
+            scrim.raycastTarget = true;
+            scrimObject = scrimRect.gameObject;
+
+            Image panel = UiFactory.Card("Panel", root, Paper, Ink, 28f, 8f);
+            UiFactory.Place(panel.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(PanelWidth, PanelHeight));
+
+            TMP_Text title = UiFactory.Text("Title", panel.transform, "맵 정보", 30f, Ink, true);
+            UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -24f), new Vector2(360f, 40f));
+
+            TMP_Text guide = UiFactory.Text("Guide", panel.transform, "이름과 설명은 저장을 눌러야 바뀝니다. 그림 찍기와 시작 위치는 누르면 바로 바뀝니다.", 20f, Muted);
+            UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f, 28f));
+            DesktopOnly.Add(guide.gameObject);
+
+            // 왼쪽: 대표 그림과 그림 찍기
+            RawImage thumbnail = Thumbnail("Thumbnail", panel.transform, new Vector2(leftWidth, leftWidth * 9f / 16f), 16f, out GameObject noThumbnail);
+            UiFactory.Place((RectTransform)thumbnail.transform.parent, UiFactory.TopLeft, new Vector2(PanelPadding, -top), new Vector2(leftWidth, leftWidth * 9f / 16f));
+
+            Button snapshot = BigButton("Snapshot", panel.transform, "지금 보는 장면을 대표 그림으로", null, Paper, Ink, out TMP_Text snapshotLabel);
+            UiFactory.Place((RectTransform)snapshot.transform, UiFactory.TopLeft, new Vector2(PanelPadding, -top - leftWidth * 9f / 16f - 14f), new Vector2(leftWidth, 52f));
+            snapshotLabel.fontSize = 22f;
+
+            TMP_Text snapshotNote = UiFactory.Text("SnapshotNote", panel.transform, "화면의 단추와 글자는 찍히지 않습니다.", 18f, Muted);
+            UiFactory.Place(snapshotNote.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -top - leftWidth * 9f / 16f - 76f), new Vector2(leftWidth, 26f));
+
+            // 오른쪽: 이름, 설명, 블록 수와 날짜, 시작 위치
+            TMP_Text nameTitle = UiFactory.Text("NameTitle", panel.transform, "이름", 20f, Ink, true);
+            UiFactory.Place(nameTitle.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top + 2f), new Vector2(200f, 26f));
+
+            TMP_InputField nameField = InputField("NameField", panel.transform, "맵의 이름");
+            UiFactory.Place((RectTransform)nameField.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 28f), new Vector2(rightWidth, fieldHeight));
+
+            TMP_Text descriptionTitle = UiFactory.Text("DescriptionTitle", panel.transform, "설명", 20f, Ink, true);
+            UiFactory.Place(descriptionTitle.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 88f), new Vector2(200f, 26f));
+
+            TMP_InputField descriptionField = InputField("DescriptionField", panel.transform, "어떤 맵인지 한 줄로");
+            UiFactory.Place((RectTransform)descriptionField.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 118f), new Vector2(rightWidth, fieldHeight));
+
+            TMP_Text facts = UiFactory.Text("Facts", panel.transform, "블록 0개", 18f, Muted);
+            UiFactory.Place(facts.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 178f), new Vector2(rightWidth, 26f));
+            facts.overflowMode = TextOverflowModes.Ellipsis;
+
+            RectTransform divider = UiFactory.Rect("Divider", panel.transform);
+            UiFactory.Place(divider, UiFactory.TopLeft, new Vector2(rightLeft, -top - 216f), new Vector2(rightWidth, 2f));
+            var dividerLine = divider.gameObject.AddComponent<Image>();
+            dividerLine.color = Line;
+            dividerLine.raycastTarget = false;
+
+            TMP_Text spawnLabel = UiFactory.Text("SpawnLabel", panel.transform, MapInfoView.DefaultSpawnText, 20f, Ink, true);
+            UiFactory.Place(spawnLabel.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 232f), new Vector2(rightWidth, 28f));
+            spawnLabel.overflowMode = TextOverflowModes.Ellipsis;
+
+            Button setSpawn = BigButton("SetSpawn", panel.transform, "지금 선 자리를 시작 위치로", null, Paper, Ink, out TMP_Text setSpawnLabel);
+            UiFactory.Place((RectTransform)setSpawn.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 270f), new Vector2(318f, 52f));
+            setSpawnLabel.fontSize = 20f;
+
+            Button clearSpawn = BigButton("ClearSpawn", panel.transform, "처음 자리로", null, Paper, Ink, out TMP_Text clearSpawnLabel);
+            UiFactory.Place((RectTransform)clearSpawn.transform, UiFactory.TopLeft, new Vector2(rightLeft + 318f + 12f, -top - 270f), new Vector2(rightWidth - 318f - 12f, 52f));
+            clearSpawnLabel.fontSize = 20f;
+
+            TMP_Text note = UiFactory.Text("Note", panel.transform, string.Empty, 18f, AtelierPalette.Clay);
+            UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 336f), new Vector2(rightWidth, 26f));
+
+            // 아래: 목록으로, 저장
+            Button back = BigButton("BackToList", panel.transform, "목록으로", "Esc", Paper, Ink, out _);
+            UiFactory.Place((RectTransform)back.transform, UiFactory.BottomLeft, new Vector2(PanelPadding, 34f), new Vector2(300f, 64f));
+
+            Button save = BigButton("SaveInfo", panel.transform, "저장", null, Gold, Ink, out _);
+            UiFactory.Place((RectTransform)save.transform, UiFactory.BottomRight, new Vector2(-PanelPadding, 34f), new Vector2(300f, 64f));
+            DesktopOnly.Add(save.gameObject);
+
+            root.gameObject.SetActive(false);
+
+            var serialized = new SerializedObject(view);
+            serialized.FindProperty("root").objectReferenceValue = root.gameObject;
+            serialized.FindProperty("thumbnail").objectReferenceValue = thumbnail;
+            serialized.FindProperty("noThumbnailLabel").objectReferenceValue = noThumbnail;
+            serialized.FindProperty("nameField").objectReferenceValue = nameField;
+            serialized.FindProperty("descriptionField").objectReferenceValue = descriptionField;
+            serialized.FindProperty("factsLabel").objectReferenceValue = facts;
+            serialized.FindProperty("spawnLabel").objectReferenceValue = spawnLabel;
+            serialized.FindProperty("noteLabel").objectReferenceValue = note;
+            serialized.FindProperty("snapshotButton").objectReferenceValue = snapshot;
+            serialized.FindProperty("setSpawnButton").objectReferenceValue = setSpawn;
+            serialized.FindProperty("clearSpawnButton").objectReferenceValue = clearSpawn;
+            serialized.FindProperty("saveButton").objectReferenceValue = save;
+            serialized.FindProperty("backButton").objectReferenceValue = back;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return view;
+        }
+
+        /// <summary>
+        /// 맵의 대표 그림을 보이는 자리. 테두리가 있는 바탕 상자 안에 그림이 가득 차며, 그림이 없을 때는 바탕과 "그림 없음" 글자가 보인다.
+        /// 돌려주는 것은 안쪽의 그림이고, 자리를 잡을 때는 그 부모(바탕 상자)를 놓는다. 그림은 꺼 둔 채로 만든다.
+        /// </summary>
+        private static RawImage Thumbnail(string name, Transform parent, Vector2 size, float corner, out GameObject emptyLabel)
+        {
+            Image back = UiFactory.Box(name + "Back", parent, Line, corner);
+            back.rectTransform.sizeDelta = size;
+
+            // 글자를 먼저 만들어 그림 아래에 깔리게 한다. 그림이 있으면 그림에 가려진다.
+            TMP_Text label = UiFactory.Text("Empty", back.transform, "그림 없음", size.y > 100f ? 20f : 13f, Muted, false, TextAlignmentOptions.Center);
+            UiFactory.Fill(label.rectTransform);
+            emptyLabel = label.gameObject;
+
+            RectTransform rect = UiFactory.Rect(name, back.transform);
+            UiFactory.Fill(rect, 3f, 3f, 3f, 3f);
+            var image = rect.gameObject.AddComponent<RawImage>();
+            image.raycastTarget = false;
+            image.enabled = false;
+
+            UiFactory.Outline(back, AtelierPalette.WithAlpha(Ink, 0.4f));
+            return image;
         }
 
         /// <summary>글자를 한 줄 써넣는 칸. 테두리가 있는 종이색 상자이며, 비어 있을 때는 흐린 안내 글자가 보인다.</summary>
