@@ -9,6 +9,7 @@ namespace AtelierVerse.UI
     /// Esc로 여는 메뉴. 위쪽 탭과 아래쪽 큰 단추는 로블록스의 메뉴를, 바로가기의 큰 타일은 VRChat의 메뉴를 따랐다.
     /// 무엇을 할지는 직접 처리하지 않고 요청 이벤트로 알린다.
     /// 조작 방식(키보드·마우스, VR)에 따라 그 조작에 맞는 안내만 보인다.
+    /// 키보드·마우스에만 해당하는 설정의 줄은 VR에서 흐리게 하고 누를 수 없게 한다(20일차).
     /// </summary>
     public class QuickMenuView : MonoBehaviour
     {
@@ -30,6 +31,7 @@ namespace AtelierVerse.UI
         [SerializeField] private Button mapsTile;
         [SerializeField] private GameObject[] desktopOnly;
         [SerializeField] private GameObject[] vrOnly;
+        [SerializeField] private CanvasGroup[] desktopOnlyGroups;
         [SerializeField] private string quitText = "게임 끝내기";
         [SerializeField] private string quitConfirmText = "한 번 더 누르면 끝납니다";
 
@@ -122,6 +124,17 @@ namespace AtelierVerse.UI
 
             if (viewTile != null) viewTile.interactable = !vr;
             if (viewTileGroup != null) viewTileGroup.alpha = vr ? UnavailableAlpha : 1f;
+
+            if (desktopOnlyGroups == null) return;
+
+            foreach (CanvasGroup group in desktopOnlyGroups)
+            {
+                if (group == null) continue;
+
+                group.alpha = vr ? UnavailableAlpha : 1f;
+                group.interactable = !vr;
+                group.blocksRaycasts = !vr;
+            }
         }
 
         private static void SetActive(GameObject[] items, bool active)

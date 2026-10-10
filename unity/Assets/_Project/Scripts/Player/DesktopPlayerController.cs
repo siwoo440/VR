@@ -28,6 +28,7 @@ namespace AtelierVerse.Player
         private InputAction zoomAction;
         private InputAction flyAction;
         private float lookSensitivity;
+        private bool invertLookY;
 
         /// <summary>메뉴처럼 조작을 막아야 하는 화면이 열려 있는지.</summary>
         public bool InputBlocked { get; private set; }
@@ -123,6 +124,7 @@ namespace AtelierVerse.Player
         private void ApplySettings()
         {
             lookSensitivity = GameSettings.LookSensitivity;
+            invertLookY = GameSettings.InvertLookY;
         }
 
         private void TryCaptureLook()
@@ -140,7 +142,9 @@ namespace AtelierVerse.Player
         {
             Vector2 delta = lookAction.ReadValue<Vector2>() * lookSensitivity;
             Motor.Turn(delta.x);
-            Rig.AddPitch(-delta.y);
+
+            // 마우스를 위로 밀면 delta.y가 양수다. 보통은 위를 보고(각도가 줄고), 반대로 설정했으면 아래를 본다.
+            Rig.AddPitch(invertLookY ? delta.y : -delta.y);
         }
 
         private void Zoom()

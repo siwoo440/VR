@@ -86,6 +86,9 @@ namespace AtelierVerse.EditorTools
         private static readonly List<Object> DesktopOnly = new List<Object>();
         private static readonly List<Object> VrOnly = new List<Object>();
 
+        // 키보드·마우스에만 해당하는 설정의 줄. VR에서 메뉴가 흐리게 하고 누를 수 없게 한다(20일차).
+        private static readonly List<Object> DesktopOnlyGroups = new List<Object>();
+
         /// <summary>
         /// 16일차의 셋업이 그려 둔 모양 그림(블록, 판, 기둥, 경사, 계단)을 불러온다. 하나라도 없으면 null이다.
         /// 그림이 없으면 부품 칸은 둥근 네모로 그린다(앞 일차의 셋업만 적용된 상태).
@@ -116,6 +119,7 @@ namespace AtelierVerse.EditorTools
         {
             DesktopOnly.Clear();
             VrOnly.Clear();
+            DesktopOnlyGroups.Clear();
 
             var root = new GameObject("GameUI");
             var ui = root.AddComponent<GameUi>();
@@ -123,6 +127,9 @@ namespace AtelierVerse.EditorTools
             // 소리: 무슨 일이 일어났는지 듣고 소리를 고르는 부품과, 실제로 소리를 내는 부품(19일차).
             root.AddComponent<SfxPlayer>();
             root.AddComponent<GameSounds>();
+
+            // 화면: 설정의 화면 품질과 수직 동기화를 실제 그리기에 적용하는 부품(20일차).
+            root.AddComponent<GraphicsApplier>();
 
             RectTransform canvas = CreateCanvas(root.transform, out TrackedDeviceRaycaster trackedRaycaster);
             RectTransform hud = UiFactory.Rect("Hud", canvas);
@@ -1303,6 +1310,7 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("mapsTile").objectReferenceValue = mapsTile;
             SetObjects(serialized.FindProperty("desktopOnly"), DesktopOnly.ToArray());
             SetObjects(serialized.FindProperty("vrOnly"), VrOnly.ToArray());
+            SetObjects(serialized.FindProperty("desktopOnlyGroups"), DesktopOnlyGroups.ToArray());
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }
@@ -1390,68 +1398,117 @@ namespace AtelierVerse.EditorTools
             return page.gameObject;
         }
 
+        /// <summary>
+        /// 설정 쪽. 위에 갈래(화면·조작·소리)를 고르는 칸과 기본값 단추가 있고, 그 아래에 고른 갈래의 줄이 보인다(20일차).
+        /// 키보드·마우스에만 해당하는 줄은 VR에서 흐리게 하고 "PC 전용" 딱지를 보인다.
+        /// </summary>
         private static GameObject BuildSettingsPage(RectTransform pages)
         {
+            const float barHeight = 48f;
+
             RectTransform page = UiFactory.Rect("SettingsPage", pages);
             UiFactory.Fill(page);
 
-            Slider look = BuildSliderRow(page, 0, "마우스 감도", "LookSlider", out TMP_Text lookValue);
-            Slider fieldOfView = BuildSliderRow(page, 1, "시야각", "FieldOfViewSlider", out TMP_Text fieldOfViewValue);
-            Slider sound = BuildSliderRow(page, 2, "소리 크기", "SoundSlider", out TMP_Text soundValue);
+            ChoiceBar sectionBar = BuildChoiceBar("Sections", page, "Section", new[] { "화면", "조작", "소리" }, 132f, barHeight);
+            var sectionRect = (RectTransform)sectionBar.transform;
+            UiFactory.Place(sectionRect, UiFactory.TopLeft, new Vector2(0f, -2f), sectionRect.sizeDelta);
 
-            RectTransform toggleRow = BuildRow(page, 3, "사람들 목록 보이기");
-            Image toggleBox = UiFactory.Box("PeopleToggle", toggleRow, Paper, 10f);
-            UiFactory.Place(toggleBox.rectTransform, UiFactory.MiddleRight, Vector2.zero, new Vector2(40f, 40f));
-            toggleBox.raycastTarget = true;
-            UiFactory.Outline(toggleBox, Ink);
-            Image check = UiFactory.Box("Check", toggleBox.transform, Gold, 6f);
-            UiFactory.Place(check.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(24f, 24f));
+            Button reset = BigButton("Reset", page, "모두 기본값으로", null, Paper, Ink, out _);
+            UiFactory.Place((RectTransform)reset.transform, UiFactory.TopRight, new Vector2(-6f, -2f), new Vector2(236f, barHeight));
 
-            var toggle = toggleBox.gameObject.AddComponent<Toggle>();
-            toggle.targetGraphic = toggleBox;
-            toggle.graphic = check;
-            UiFactory.NoNavigation(toggle);
+            // 화면
+            RectTransform screen = BuildSection(page, "ScreenSection", barHeight);
 
-            TMP_Text toggleHint = UiFactory.Text("Hint", toggleRow, "Tab 키로도 켜고 끕니다", 18f, Muted, false, TextAlignmentOptions.Right);
-            UiFactory.Place(toggleHint.rectTransform, UiFactory.MiddleRight, new Vector2(-60f, 0f), new Vector2(360f, 30f));
-            DesktopOnly.Add(toggleHint.gameObject);
+            RectTransform displayRow = BuildRow(screen, 0, "화면 방식", true);
+            ChoiceBar display = BuildChoiceBar("DisplayBar", displayRow, "Display", new[] { "창", "전체 화면" }, ChoiceWidth, ChoiceHeight);
+            PlaceRight(display);
 
-            // 위의 두 설정은 키보드·마우스에만 쓰인다. VR에서는 그렇다고 알려 둔다.
-            TMP_Text vrNote = UiFactory.Text("VrNote", page, "마우스 감도와 시야각은 키보드·마우스로 할 때 적용됩니다.", 20f, Muted);
-            UiFactory.Place(vrNote.rectTransform, UiFactory.BottomLeft, new Vector2(240f, 16f), new Vector2(720f, 30f));
-            VrOnly.Add(vrNote.gameObject);
+            RectTransform qualityRow = BuildRow(screen, 1, "화면 품질", false);
+            ChoiceBar quality = BuildChoiceBar("QualityBar", qualityRow, "Quality", GraphicsQuality.Labels, ChoiceWidth, ChoiceHeight);
+            PlaceRight(quality);
 
-            Button reset = BigButton("Reset", page, "기본값으로", null, Paper, Ink, out _);
-            UiFactory.Place((RectTransform)reset.transform, UiFactory.BottomLeft, new Vector2(0f, 6f), new Vector2(220f, 52f));
+            Toggle vSync = BuildToggleRow(screen, 2, "수직 동기화", "VSyncToggle", "모니터에 맞춰 그려 화면이 찢어져 보이지 않습니다", false, true);
+            Toggle people = BuildToggleRow(screen, 3, "사람들 목록 보이기", "PeopleToggle", "Tab 키로도 켜고 끕니다", true, false);
+
+            // 조작
+            RectTransform controls = BuildSection(page, "ControlSection", barHeight);
+            Slider look = BuildSliderRow(controls, 0, "마우스 감도", "LookSlider", true, out TMP_Text lookValue);
+            Toggle invertLook = BuildToggleRow(controls, 1, "위아래 시점 반대로", "InvertLookToggle", "마우스를 위로 밀면 아래를 봅니다", false, true);
+            Slider fieldOfView = BuildSliderRow(controls, 2, "시야각", "FieldOfViewSlider", true, out TMP_Text fieldOfViewValue);
+
+            // 소리
+            RectTransform sound = BuildSection(page, "SoundSection", barHeight);
+            Slider soundSlider = BuildSliderRow(sound, 0, "소리 크기", "SoundSlider", false, out TMP_Text soundValue);
+
+            controls.gameObject.SetActive(false);
+            sound.gameObject.SetActive(false);
 
             var panel = page.gameObject.AddComponent<SettingsPanel>();
             var serialized = new SerializedObject(panel);
+            serialized.FindProperty("sectionBar").objectReferenceValue = sectionBar;
+            SetObjects(serialized.FindProperty("sections"), screen.gameObject, controls.gameObject, sound.gameObject);
+            serialized.FindProperty("displayBar").objectReferenceValue = display;
+            serialized.FindProperty("qualityBar").objectReferenceValue = quality;
+            serialized.FindProperty("vSyncToggle").objectReferenceValue = vSync;
+            serialized.FindProperty("peopleListToggle").objectReferenceValue = people;
             serialized.FindProperty("lookSlider").objectReferenceValue = look;
             serialized.FindProperty("lookValue").objectReferenceValue = lookValue;
+            serialized.FindProperty("invertLookToggle").objectReferenceValue = invertLook;
             serialized.FindProperty("fieldOfViewSlider").objectReferenceValue = fieldOfView;
             serialized.FindProperty("fieldOfViewValue").objectReferenceValue = fieldOfViewValue;
-            serialized.FindProperty("soundSlider").objectReferenceValue = sound;
+            serialized.FindProperty("soundSlider").objectReferenceValue = soundSlider;
             serialized.FindProperty("soundValue").objectReferenceValue = soundValue;
-            serialized.FindProperty("peopleListToggle").objectReferenceValue = toggle;
             serialized.FindProperty("resetButton").objectReferenceValue = reset;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return page.gameObject;
         }
 
-        /// <summary>설정 한 줄의 바탕과 왼쪽 이름.</summary>
-        private static RectTransform BuildRow(RectTransform page, int index, string title)
+        private const float ChoiceWidth = 150f;
+        private const float ChoiceHeight = 46f;
+        private const float ChoiceGap = 8f;
+        private const float RowPitch = 74f;
+        private const float RowHeight = 62f;
+
+        /// <summary>설정의 갈래 하나가 들어가는 자리. 위쪽의 갈래 칸 아래를 가득 채운다.</summary>
+        private static RectTransform BuildSection(RectTransform page, string name, float barHeight)
         {
-            RectTransform row = UiFactory.Rect($"Row{index}", page);
-            UiFactory.StretchTop(row, -4f - index * 76f, 64f);
+            RectTransform section = UiFactory.Rect(name, page);
+            UiFactory.Fill(section, 0f, 0f, 0f, barHeight + 16f);
+            return section;
+        }
+
+        /// <summary>
+        /// 설정 한 줄의 바탕과 왼쪽 이름. desktopOnly이면 키보드·마우스에만 해당하는 줄이다:
+        /// VR에서 메뉴가 이 줄을 흐리게 하고 누를 수 없게 하며, 이름 옆에 "PC 전용" 딱지가 보인다.
+        /// </summary>
+        private static RectTransform BuildRow(RectTransform section, int index, string title, bool desktopOnly)
+        {
+            RectTransform row = UiFactory.Rect($"Row{index}", section);
+            UiFactory.StretchTop(row, -index * RowPitch, RowHeight);
 
             TMP_Text label = UiFactory.Text("Label", row, title, 24f, Ink, true);
             UiFactory.Place(label.rectTransform, UiFactory.MiddleLeft, Vector2.zero, new Vector2(320f, 36f));
+
+            if (desktopOnly)
+            {
+                DesktopOnlyGroups.Add(row.gameObject.AddComponent<CanvasGroup>());
+
+                RectTransform pcOnly = UiFactory.Badge("PcOnly", row, "PC 전용", Paper, Muted, 30f);
+                UiFactory.Place(pcOnly, UiFactory.MiddleLeft, new Vector2(UiFactory.WidthOf(label) + 14f, 0f), pcOnly.sizeDelta);
+                VrOnly.Add(pcOnly.gameObject);
+
+                // 딱지는 줄과 함께 흐려지지 않게 한다. 왜 누를 수 없는지 알리는 글자이기 때문이다.
+                var badgeGroup = pcOnly.gameObject.AddComponent<CanvasGroup>();
+                badgeGroup.ignoreParentGroups = true;
+                badgeGroup.blocksRaycasts = false;
+            }
+
             return row;
         }
 
-        private static Slider BuildSliderRow(RectTransform page, int index, string title, string sliderName, out TMP_Text value)
+        private static Slider BuildSliderRow(RectTransform section, int index, string title, string sliderName, bool desktopOnly, out TMP_Text value)
         {
-            RectTransform row = BuildRow(page, index, title);
+            RectTransform row = BuildRow(section, index, title, desktopOnly);
 
             GameObject sliderObject = DefaultControls.CreateSlider(new DefaultControls.Resources());
             sliderObject.name = sliderName;
@@ -1472,6 +1529,73 @@ namespace AtelierVerse.EditorTools
             value = UiFactory.Text("Value", row, "100%", 22f, Muted, true, TextAlignmentOptions.Right);
             UiFactory.Place(value.rectTransform, UiFactory.MiddleRight, Vector2.zero, new Vector2(96f, 36f));
             return slider;
+        }
+
+        /// <summary>켜고 끄는 칸이 오른쪽 끝에 있는 줄. hint는 칸 왼쪽의 작은 설명이며, hintDesktopOnly이면 키보드·마우스에서만 보인다.</summary>
+        private static Toggle BuildToggleRow(RectTransform section, int index, string title, string toggleName, string hint, bool hintDesktopOnly, bool desktopOnly)
+        {
+            RectTransform row = BuildRow(section, index, title, desktopOnly);
+
+            Image box = UiFactory.Box(toggleName, row, Paper, 10f);
+            UiFactory.Place(box.rectTransform, UiFactory.MiddleRight, Vector2.zero, new Vector2(40f, 40f));
+            box.raycastTarget = true;
+            UiFactory.Outline(box, Ink);
+            Image check = UiFactory.Box("Check", box.transform, Gold, 6f);
+            UiFactory.Place(check.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(24f, 24f));
+
+            var toggle = box.gameObject.AddComponent<Toggle>();
+            toggle.targetGraphic = box;
+            toggle.graphic = check;
+            UiFactory.NoNavigation(toggle);
+
+            if (!string.IsNullOrEmpty(hint))
+            {
+                TMP_Text hintText = UiFactory.Text("Hint", row, hint, 18f, Muted, false, TextAlignmentOptions.Right);
+                UiFactory.Place(hintText.rectTransform, UiFactory.MiddleRight, new Vector2(-60f, 0f), new Vector2(460f, 30f));
+                if (hintDesktopOnly) DesktopOnly.Add(hintText.gameObject);
+            }
+
+            return toggle;
+        }
+
+        /// <summary>나란히 놓인 칸 가운데 하나를 고르는 줄. 칸의 이름은 prefix에 번호를 붙인 것이다. 크기는 칸의 수에 맞춰지며 자리는 부르는 쪽이 정한다.</summary>
+        private static ChoiceBar BuildChoiceBar(string name, Transform parent, string prefix, string[] options, float width, float height)
+        {
+            RectTransform bar = UiFactory.Rect(name, parent);
+            bar.sizeDelta = new Vector2(options.Length * width + (options.Length - 1) * ChoiceGap, height);
+
+            var buttons = new Button[options.Length];
+            var fills = new Image[options.Length];
+            var labels = new TMP_Text[options.Length];
+            for (int i = 0; i < options.Length; i++)
+            {
+                Image box = UiFactory.Box($"{prefix}{i}", bar, Paper, 12f);
+                UiFactory.Place(box.rectTransform, UiFactory.MiddleLeft, new Vector2(i * (width + ChoiceGap), 0f), new Vector2(width, height));
+                UiFactory.Outline(box, Ink);
+
+                labels[i] = UiFactory.Text("Label", box.transform, options[i], 22f, Ink, true, TextAlignmentOptions.Center);
+                UiFactory.Fill(labels[i].rectTransform);
+
+                fills[i] = box;
+                buttons[i] = UiFactory.Clickable(box);
+            }
+
+            var choice = bar.gameObject.AddComponent<ChoiceBar>();
+            var serialized = new SerializedObject(choice);
+            SetObjects(serialized.FindProperty("buttons"), buttons);
+            SetObjects(serialized.FindProperty("fills"), fills);
+            SetObjects(serialized.FindProperty("labels"), labels);
+            serialized.FindProperty("selectedFill").colorValue = Gold;
+            serialized.FindProperty("normalFill").colorValue = Paper;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return choice;
+        }
+
+        /// <summary>고르는 줄을 설정 한 줄의 오른쪽 끝에 붙인다.</summary>
+        private static void PlaceRight(ChoiceBar bar)
+        {
+            var rect = (RectTransform)bar.transform;
+            UiFactory.Place(rect, UiFactory.MiddleRight, Vector2.zero, rect.sizeDelta);
         }
 
         /// <summary>로블록스 메뉴의 도움말처럼 조작 키를 한눈에 보여 준다.</summary>

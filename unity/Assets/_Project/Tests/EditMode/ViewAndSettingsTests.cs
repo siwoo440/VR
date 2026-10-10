@@ -17,6 +17,9 @@ namespace AtelierVerse.Tests
         private float savedFieldOfView;
         private bool savedPeopleList;
         private float savedSound;
+        private bool savedInvertLook;
+        private int savedQuality;
+        private bool savedVSync;
 
         [SetUp]
         public void SaveSettings()
@@ -25,6 +28,9 @@ namespace AtelierVerse.Tests
             savedFieldOfView = GameSettings.FieldOfView;
             savedPeopleList = GameSettings.ShowPeopleList;
             savedSound = GameSettings.SoundVolume;
+            savedInvertLook = GameSettings.InvertLookY;
+            savedQuality = GameSettings.Quality;
+            savedVSync = GameSettings.VSync;
         }
 
         [TearDown]
@@ -34,6 +40,64 @@ namespace AtelierVerse.Tests
             GameSettings.FieldOfView = savedFieldOfView;
             GameSettings.ShowPeopleList = savedPeopleList;
             GameSettings.SoundVolume = savedSound;
+            GameSettings.InvertLookY = savedInvertLook;
+            GameSettings.Quality = savedQuality;
+            GameSettings.VSync = savedVSync;
+        }
+
+        [Test]
+        public void 새_설정의_처음_값은_보통_품질_수직_동기화_켬_시점_그대로다()
+        {
+            GameSettings.ResetToDefaults();
+
+            Assert.AreEqual(GameSettings.QualityNormal, GameSettings.Quality);
+            Assert.AreEqual(GameSettings.QualityNormal, GameSettings.DefaultQuality);
+            Assert.IsTrue(GameSettings.VSync);
+            Assert.IsFalse(GameSettings.InvertLookY);
+        }
+
+        [Test]
+        public void 화면_품질은_낮음에서_높음_사이로_맞춘다()
+        {
+            GameSettings.Quality = GameSettings.QualityHigh;
+            Assert.AreEqual(GameSettings.QualityHigh, GameSettings.Quality);
+
+            GameSettings.Quality = 99;
+            Assert.AreEqual(GameSettings.QualityHigh, GameSettings.Quality);
+
+            GameSettings.Quality = -5;
+            Assert.AreEqual(GameSettings.QualityLow, GameSettings.Quality);
+        }
+
+        [Test]
+        public void 새_설정도_값이_바뀔_때만_알리고_기본값으로_돌아간다()
+        {
+            GameSettings.ResetToDefaults();
+            int changes = 0;
+            void Count() => changes++;
+
+            GameSettings.Changed += Count;
+            try
+            {
+                GameSettings.Quality = GameSettings.QualityNormal;
+                GameSettings.VSync = true;
+                GameSettings.InvertLookY = false;
+                Assert.AreEqual(0, changes, "같은 값을 다시 넣었는데 알렸습니다.");
+
+                GameSettings.Quality = GameSettings.QualityLow;
+                GameSettings.VSync = false;
+                GameSettings.InvertLookY = true;
+                Assert.AreEqual(3, changes);
+            }
+            finally
+            {
+                GameSettings.Changed -= Count;
+            }
+
+            GameSettings.ResetToDefaults();
+            Assert.AreEqual(GameSettings.QualityNormal, GameSettings.Quality);
+            Assert.IsTrue(GameSettings.VSync);
+            Assert.IsFalse(GameSettings.InvertLookY);
         }
 
         [Test]

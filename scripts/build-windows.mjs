@@ -1,5 +1,7 @@
 // Windows 실행 파일을 명령줄로 만들고, 원하면 바로 실행해 저장 파일과 로그로 확인하는 도구
-// 사용법: node scripts/build-windows.mjs [--out 폴더] [--development] [--run] [--vr] [--quit-after 초] [--skip-build] [--unity Unity.exe 경로]
+// 사용법: node scripts/build-windows.mjs [--out 폴더] [--development] [--run] [--vr] [--quality low|normal|high] [--screen-check] [--quit-after 초] [--skip-build] [--unity Unity.exe 경로]
+// --screen-check는 실행 중에 전체 화면으로 갔다가 창으로 돌아오게 해서, 로그에 적힌 실제 화면 방식과 크기를 확인한다(화면이 잠깐 전체 화면이 됨).
+// --quality는 실행 확인을 그 화면 품질로 한다(이번 실행만, 설정은 바꾸지 않음). 그림은 smoke-품질.png로 저장하고, 로그에서 그 품질 단계로 그렸는지 확인한다.
 // --vr은 실행 확인을 -vr로 한다. VR 프로그램이 없는 PC에서는 키보드·마우스로 돌아오는지를 보게 된다.
 // 평소 실행(--vr 없음)은 VR 프로그램(OpenXR 런타임)을 한 번도 찾지 않아야 하며, 찾은 흔적이 로그에 있으면 실패로 본다.
 import { spawnSync } from "node:child_process"; // 외부 프로그램 실행
@@ -15,6 +17,7 @@ const VR_LAUNCHER = "AtelierVerse-VR.bat"; // VR로 시작하는 배치 파일 �
 const BOOT_CONFIG = join("AtelierVerse_Data", "boot.config"); // 실행 파일의 시작 설정
 const PRE_INIT_KEY = "xrsdk-pre-init-library"; // 시작 설정에 남아 있으면 안 되는 XR 사전 초기화 항목
 const RUNTIME_CONTACT = /OpenXR-Loader|Loading OpenXR loader|XR_ERROR_|xrCreateInstance/; // 로그에서 VR 프로그램을 찾은 흔적
+const QUALITY_LEVELS = { low: "PC Low", normal: "PC", high: "PC High" }; // 화면 품질마다의 품질 단계 이름(GraphicsQuality.LevelNames와 같아야 함)
 const SAVE_FILE = join(homedir(), "AppData", "LocalLow", "Palettra Games", "Atelier Verse", "maps", "local.map.json"); // 실행 파일이 쓰는 맵 파일
 const args = process.argv.slice(2); // 명령줄 인자
 
@@ -101,10 +104,18 @@ if (preInit.length > 0 || !existsSync(launcher)) // 빌드 뒤 다듬기가 빠�
 if (flag("--run")) // 실행 확인 단계
 {
     const seconds = option("--quit-after", "10"); // 끝내기까지의 초
-    const screenshot = join(out, flag("--vr") ? "smoke-vr.png" : "smoke.png"); // 화면 그림
+    const quality = option("--quality", ""); // 이번 실행의 화면 품질(없으면 설정을 따름)
+    if (quality && !QUALITY_LEVELS[quality]) // 알 수 없는 품질
+    {
+        console.error(`--quality는 low, normal, high 가운데 하나여야 합니다: ${quality}`); // 안내
+        process.exit(1); // 실패 종료
+    }
+    const screenshot = join(out, flag("--vr") ? "smoke-vr.png" : quality ? `smoke-${quality}.png` : "smoke.png"); // 화면 그림
     const log = join(out, "player.log"); // 실행 로그
     const exeArgs = ["-quitAfter", seconds, "-screenshotOut", screenshot, "-logFile", log, "-screen-fullscreen", "0", "-screen-width", "1280", "-screen-height", "720"]; // 실행 인자
     if (flag("--vr")) exeArgs.push("-vr"); // VR 화면으로 시작 요청
+    if (quality) exeArgs.push("-quality", quality); // 이번 실행의 화면 품질
+    if (flag("--screen-check")) exeArgs.push("-screenCheck"); // 화면 방식을 바꿔 보는 확인
     console.log(`실행 시작: ${seconds}초 뒤 스스로 끝남`); // 안내
     const run = spawnSync(executable, exeArgs, { stdio: "ignore", timeout: (Number(seconds) + 90) * 1000 }); // 실행(끝날 때까지 기다림)
     console.log(`실행 종료 코드 ${run.status}${run.error ? ` (${run.error.message})` : ""}`); // 결과
@@ -116,5 +127,18 @@ if (flag("--run")) // 실행 확인 단계
     const contacts = grep(log, RUNTIME_CONTACT).length; // VR 프로그램을 찾은 줄 수
     const quiet = flag("--vr") || contacts === 0; // 평소 실행은 한 번도 찾지 않아야 함
     console.log(`VR 프로그램을 찾은 흔적: ${contacts}줄${flag("--vr") ? " (-vr로 켰으므로 찾는 것이 정상)" : quiet ? "" : " (평소 실행인데 찾았음)"}`); // 흔적 안내
-    if (run.status !== 0 || !existsSync(SAVE_FILE) || problems.length > 0 || !quiet) process.exit(1); // 하나라도 틀리면 실패
+    const qualityLines = grep(log, /\[Atelier Verse\] 화면 품질/); // 화면 품질을 적용했다는 줄
+    const qualityOk = qualityLines.length > 0 && (!quality || qualityLines.some((line) => line.includes(`(${QUALITY_LEVELS[quality]})`))); // 적용했고, 품질을 정했으면 그 단계여야 함
+    console.log(`화면 품질 적용: ${qualityOk ? "확인" : qualityLines.length ? "정한 품질과 다름" : "적용했다는 줄이 없음"}`); // 품질 안내
+    let screenOk = true; // 화면 방식 확인(부탁했을 때만 봄)
+    if (flag("--screen-check")) // 화면 방식 확인 단계
+    {
+        const steps = grep(log, /화면 방식 확인 [123]\/3/); // 처음, 전체 화면으로, 창으로
+        const full = steps.find((line) => line.includes("2/3")) ?? ""; // 전체 화면으로 간 뒤의 줄
+        const back = steps.find((line) => line.includes("3/3")) ?? ""; // 창으로 돌아온 뒤의 줄
+        const monitor = /모니터 (\d+x\d+)/.exec(full)?.[1] ?? ""; // 모니터의 크기
+        screenOk = steps.length === 3 && full.includes(`: 전체 화면 ${monitor} `) && monitor !== "" && back.includes(": 창 1280x720 "); // 모니터 크기의 전체 화면이 되었다가 처음 크기의 창으로 돌아와야 함
+        console.log(`화면 방식 확인: ${screenOk ? "전체 화면이 되었다가 창으로 돌아옴" : "기대와 다름"}`); // 결과 안내
+    }
+    if (run.status !== 0 || !existsSync(SAVE_FILE) || problems.length > 0 || !quiet || !qualityOk || !screenOk) process.exit(1); // 하나라도 틀리면 실패
 }

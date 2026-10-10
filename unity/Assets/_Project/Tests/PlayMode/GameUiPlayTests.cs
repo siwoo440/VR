@@ -289,12 +289,26 @@ namespace AtelierVerse.Tests
             yield return Frames(2);
             SaveCapture(Path.Combine(directory, "menu-shortcuts.png"));
 
+            // 테스트의 바탕은 수직 동기화를 끄고 시작한다. 그림에는 처음 값(켬)이 보이게 한다.
+            GameSettings.VSync = true;
+
             string[] names = { "menu-people.png", "menu-settings.png", "menu-help.png" };
             for (int i = 0; i < names.Length; i++)
             {
                 ui.Menu.ShowTab(i + 1);
                 yield return Frames(2);
                 SaveCapture(Path.Combine(directory, names[i]));
+            }
+
+            // 설정의 나머지 갈래(20일차). 첫 갈래(화면)는 위의 menu-settings.png에 찍혔다.
+            ui.Menu.ShowTab(2);
+            SettingsPanel settings = Find<SettingsPanel>(ui.Menu, "SettingsPage");
+            string[] sections = { "menu-settings-controls.png", "menu-settings-sound.png" };
+            for (int i = 0; i < sections.Length; i++)
+            {
+                settings.ShowSection(i + 1);
+                yield return Frames(2);
+                SaveCapture(Path.Combine(directory, sections[i]));
             }
         }
     }

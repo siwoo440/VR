@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 19일차(기본 소리. VR은 실제 헤드셋 확인 전)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 20일차(설정 늘리기. VR은 실제 헤드셋 확인 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -59,6 +59,7 @@
 | 17일차 | 여러 맵 다루기. 맵 목록(내 작업실)에서 새 맵, 열기, 이름 바꾸기, 지우기 | [`unity/Devlogs/Day17`](unity/Devlogs/Day17/README.md) |
 | 18일차 | 시작 위치 정하기와 맵 정보. 맵마다 처음 서는 자리, 설명, 대표 그림. 맵 형식 3판 | [`unity/Devlogs/Day18`](unity/Devlogs/Day18/README.md) |
 | 19일차 | 기본 소리. 걷기·블록·단추·알림의 소리 22가지(코드로 만듦)와 설정의 소리 크기. 소리 미리 듣기 파일 | [`unity/Devlogs/Day19`](unity/Devlogs/Day19/README.md) |
+| 20일차 | 설정 늘리기. 화면 방식(창·전체 화면), 화면 품질 세 단계, 수직 동기화, 위아래 시점 반대로. 설정을 화면·조작·소리 갈래로 나눔 | [`unity/Devlogs/Day20`](unity/Devlogs/Day20/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 폴더(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\`)에 맵마다 파일 하나로 자동 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -72,7 +73,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 부품 고르는 창 | B (부품 칸에 넣을 부품을 고름. 판·기둥·경사·계단은 여기서 넣음) |
 | 내 작업실(맵 목록) | M 또는 메뉴의 "내 작업실". 새 맵, 열기, 정보, 지우기 |
 | 맵 정보 | 맵 목록에서 줄의 "정보". 이름과 설명 고치기, 지금 보는 장면을 대표 그림으로 찍기, 지금 선 자리를 시작 위치로 정하기 |
-| 소리 크기 | Esc 메뉴의 설정 탭에서 "소리 크기". 0%면 끔 |
+| 설정 | Esc 메뉴의 설정 탭. 화면(창·전체 화면, 화면 품질, 수직 동기화, 사람들 목록), 조작(마우스 감도, 위아래 시점 반대로, 시야각), 소리(소리 크기) 갈래로 나뉨 |
 | 블록 놓기, 지우기 | 부품을 고른 뒤 마우스 왼쪽, 오른쪽. 블록은 칸에 맞추지 않고 가리킨 자리에 놓임 |
 | 블록 칠하기 | 부품을 고르고 블록을 가리킨 뒤 마우스 가운데 또는 F |
 | 블록 돌리기 | R(시계 방향), T(반대). 놓기 전에 15도씩 |
@@ -111,9 +112,11 @@ node scripts/build-windows.mjs
 
 `--run`을 붙이면 만든 실행 파일을 10초 동안 실제로 띄웠다가 스스로 끝내고, 맵 파일이 만들어졌는지와 로그에 예외가 없는지, 화면 그림(`smoke.png`)을 확인합니다. `--development`는 개발용 빌드, `--out 폴더`는 다른 출력 폴더, `--skip-build --run`은 이미 만든 실행 파일만 다시 확인합니다. 에디터 메뉴 `Atelier Verse/Windows 빌드 만들기`로도 만들 수 있습니다.
 
+`--run`에 `--quality low|normal|high`를 더하면 그 화면 품질로 켜 보고(설정은 바꾸지 않음, 그림은 `smoke-품질.png`), `--screen-check`를 더하면 전체 화면으로 갔다가 창으로 돌아오는지를 로그로 확인합니다(화면이 잠깐 전체 화면이 됩니다). 확인 실행은 초당 그린 횟수도 로그에 적습니다.
+
 빌드하면 실행 파일 옆에 VR로 시작하는 `AtelierVerse-VR.bat`이 함께 생깁니다. 그냥 연 `AtelierVerse.exe`는 VR 프로그램을 찾지 않습니다. `--run --vr`은 실행 확인을 VR로 시작해서 합니다(VR 프로그램이 없는 PC에서는 키보드·마우스로 돌아오는지를 봅니다).
 
-실행 파일은 `-vr`(VR 화면으로 시작)과, 자동 확인용인 `-quitAfter 초`·`-screenshotOut 경로` 인자를 알아듣습니다.
+실행 파일은 `-vr`(VR 화면으로 시작)과, 자동 확인용인 `-quitAfter 초`·`-screenshotOut 경로`·`-quality low|normal|high`·`-screenCheck` 인자를 알아듣습니다. `-quitAfter`로 켠 실행은 사람이 쓰는 것이 아니므로 키보드와 마우스 입력을 받지 않습니다.
 
 ## 시안 보는 방법
 

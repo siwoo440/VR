@@ -16,12 +16,21 @@ namespace AtelierVerse.Core
         public const float DefaultFieldOfView = 70f;
         public const float DefaultSoundVolume = 0.7f;
 
+        // 화면 품질. 번호의 뜻(어느 품질 단계인지)은 GraphicsQuality가 안다.
+        public const int QualityLow = 0;
+        public const int QualityNormal = 1;
+        public const int QualityHigh = 2;
+        public const int DefaultQuality = QualityNormal;
+
         private const string LookKey = "settings.lookSensitivity";
         private const string FieldOfViewKey = "settings.fieldOfView";
         private const string PeopleListKey = "settings.showPeopleList";
         private const string SnapLevelKey = "settings.snapLevel";
         private const string HotbarPartsKey = "settings.hotbarParts";
         private const string SoundVolumeKey = "settings.soundVolume";
+        private const string InvertLookKey = "settings.invertLookY";
+        private const string QualityKey = "settings.quality";
+        private const string VSyncKey = "settings.vSync";
 
         public static event Action Changed;
 
@@ -30,6 +39,18 @@ namespace AtelierVerse.Core
         {
             get => Mathf.Clamp(PlayerPrefs.GetFloat(LookKey, DefaultLookSensitivity), MinLookSensitivity, MaxLookSensitivity);
             set => SetFloat(LookKey, Mathf.Clamp(value, MinLookSensitivity, MaxLookSensitivity));
+        }
+
+        /// <summary>마우스를 위로 밀면 아래를 보게 할지. 끈 것이 기본이다.</summary>
+        public static bool InvertLookY
+        {
+            get => PlayerPrefs.GetInt(InvertLookKey, 0) != 0;
+            set
+            {
+                if (InvertLookY == value) return;
+                PlayerPrefs.SetInt(InvertLookKey, value ? 1 : 0);
+                Changed?.Invoke();
+            }
         }
 
         /// <summary>화면에 보이는 세로 시야각(도).</summary>
@@ -44,6 +65,34 @@ namespace AtelierVerse.Core
         {
             get => Mathf.Clamp01(PlayerPrefs.GetFloat(SoundVolumeKey, DefaultSoundVolume));
             set => SetFloat(SoundVolumeKey, Mathf.Clamp01(value));
+        }
+
+        /// <summary>화면 품질(QualityLow~QualityHigh). 범위를 벗어난 값은 범위 안으로 맞춘다.</summary>
+        public static int Quality
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt(QualityKey, DefaultQuality), QualityLow, QualityHigh);
+            set
+            {
+                value = Mathf.Clamp(value, QualityLow, QualityHigh);
+                if (Quality == value) return;
+                PlayerPrefs.SetInt(QualityKey, value);
+                Changed?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// 수직 동기화. 켜면 모니터가 보여 줄 수 있는 만큼만 그려, 화면이 찢어져 보이지 않고 그래픽 카드가 쉬지 않고 도는 일이 없다.
+        /// 켠 것이 기본이다.
+        /// </summary>
+        public static bool VSync
+        {
+            get => PlayerPrefs.GetInt(VSyncKey, 1) != 0;
+            set
+            {
+                if (VSync == value) return;
+                PlayerPrefs.SetInt(VSyncKey, value ? 1 : 0);
+                Changed?.Invoke();
+            }
         }
 
         /// <summary>화면 오른쪽 위의 사람들 목록을 보일지 여부.</summary>
@@ -97,6 +146,9 @@ namespace AtelierVerse.Core
             PlayerPrefs.DeleteKey(SnapLevelKey);
             PlayerPrefs.DeleteKey(HotbarPartsKey);
             PlayerPrefs.DeleteKey(SoundVolumeKey);
+            PlayerPrefs.DeleteKey(InvertLookKey);
+            PlayerPrefs.DeleteKey(QualityKey);
+            PlayerPrefs.DeleteKey(VSyncKey);
             Changed?.Invoke();
         }
 

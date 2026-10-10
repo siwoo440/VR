@@ -15,6 +15,7 @@ namespace AtelierVerse.Tests
 {
     /// <summary>
     /// 게임을 실제로 실행하는 테스트의 공통 바탕. 가상 키보드와 마우스, 초당 60프레임 고정, 개인 설정 되돌리기,
+    /// 가짜 창(화면 방식을 바꿔도 실제 창은 건드리지 않음)과 화면 품질 되돌리기,
     /// Sandbox 씬 불러오기, 화면 그림 찍기를 맡는다.
     /// 맵 파일은 테스트마다 새 임시 폴더에 두어 이 기기의 실제 저장 파일을 건드리지 않는다.
     /// </summary>
@@ -33,6 +34,12 @@ namespace AtelierVerse.Tests
         private int savedSnapLevel;
         private string savedHotbarParts;
         private float savedSoundVolume;
+        private bool savedInvertLook;
+        private int savedQuality;
+        private bool savedVSync;
+        private IScreenDevice savedScreen;
+        private bool hadWindow;
+        private Vector2Int savedWindow;
         private Action savedExitHandler;
         private RenderTexture captureTarget;
         private Camera captureCamera;
@@ -41,6 +48,33 @@ namespace AtelierVerse.Tests
         protected Mouse mouse;
         protected GameUi ui;
         protected DesktopPlayerController player;
+
+        /// <summary>테스트 동안 실제 창 대신 쓰이는 가짜 창. 화면 방식을 바꾸면 여기에 적힌다.</summary>
+        protected FakeScreen screen;
+
+        protected sealed class FakeScreen : IScreenDevice
+        {
+            public bool Fullscreen { get; set; }
+
+            public int Width { get; set; } = 1600;
+
+            public int Height { get; set; } = 900;
+
+            public int DisplayWidth { get; set; } = 2560;
+
+            public int DisplayHeight { get; set; } = 1440;
+
+            /// <summary>창의 크기나 방식을 바꾼 횟수.</summary>
+            public int ApplyCount { get; private set; }
+
+            public void Apply(int width, int height, bool fullscreen)
+            {
+                Width = width;
+                Height = height;
+                Fullscreen = fullscreen;
+                ApplyCount++;
+            }
+        }
 
         private static readonly string TestMapRoot = Path.Combine(Path.GetTempPath(), "atelier-verse-tests");
 
@@ -72,7 +106,21 @@ namespace AtelierVerse.Tests
             savedSnapLevel = GameSettings.SnapLevel;
             savedHotbarParts = GameSettings.HotbarParts;
             savedSoundVolume = GameSettings.SoundVolume;
+            savedInvertLook = GameSettings.InvertLookY;
+            savedQuality = GameSettings.Quality;
+            savedVSync = GameSettings.VSync;
             GameSettings.ResetToDefaults();
+
+            // 테스트는 초당 60프레임으로 고정해 돌린다. 수직 동기화가 켜져 있으면 그 고정이 듣지 않을 수 있어 끄고 시작한다.
+            GameSettings.VSync = false;
+
+            // 화면 방식을 바꾸는 테스트가 실제 창을 건드리지 않게 가짜 창을 끼운다.
+            hadWindow = ScreenControl.HasRememberedWindow;
+            savedWindow = ScreenControl.RememberedWindow;
+            ScreenControl.ForgetWindow();
+            savedScreen = ScreenControl.Device;
+            screen = new FakeScreen();
+            ScreenControl.Device = screen;
 
             savedExitHandler = AppExit.Handler;
             keyboard = InputSystem.AddDevice<Keyboard>();
@@ -90,6 +138,17 @@ namespace AtelierVerse.Tests
             GameSettings.SnapLevel = savedSnapLevel;
             GameSettings.HotbarParts = savedHotbarParts;
             GameSettings.SoundVolume = savedSoundVolume;
+            GameSettings.InvertLookY = savedInvertLook;
+            GameSettings.Quality = savedQuality;
+            GameSettings.VSync = savedVSync;
+
+            // 에디터에서는 실행 중에 바꾼 품질 단계와 수직 동기화가 프로젝트 설정 파일에 남는다. 테스트마다 바꾸기 전으로 돌려놓는다.
+            GraphicsQuality.Restore();
+
+            ScreenControl.Device = savedScreen;
+            ScreenControl.ForgetWindow();
+            if (hadWindow) ScreenControl.RememberWindow(savedWindow.x, savedWindow.y);
+
             Application.targetFrameRate = previousFrameRate;
 
             // 아직 떠 있는 씬의 남은 변경을 지금 저장해 두어야, 다음 테스트가 씬을 바꿀 때 그 변경이 다음 테스트의 폴더로 새지 않는다.

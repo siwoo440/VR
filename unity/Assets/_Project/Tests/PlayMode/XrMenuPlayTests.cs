@@ -178,7 +178,7 @@ namespace AtelierVerse.Tests
             Assert.IsTrue(Find<Transform>(ui.Menu, "PcOnly").gameObject.activeSelf);
             Assert.IsTrue(Find<Transform>(ui.Menu, "KeysVr").gameObject.activeSelf);
             Assert.IsFalse(Find<Transform>(ui.Menu, "KeysDesktop").gameObject.activeSelf);
-            Assert.IsTrue(Find<Transform>(ui.Menu, "VrNote").gameObject.activeSelf);
+            Assert.IsTrue(Find<Transform>(Find<Transform>(ui.Menu, "ControlSection"), "PcOnly").gameObject.activeSelf, "설정의 키보드·마우스 줄에 PC 전용 딱지가 보여야 합니다.");
             Assert.IsFalse(Find<Transform>(Find<Button>(ui.Menu, "Resume"), "Key").gameObject.activeSelf, "VR에서는 키 딱지를 감춥니다.");
 
             yield return PointRightHandAt(CenterOf(viewTile));
@@ -196,7 +196,12 @@ namespace AtelierVerse.Tests
             yield return PullTrigger();
             Assert.AreEqual(2, ui.Menu.CurrentTab);
 
-            Slider slider = Find<Slider>(ui.Menu, "LookSlider");
+            // 소리 크기는 "소리" 갈래에 있다. 갈래의 칸도 광선으로 누른다(20일차).
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.Menu, "Section2")));
+            yield return PullTrigger();
+            Assert.IsTrue(Find<Transform>(ui.Menu, "SoundSection").gameObject.activeInHierarchy, "갈래의 칸을 가리켜 눌렀는데 갈래가 바뀌지 않았습니다.");
+
+            Slider slider = Find<Slider>(ui.Menu, "SoundSlider");
             var rect = (RectTransform)slider.transform;
             float before = slider.normalizedValue;
             float target = before < 0.5f ? 0.8f : 0.2f;
@@ -313,8 +318,14 @@ namespace AtelierVerse.Tests
             ui.Menu.ShowTab(3);
             yield return Frames(3);
             SaveCapture(Path.Combine(directory, "vr-menu-help-close.png"));
+
+            // 테스트의 바탕은 수직 동기화를 끄고 시작한다. 그림에는 처음 값(켬)이 보이게 한다.
+            GameSettings.VSync = true;
             ui.Menu.ShowTab(2);
             yield return Frames(3);
+
+            // 광선이 VR에서 누를 수 있는 칸(화면 품질)을 가리키게 한다.
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.Menu, "Quality2")));
             SaveCapture(Path.Combine(directory, "vr-menu-settings-close.png"));
             ui.Menu.ShowTab(0);
             view.fieldOfView = fieldOfView;
