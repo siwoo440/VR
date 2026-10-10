@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AtelierVerse.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -242,6 +243,122 @@ namespace AtelierVerse.Tests
             // 기둥을 판의 옆면에: 반 굵기(0.25)만큼만 떨어진다. 높이는 간격의 배수로만 맞추므로 판의 가운데 높이다.
             Vector3 beside = PlacementMath.SnapToBlock(slab, Quaternion.identity, slabHalf, new Vector3(0.5f, 0.3f, 0.1f), Vector3.right, 1f, pillarHalf);
             AssertNear(new Vector3(0.75f, 0.25f, 0f), beside);
+        }
+
+        [Test]
+        public void 바닥에서는_돌린_블록의_가로와_세로를_따라_늘어놓는다()
+        {
+            Quaternion rotation = PlacementMath.YawRotation(30f);
+
+            PlacementMath.FaceAxes(Vector3.up, rotation, out Vector3 u, out Vector3 v);
+
+            AssertNear(rotation * Vector3.right, u);
+            Assert.AreEqual(1f, Mathf.Abs(Vector3.Dot(v, rotation * Vector3.forward)), Close, "둘째 방향은 블록의 세로여야 면이 빈틈없이 닿습니다.");
+            Assert.AreEqual(0f, Vector3.Dot(u, v), Close);
+            Assert.AreEqual(0f, Vector3.Dot(v, Vector3.up), Close, "바닥 위에 놓이는 방향이어야 합니다.");
+        }
+
+        [Test]
+        public void 벽에서는_벽을_따라가는_방향과_위아래로_늘어놓는다()
+        {
+            // 면이 캐릭터 쪽(-z)을 보는 벽.
+            PlacementMath.FaceAxes(Vector3.back, Quaternion.identity, out Vector3 u, out Vector3 v);
+            AssertNear(Vector3.right, u);
+            Assert.AreEqual(1f, Mathf.Abs(Vector3.Dot(v, Vector3.up)), Close);
+
+            // 면이 +x를 보는 벽: 블록의 가로가 면을 뚫고 나오므로 세로를 따른다.
+            PlacementMath.FaceAxes(Vector3.right, Quaternion.identity, out u, out v);
+            AssertNear(Vector3.forward, u);
+            Assert.AreEqual(1f, Mathf.Abs(Vector3.Dot(v, Vector3.up)), Close);
+
+            // 방향이 없는 값(0)이 와도 바닥으로 보고 계산한다.
+            PlacementMath.FaceAxes(Vector3.zero, Quaternion.identity, out u, out v);
+            AssertNear(Vector3.right, u);
+            Assert.AreEqual(1f, v.magnitude, Close);
+        }
+
+        [Test]
+        public void 부품이_차지하는_길이는_크기와_돌린_각도를_따른다()
+        {
+            var half = new Vector3(0.5f, 0.25f, 1f);
+
+            Assert.AreEqual(1f, PlacementMath.Extent(half, Quaternion.identity, Vector3.right), Close);
+            Assert.AreEqual(0.5f, PlacementMath.Extent(half, Quaternion.identity, Vector3.up), Close);
+            Assert.AreEqual(2f, PlacementMath.Extent(half, Quaternion.identity, Vector3.forward), Close);
+
+            // 90도 돌리면 긴 쪽이 가로가 된다.
+            Assert.AreEqual(2f, PlacementMath.Extent(half, PlacementMath.YawRotation(90f), Vector3.right), Close);
+
+            // 45도 돌린 블록은 모서리에서 모서리까지다.
+            var cube = new Vector3(0.5f, 0.5f, 0.5f);
+            Assert.AreEqual(Mathf.Sqrt(2f), PlacementMath.Extent(cube, PlacementMath.YawRotation(45f), Vector3.right), Close);
+        }
+
+        [Test]
+        public void 면_위의_점이_줄의_몇_번째_칸인지_찾고_칸의_가운데를_돌려준다()
+        {
+            var origin = new Vector3(2f, 0f, 3f);
+            var first = new Vector3(2f, 0.5f, 3f);
+
+            Assert.AreEqual(Vector2Int.zero, PlacementMath.LatticeCell(new Vector3(2.4f, 0f, 3.4f), origin, Vector3.right, Vector3.forward, 1f, 1f));
+            Assert.AreEqual(new Vector2Int(1, 0), PlacementMath.LatticeCell(new Vector3(2.6f, 0f, 3.4f), origin, Vector3.right, Vector3.forward, 1f, 1f), "칸의 반을 넘어야 다음 칸입니다.");
+            Assert.AreEqual(new Vector2Int(-1, -2), PlacementMath.LatticeCell(new Vector3(0.9f, 0f, 1.2f), origin, Vector3.right, Vector3.forward, 1f, 1f));
+
+            // 칸이 네모가 아닌 부품(가로 2, 세로 0.5).
+            Assert.AreEqual(new Vector2Int(1, 3), PlacementMath.LatticeCell(new Vector3(4.3f, 0f, 4.6f), origin, Vector3.right, Vector3.forward, 2f, 0.5f));
+
+            AssertNear(new Vector3(5f, 0.5f, 1f), PlacementMath.LatticeCenter(first, new Vector2Int(3, -2), Vector3.right, Vector3.forward, 1f, 1f));
+            AssertNear(first, PlacementMath.LatticeCenter(first, Vector2Int.zero, Vector3.right, Vector3.forward, 2f, 0.5f));
+
+            // 돌린 줄에서도 칸의 가운데 아래의 점은 그 칸으로 읽힌다.
+            Quaternion rotation = PlacementMath.YawRotation(30f);
+            PlacementMath.FaceAxes(Vector3.up, rotation, out Vector3 u, out Vector3 v);
+            for (int x = -3; x <= 3; x++)
+            {
+                for (int y = -3; y <= 3; y++)
+                {
+                    var cell = new Vector2Int(x, y);
+                    Vector3 center = PlacementMath.LatticeCenter(first, cell, u, v, 1f, 1f);
+                    Assert.AreEqual(cell, PlacementMath.LatticeCell(center + Vector3.down * 0.5f, origin, u, v, 1f, 1f));
+                }
+            }
+        }
+
+        [Test]
+        public void 지나온_칸을_빠짐없이_차례로_담는다()
+        {
+            var path = new List<Vector2Int> { new Vector2Int(9, 9) };
+
+            PlacementMath.CellsBetween(Vector2Int.zero, Vector2Int.zero, path);
+            Assert.AreEqual(0, path.Count, "같은 칸이면 비웁니다.");
+
+            PlacementMath.CellsBetween(Vector2Int.zero, new Vector2Int(4, 0), path);
+            CollectionAssert.AreEqual(new[] { new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0), new Vector2Int(4, 0) }, path);
+
+            PlacementMath.CellsBetween(new Vector2Int(1, 1), new Vector2Int(-2, 4), path);
+            CollectionAssert.AreEqual(new[] { new Vector2Int(0, 2), new Vector2Int(-1, 3), new Vector2Int(-2, 4) }, path);
+
+            // 비스듬한 길: 처음 칸은 넣지 않고 끝 칸은 넣으며, 한 번에 한 칸씩만 옮겨 가고 같은 칸을 두 번 담지 않는다.
+            var from = new Vector2Int(0, 0);
+            var to = new Vector2Int(5, 2);
+            PlacementMath.CellsBetween(from, to, path);
+            Assert.AreEqual(5, path.Count);
+            Assert.AreEqual(to, path[path.Count - 1]);
+            Assert.IsFalse(path.Contains(from));
+
+            Vector2Int previous = from;
+            var seen = new HashSet<Vector2Int>();
+            foreach (Vector2Int cell in path)
+            {
+                Assert.LessOrEqual(Mathf.Abs(cell.x - previous.x), 1);
+                Assert.LessOrEqual(Mathf.Abs(cell.y - previous.y), 1);
+                Assert.IsTrue(seen.Add(cell), "같은 칸을 두 번 담았습니다.");
+                previous = cell;
+            }
+
+            // 너무 멀리 건너뛰면 정한 수까지만 담는다.
+            PlacementMath.CellsBetween(Vector2Int.zero, new Vector2Int(200, 0), path, 10);
+            Assert.AreEqual(10, path.Count);
         }
 
         [Test]

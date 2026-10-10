@@ -1675,7 +1675,7 @@ namespace AtelierVerse.EditorTools
                 UiFactory.Place(text.rectTransform, UiFactory.TopLeft, new Vector2(x + 232f, y), new Vector2(250f, 40f));
             }
 
-            TMP_Text note = UiFactory.Text("Note", page, "대화는 여러 사람이 함께 들어오는 기능과 같이 연결됩니다.", 20f, Muted);
+            TMP_Text note = UiFactory.Text("Note", page, "놓기 · 지우기 · 칠하기는 누른 채 끌면 이어서 됩니다. 대화는 여러 사람이 함께 들어올 때 연결됩니다.", 20f, Muted);
             UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - rowsPerColumn * rowHeight), new Vector2(960f, 30f));
             return page.gameObject;
         }

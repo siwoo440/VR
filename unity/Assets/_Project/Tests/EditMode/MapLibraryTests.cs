@@ -232,6 +232,52 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 다른_프로그램이_파일을_잠깐_잡고_있어도_기다렸다_저장한다()
+        {
+            Save("map-a", "탑", 5, "2026-10-09T01:00:00Z");
+            string path = MapLibrary.PathOf("map-a");
+
+            // 파일을 잡았다가 0.04초 뒤에 놓는다. 방금 쓴 파일을 백신이 잠깐 훑는 경우와 같다.
+            var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
+            var release = new System.Threading.Thread(() =>
+            {
+                System.Threading.Thread.Sleep(40);
+                locked.Dispose();
+            });
+            release.Start();
+
+            try
+            {
+                Assert.IsTrue(MapLibrary.UpdateInfo("map-a", "높은 탑", "설명"), "파일이 곧 풀렸는데 저장하지 못했습니다.");
+            }
+            finally
+            {
+                release.Join();
+            }
+
+            MapInfo info = MapLibrary.List()[0];
+            Assert.AreEqual("높은 탑", info.Name);
+            Assert.AreEqual("설명", info.Description);
+            Assert.AreEqual(5, info.BlockCount);
+        }
+
+        [Test]
+        public void 파일이_계속_잡혀_있으면_저장하지_못했다고_알리고_파일은_그대로다()
+        {
+            Save("map-a", "탑", 5, "2026-10-09T01:00:00Z");
+            string path = MapLibrary.PathOf("map-a");
+
+            using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                Assert.IsFalse(MapLibrary.UpdateInfo("map-a", "높은 탑", "설명"), "파일을 쓸 수 없는데 저장했다고 했습니다.");
+            }
+
+            MapInfo info = MapLibrary.List()[0];
+            Assert.AreEqual("탑", info.Name, "저장하지 못했으면 파일의 내용이 그대로여야 합니다.");
+            Assert.AreEqual(5, info.BlockCount);
+        }
+
+        [Test]
         public void 목록은_만든_때와_시작_위치를_정했는지와_대표_그림이_있는지를_안다()
         {
             MapDocument document = MapDocument.Create("탑", Min, Max);

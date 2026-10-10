@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AtelierVerse.Core;
 using AtelierVerse.World;
 using UnityEngine;
@@ -13,6 +14,15 @@ namespace AtelierVerse.Player
         Grabbed,
         Released,
         SnapChanged,
+    }
+
+    /// <summary>단추를 누른 채 끌어서 이어 하고 있는 일.</summary>
+    public enum StrokeKind
+    {
+        None,
+        Place,
+        Remove,
+        Paint,
     }
 
     /// <summary>놓을 수 없는 까닭. 알림 띠에 보여 준다.</summary>
@@ -31,6 +41,9 @@ namespace AtelierVerse.Player
     /// 놓기 전에 좌우로 15도씩 돌릴 수 있고, 맞추기 도우미를 켜면 모눈이나 가리킨 블록에 나란히 붙는 자리로 당겨진다(15일차).
     /// 부품은 모양과 크기가 다를 수 있다(16일차). 얹는 높이, 범위와 겹침 검사, 미리 보기가 부품의 크기와 모양을 따른다. 칠하기는 색만 바꾸고 모양은 그대로 둔다.
     /// 옮기기는 블록을 잡아(화면에서 잠시 감추고 미리 보기로 대신 보임) 새 자리를 가리켜 놓는 것이며, 한 번의 편집으로 기록된다.
+    /// 놓기·지우기·칠하기는 단추를 누른 채 조준을 옮기면 이어서 된다(21일차). 한 번 끈 것은 기록의 한 묶음이 되어 되돌리기 한 번에 돌아온다.
+    /// 끌어서 놓기는 첫 블록을 놓은 면 위에 첫 블록과 줄을 맞춰 놓는다(이미 블록이 있는 자리, 맵 밖, 캐릭터가 선 자리는 건너뜀).
+    /// 끌어서 지우기는 처음 가리킨 면과 같은 면에 있는 블록만 지운다. 그러지 않으면 누르고 있는 동안 뒤의 블록까지 뚫고 들어간다.
     /// 부품을 고르고 조준하고 있을 때만(PC에서는 마우스를 잡았을 때) 동작하며, 캐릭터나 블록이 아닌 물체와 겹치는 자리에는 놓지 않는다.
     /// 놓기·지우기·칠하기·옮기기는 블록 세계의 기록 층(History)을 거쳐 되돌릴 수 있다. 놓지 못한 까닭은 알림으로 올린다.
     /// 조준 광선, 조작이 막혔는지, 어느 입력 묶음을 읽을지는 이 기기의 캐릭터(LocalPlayer)에게 물으므로 조작 방식을 직접 알지 않는다.
@@ -46,6 +59,16 @@ namespace AtelierVerse.Player
         public const string GrabbedMessage = "블록을 잡았습니다 · 놓을 자리를 가리켜 놓으세요";
         public const string GrabCancelledMessage = "옮기기를 그만두었습니다";
 
+        // 끌어서 지울 때 "같은 면"으로 보는 범위: 처음 가리킨 면에서 떨어진 거리와 면의 방향이 어긋난 정도.
+        private const float StrokePlaneTolerance = 0.08f;
+        private const float StrokeNormalAlign = 0.9f;
+
+        /// <summary>
+        /// 단추를 누른 뒤 이만큼(초)은 끌기로 보지 않는다. 짧게 누르면서 시점이 크게 움직여도 하나만 놓이고 하나만 지워진다.
+        /// 이보다 오래 누르고 있으면 그때의 조준까지 한꺼번에 따라잡는다.
+        /// </summary>
+        public const float StrokeHoldDelay = 0.12f;
+
         private const float OverlapMargin = 0.98f;
         private const float RotatePress = 0.6f;
         private const float RotateRelease = 0.3f;
@@ -54,6 +77,7 @@ namespace AtelierVerse.Player
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly Collider[] OverlapBuffer = new Collider[32];
+        private static readonly List<Vector2Int> StrokePath = new List<Vector2Int>();
 
         [SerializeField] private InputActionAsset actions;
         [SerializeField] private Renderer ghostPrefab;
@@ -79,6 +103,24 @@ namespace AtelierVerse.Player
         private int carriedBlockId = BlockMap.NoId;
         private int rotateHeld;
         private float nextRotateAt;
+
+        // 조준 광선이 닿은 자리와 그 면의 방향. 끌기의 면을 정하는 데 쓴다.
+        private Vector3 aimPoint;
+        private Vector3 aimNormal = Vector3.up;
+
+        // 끌기: 처음 가리킨 면(한 점과 방향)과, 끌어서 놓을 때 블록을 늘어놓는 줄(두 방향과 칸의 크기).
+        private Vector3 strokeNormal;
+        private Vector3 strokeFaceOrigin;
+        private Vector3 strokeFirstCenter;
+        private Vector3 strokeU;
+        private Vector3 strokeV;
+        private float strokePitchU;
+        private float strokePitchV;
+        private int strokePart;
+        private Quaternion strokeRotation;
+        private Vector2Int strokeCell;
+        private bool strokeWarned;
+        private float strokeStartedAt;
 
         /// <summary>돌린 각도, 맞추기 단계, 블록을 잡았는지가 바뀌면 알린다. 화면의 표시가 듣는다.</summary>
         public event Action StateChanged;
@@ -130,6 +172,14 @@ namespace AtelierVerse.Player
         /// <summary>잡고 있는 블록의 번호. 잡고 있지 않으면 BlockMap.NoId다.</summary>
         public int CarriedBlockId => carriedBlockId;
 
+        /// <summary>단추를 누른 채 끌어서 이어 하고 있는 일. 끌고 있지 않으면 None이다.</summary>
+        public StrokeKind Stroke { get; private set; }
+
+        public bool IsStroking => Stroke != StrokeKind.None;
+
+        /// <summary>이번 끌기에서 놓거나 지우거나 칠한 블록의 수.</summary>
+        public int StrokeCount { get; private set; }
+
         /// <summary>조준 광선이 닿는 거리 안의 무엇인가에 닿았는지.</summary>
         public bool HasAimHit { get; private set; }
 
@@ -176,6 +226,7 @@ namespace AtelierVerse.Player
         {
             if (player != null) player.ModeChanged -= OnModeChanged;
 
+            EndStroke();
             ReleaseCarried();
             wasActive = false;
             HasAimHit = false;
@@ -233,6 +284,11 @@ namespace AtelierVerse.Player
             }
 
             UpdateTarget(active);
+
+            // 메뉴를 열거나 부품 선택을 풀면 끌기도 끝난다. 그때까지 한 것은 한 묶음으로 남는다.
+            if (IsStroking && !ready) EndStroke();
+            if (Stroke == StrokeKind.Place) UpdateStrokeTarget();
+
             ShowGhost();
             if (!ready) return;
 
@@ -243,10 +299,216 @@ namespace AtelierVerse.Player
                 return;
             }
 
-            if (placeAction.WasPressedThisFrame()) PlaceAtTarget();
-            else if (removeAction.WasPressedThisFrame()) RemoveAtTarget();
-            else if (paintAction.WasPressedThisFrame()) PaintAtTarget();
+            if (IsStroking)
+            {
+                ContinueStroke();
+                return;
+            }
+
+            if (placeAction.WasPressedThisFrame()) BeginStroke(StrokeKind.Place);
+            else if (removeAction.WasPressedThisFrame()) BeginStroke(StrokeKind.Remove);
+            else if (paintAction.WasPressedThisFrame()) BeginStroke(StrokeKind.Paint);
             else if (grabAction.WasPressedThisFrame()) GrabAtTarget();
+        }
+
+        /// <summary>
+        /// 단추를 누른 그 프레임의 일을 하고(하나 놓기, 지우기, 칠하기), 이어서 끌 수 있게 끌기를 시작한다.
+        /// 기록의 묶음을 먼저 열어 첫 블록도 같은 묶음에 들게 한다. 놓기와 지우기는 첫 일이 이루어져야 끌기가 된다.
+        /// 칠하기는 빈 곳에서 눌러도 끌기가 되어, 누른 채 블록 위로 가져가면 칠해진다.
+        /// </summary>
+        private void BeginStroke(StrokeKind kind)
+        {
+            world.History.BeginGroup();
+
+            bool done;
+            switch (kind)
+            {
+                case StrokeKind.Place: done = PlaceAtTarget(); break;
+                case StrokeKind.Remove: done = RemoveAtTarget(); break;
+                default: done = PaintAtTarget(); break;
+            }
+
+            if (!done && kind != StrokeKind.Paint)
+            {
+                world.History.EndGroup();
+                return;
+            }
+
+            Stroke = kind;
+            StrokeCount = done ? 1 : 0;
+            strokeWarned = false;
+            strokeStartedAt = Time.unscaledTime;
+            strokeNormal = aimNormal;
+            strokeFaceOrigin = aimPoint;
+            if (kind == StrokeKind.Place) SetUpStrokeLattice();
+            StateChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 끌어서 놓을 줄을 정한다. 첫 블록이 줄의 처음(칸 0, 0)이고, 줄은 처음 가리킨 면 위에 블록의 가로세로를 따라 놓인다.
+        /// 부품과 돌린 각도는 끌기를 시작할 때의 것으로 굳힌다. 끄는 도중에 부품을 바꾸거나 돌려도 줄은 그대로다.
+        /// </summary>
+        private void SetUpStrokeLattice()
+        {
+            strokePart = SelectedPart;
+            strokeRotation = TargetRotation;
+            strokeFirstCenter = TargetPosition;
+            strokeCell = Vector2Int.zero;
+
+            Vector3 half = world.HalfSizeOf(strokePart);
+            PlacementMath.FaceAxes(strokeNormal, strokeRotation, out strokeU, out strokeV);
+            strokePitchU = PlacementMath.Extent(half, strokeRotation, strokeU);
+            strokePitchV = PlacementMath.Extent(half, strokeRotation, strokeV);
+
+            // 줄의 처음은 첫 블록 바로 아래의 면 위다. 맞추기 도우미가 블록을 당겨 놓았어도 줄은 놓인 블록에 맞는다.
+            strokeFaceOrigin = strokeFirstCenter - strokeNormal * Vector3.Dot(strokeFirstCenter - aimPoint, strokeNormal);
+        }
+
+        private void ContinueStroke()
+        {
+            InputAction held = Stroke == StrokeKind.Place ? placeAction : Stroke == StrokeKind.Remove ? removeAction : paintAction;
+
+            // 끄는 도중에 되돌리기를 눌러 묶음이 닫혔으면 끌기를 끝낸다. 한 것이 방금 되돌려졌으므로 몇 개를 했다고 알리지 않는다.
+            if (!world.History.IsGrouping)
+            {
+                EndStroke(false);
+                return;
+            }
+
+            if (!held.IsPressed())
+            {
+                EndStroke();
+                return;
+            }
+
+            if (Time.unscaledTime - strokeStartedAt < StrokeHoldDelay) return;
+
+            switch (Stroke)
+            {
+                case StrokeKind.Place: ContinuePlace(); break;
+                case StrokeKind.Remove: ContinueRemove(); break;
+                case StrokeKind.Paint: ContinuePaint(); break;
+            }
+        }
+
+        /// <summary>조준이 줄의 다른 칸으로 옮겨 갔으면, 지난 칸에서 그 칸까지 지나온 칸에 블록을 놓는다.</summary>
+        private void ContinuePlace()
+        {
+            if (!TryGetStrokeCell(out Vector2Int cell) || cell == strokeCell) return;
+
+            PlacementMath.CellsBetween(strokeCell, cell, StrokePath);
+            foreach (Vector2Int step in StrokePath)
+            {
+                PlaceStrokeCell(step);
+            }
+
+            strokeCell = cell;
+        }
+
+        /// <summary>
+        /// 줄의 한 칸에 블록을 놓는다. 이미 블록이 있는 자리(이번에 놓은 것 포함), 맵 밖, 캐릭터나 다른 물체와 겹치는 자리는 건너뛴다.
+        /// 맵 밖이거나 블록 수가 다 찼을 때는 끌기 한 번에 한 번만 알린다.
+        /// </summary>
+        private void PlaceStrokeCell(Vector2Int cell)
+        {
+            Vector3 half = world.HalfSizeOf(strokePart);
+            Vector3 position = StrokeCenter(cell, half);
+
+            PlaceResult check = world.CheckPlace(strokePart, position);
+            if (check == PlaceResult.OutOfBounds || check == PlaceResult.Full)
+            {
+                if (!strokeWarned) Notice.Post(Describe(ReasonOf(check, false)), NoticeKind.Warning);
+                strokeWarned = true;
+                return;
+            }
+
+            if (check != PlaceResult.Ok || OverlapsAnything(position, strokeRotation, half)) return;
+            if (world.History.Place(strokePart, position, strokeRotation, out _) == PlaceResult.Ok) StrokeCount++;
+        }
+
+        /// <summary>처음 가리킨 면과 같은 면에 있는 블록을 지운다. 지운 블록 뒤에서 드러난 블록은 면이 달라 지워지지 않는다.</summary>
+        private void ContinueRemove()
+        {
+            if (!hasRemoveTarget) return;
+            if (Mathf.Abs(Vector3.Dot(aimPoint - strokeFaceOrigin, strokeNormal)) > StrokePlaneTolerance) return;
+            if (Vector3.Dot(aimNormal, strokeNormal) < StrokeNormalAlign) return;
+
+            if (world.History.Remove(targetBlockId)) StrokeCount++;
+        }
+
+        /// <summary>지나가는 블록을 고른 부품의 색으로 칠한다. 이미 그 색인 블록은 건드리지 않는다. 끄는 동안에는 알림을 올리지 않는다.</summary>
+        private void ContinuePaint()
+        {
+            if (!hasRemoveTarget || !world.TryGet(targetBlockId, out BlockRecord current)) return;
+
+            int painted = world.Catalog.Repaint(current.Part, SelectedPart);
+            if (painted == current.Part) return;
+
+            if (world.History.Replace(targetBlockId, painted)) StrokeCount++;
+        }
+
+        /// <summary>끌기를 끝내고 기록의 묶음을 닫는다. 둘 이상을 했으면 몇 개를 했는지와 한 번에 되돌릴 수 있음을 알린다.</summary>
+        private void EndStroke(bool announce = true)
+        {
+            if (!IsStroking) return;
+
+            StrokeKind ended = Stroke;
+            int count = StrokeCount;
+            Stroke = StrokeKind.None;
+            StrokeCount = 0;
+            if (world != null) world.History.EndGroup();
+
+            if (announce && count >= 2) Notice.Post(StrokeMessage(ended, count));
+            StateChanged?.Invoke();
+        }
+
+        /// <summary>끌기를 끝냈을 때의 알림 문구.</summary>
+        public static string StrokeMessage(StrokeKind kind, int count)
+        {
+            string done = kind == StrokeKind.Place ? "놓았습니다" : kind == StrokeKind.Remove ? "지웠습니다" : "칠했습니다";
+            return $"블록 {count}개를 이어 {done} · 되돌리기 한 번에 돌아옵니다";
+        }
+
+        /// <summary>
+        /// 조준 광선이 끌기의 면과 만나는 곳이 줄의 몇 번째 칸인지. 면을 벗어났거나 손이 닿지 않는 거리면 false다.
+        /// 사이를 가리는 블록은 보지 않는다. 방금 놓은 블록이 조준을 가려 줄이 끊기는 일이 없게 하기 위해서다.
+        /// </summary>
+        private bool TryGetStrokeCell(out Vector2Int cell)
+        {
+            cell = strokeCell;
+            if (!player.TryGetAim(out Ray aim, out float extraReach)) return false;
+
+            var plane = new Plane(strokeNormal, strokeFaceOrigin);
+            if (!plane.Raycast(aim, out float distance) || distance > reach + extraReach) return false;
+
+            cell = PlacementMath.LatticeCell(aim.GetPoint(distance), strokeFaceOrigin, strokeU, strokeV, strokePitchU, strokePitchV);
+            return true;
+        }
+
+        private Vector3 StrokeCenter(Vector2Int cell, Vector3 half)
+        {
+            Vector3 center = PlacementMath.LatticeCenter(strokeFirstCenter, cell, strokeU, strokeV, strokePitchU, strokePitchV);
+            return world.ClampHeight(BlockMap.Quantize(center), half.y);
+        }
+
+        /// <summary>끌어서 놓는 동안의 미리 보기: 조준이 있는 칸에 다음 블록이 놓일 자리를 보인다. 이미 블록이 놓인 칸에서는 감춘다.</summary>
+        private void UpdateStrokeTarget()
+        {
+            HasTarget = false;
+            CanPlaceAtTarget = false;
+            Blocked = BlockedReason.None;
+            hasRemoveTarget = false;
+            if (!TryGetStrokeCell(out Vector2Int cell)) return;
+
+            Vector3 half = world.HalfSizeOf(strokePart);
+            Vector3 position = StrokeCenter(cell, half);
+            PlaceResult check = world.CheckPlace(strokePart, position);
+            if (check == PlaceResult.Occupied) return;
+
+            TargetPosition = position;
+            HasTarget = true;
+            Blocked = ReasonOf(check, check == PlaceResult.Ok && OverlapsAnything(position, strokeRotation, half));
+            CanPlaceAtTarget = Blocked == BlockedReason.None;
         }
 
         /// <summary>놓을 블록을 steps 단계(한 단계 15도)만큼 돌린다. 양수는 위에서 보아 시계 방향이다.</summary>
@@ -446,6 +708,8 @@ namespace AtelierVerse.Player
 
             HasAimHit = true;
             AimDistance = hit.distance;
+            aimPoint = hit.point;
+            aimNormal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
 
             bool aimedAtBlock = hit.collider.TryGetComponent(out PlacedBlock block) && block.Id != BlockMap.NoId;
             BlockRecord aimed = default;
@@ -495,6 +759,16 @@ namespace AtelierVerse.Player
             return false;
         }
 
+        /// <summary>
+        /// 이 자리에 부품을 놓으면 무엇과든(캐릭터, 다른 물체, 놓인 블록) 겹치는지. 끌어서 놓을 때 쓴다.
+        /// 하나씩 놓을 때는 가리킨 면 위에 얹으므로 블록끼리 겹쳐도 되지만, 끌 때는 사이를 가리는 블록을 보지 않으므로
+        /// 이미 있는 블록의 속에 놓이지 않게 건너뛴다. 면이 맞닿기만 한 것은 겹침이 아니다.
+        /// </summary>
+        private static bool OverlapsAnything(Vector3 center, Quaternion rotation, Vector3 half)
+        {
+            return Physics.OverlapBoxNonAlloc(center, half * OverlapMargin, OverlapBuffer, rotation, ~0, QueryTriggerInteraction.Ignore) > 0;
+        }
+
         private static BlockedReason ReasonOf(PlaceResult check, bool overlap)
         {
             switch (check)
@@ -515,7 +789,9 @@ namespace AtelierVerse.Player
             if (!HasTarget) return;
 
             // 잡은 블록은 그 블록의 색과 모양으로, 조금 더 진하게 보여 새로 놓는 블록과 구별한다.
-            int part = TargetPart;
+            // 끌어서 놓는 동안에는 끌기를 시작할 때의 부품과 방향으로 보인다.
+            bool laying = Stroke == StrokeKind.Place;
+            int part = laying ? strokePart : TargetPart;
             float alpha = IsCarrying ? carriedAlpha : ghostAlpha;
             PartCatalog.Part shown = world.Catalog.Get(part);
             if (ghostMesh != null && shown.mesh != null && ghostMesh.sharedMesh != shown.mesh) ghostMesh.sharedMesh = shown.mesh;
@@ -524,7 +800,7 @@ namespace AtelierVerse.Player
             color.a = alpha;
             ghostColor.SetColor(BaseColorId, color);
             ghost.SetPropertyBlock(ghostColor);
-            ghost.transform.SetPositionAndRotation(TargetPosition, TargetRotation);
+            ghost.transform.SetPositionAndRotation(TargetPosition, laying ? strokeRotation : TargetRotation);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AtelierVerse.World
@@ -95,6 +96,72 @@ namespace AtelierVerse.World
             return Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.right)) * half.x
                 + Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.up)) * half.y
                 + Mathf.Abs(Vector3.Dot(outward, rotation * Vector3.forward)) * half.z;
+        }
+
+        /// <summary>반 크기가 half이고 rotation만큼 돈 부품이 direction 방향으로 차지하는 길이(끝에서 끝까지).</summary>
+        public static float Extent(Vector3 half, Quaternion rotation, Vector3 direction)
+        {
+            return RestOffset(half, rotation, direction) * 2f;
+        }
+
+        /// <summary>
+        /// 끌어서 이어 놓을 때 블록을 늘어놓는 두 방향(21일차). 가리킨 면 위에 놓이는 두 방향이며 서로 직각이다.
+        /// 블록의 세 축 가운데 면을 뚫고 나오는 축을 빼고 남은 축을 따르므로, 바닥에서는 돌린 블록의 가로와 세로가 된다.
+        /// 그래서 이어 놓은 블록의 면이 서로 빈틈없이 닿는다.
+        /// </summary>
+        public static void FaceAxes(Vector3 normal, Quaternion rotation, out Vector3 u, out Vector3 v)
+        {
+            Vector3 outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            Vector3 right = rotation * Vector3.right;
+            Vector3 up = rotation * Vector3.up;
+            Vector3 forward = rotation * Vector3.forward;
+
+            float alongRight = Mathf.Abs(Vector3.Dot(outward, right));
+            float alongUp = Mathf.Abs(Vector3.Dot(outward, up));
+            float alongForward = Mathf.Abs(Vector3.Dot(outward, forward));
+
+            // 면을 뚫고 나오는 축이 가로(right)일 때만 세로(forward)를 첫 방향으로 삼는다.
+            Vector3 first = alongRight > alongUp && alongRight >= alongForward ? forward : right;
+
+            u = (first - outward * Vector3.Dot(outward, first)).normalized;
+            v = Vector3.Cross(outward, u).normalized;
+        }
+
+        /// <summary>면 위의 한 점이 줄의 몇 번째 칸인지. origin은 첫 블록 아래의 면 위의 점이고, 칸의 크기는 pitchU × pitchV다.</summary>
+        public static Vector2Int LatticeCell(Vector3 point, Vector3 origin, Vector3 u, Vector3 v, float pitchU, float pitchV)
+        {
+            Vector3 offset = point - origin;
+            return new Vector2Int(
+                Mathf.RoundToInt(Vector3.Dot(offset, u) / Mathf.Max(pitchU, 0.0001f)),
+                Mathf.RoundToInt(Vector3.Dot(offset, v) / Mathf.Max(pitchV, 0.0001f)));
+        }
+
+        /// <summary>줄의 칸에 놓이는 블록의 가운데. 첫 블록(칸 0, 0)의 가운데에서 칸의 수만큼 옮긴 자리다.</summary>
+        public static Vector3 LatticeCenter(Vector3 firstCenter, Vector2Int cell, Vector3 u, Vector3 v, float pitchU, float pitchV)
+        {
+            return firstCenter + u * (cell.x * pitchU) + v * (cell.y * pitchV);
+        }
+
+        /// <summary>
+        /// from에서 to까지 곧게 가며 지나는 칸을 into에 차례로 담는다. from은 넣지 않고 to는 넣는다.
+        /// 한 프레임에 조준이 여러 칸을 건너뛰어도 사이의 칸이 비지 않게 하는 데 쓴다. limit보다 많은 칸은 담지 않는다.
+        /// </summary>
+        public static void CellsBetween(Vector2Int from, Vector2Int to, List<Vector2Int> into, int limit = 64)
+        {
+            into.Clear();
+            int steps = Mathf.Max(Mathf.Abs(to.x - from.x), Mathf.Abs(to.y - from.y));
+            if (steps == 0) return;
+
+            Vector2Int last = from;
+            for (int i = 1; i <= steps && into.Count < limit; i++)
+            {
+                float t = i / (float)steps;
+                var cell = new Vector2Int(Mathf.RoundToInt(Mathf.Lerp(from.x, to.x, t)), Mathf.RoundToInt(Mathf.Lerp(from.y, to.y, t)));
+                if (cell == last) continue;
+
+                into.Add(cell);
+                last = cell;
+            }
         }
 
         /// <summary>가리킨 면 위에 부품을 얹었을 때의 가운데 자리. 면 위에서는 가리킨 바로 그 자리다.</summary>

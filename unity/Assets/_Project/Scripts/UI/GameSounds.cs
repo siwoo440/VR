@@ -26,6 +26,9 @@ namespace AtelierVerse.UI
 
         private const int NoRank = int.MaxValue;
 
+        // 같은 종류의 블록 소리 사이에 두는 가장 짧은 틈(초). 끌어서 여러 블록을 한꺼번에 놓거나 지울 때 소리가 쏟아지지 않게 한다.
+        private const float BlockSoundGap = 0.05f;
+
         private GameUi ui;
         private BlockWorld world;
         private BlockBuilder builder;
@@ -35,6 +38,7 @@ namespace AtelierVerse.UI
         private bool wasModalOpen;
         private bool hooked;
         private int pendingRank = NoRank;
+        private readonly float[] nextBlockSoundAt = new float[4];
 
         private void Awake()
         {
@@ -143,16 +147,16 @@ namespace AtelierVerse.UI
             switch (kind)
             {
                 case EditKind.Place:
-                    Sfx.PlayAt(SfxId.Place, position);
+                    PlayBlockSound(0, SfxId.Place, position);
                     break;
                 case EditKind.Remove:
-                    Sfx.PlayAt(SfxId.Remove, position);
+                    PlayBlockSound(1, SfxId.Remove, position);
                     break;
                 case EditKind.Paint:
-                    Sfx.PlayAt(SfxId.Paint, position);
+                    PlayBlockSound(2, SfxId.Paint, position);
                     break;
                 case EditKind.Move:
-                    Sfx.PlayAt(SfxId.Move, position);
+                    PlayBlockSound(3, SfxId.Move, position);
                     break;
                 case EditKind.Undo:
                     Queue(SfxId.Undo);
@@ -161,6 +165,16 @@ namespace AtelierVerse.UI
                     Queue(SfxId.Redo);
                     break;
             }
+        }
+
+        /// <summary>블록의 자리에서 소리를 낸다. 같은 종류(slot)의 소리가 방금 났으면 이번 것은 내지 않는다.</summary>
+        private void PlayBlockSound(int slot, SfxId id, Vector3 position)
+        {
+            float now = Time.unscaledTime;
+            if (now < nextBlockSoundAt[slot]) return;
+
+            nextBlockSoundAt[slot] = now + BlockSoundGap;
+            Sfx.PlayAt(id, position);
         }
 
         private void OnBuild(BuildEvent happened)

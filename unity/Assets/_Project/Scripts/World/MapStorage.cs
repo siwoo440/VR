@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using UnityEngine;
 
 namespace AtelierVerse.World
@@ -8,6 +9,8 @@ namespace AtelierVerse.World
     /// <summary>
     /// 맵 문서를 이 기기의 파일로 읽고 쓴다. 쓸 때는 임시 파일에 먼저 쓰고 이름을 바꾸어, 쓰는 도중 꺼져도 이전 파일이 남게 한다.
     /// 저장 폴더는 바꿀 수 있어 검사에서는 임시 폴더를 쓴다.
+    /// 읽고 쓰다가 실패하면 조금 기다렸다 몇 번 다시 해 본다(21일차). 방금 쓴 파일을 백신이나 색인 프로그램이 잠깐 잡고 있어
+    /// 이어지는 쓰기가 실패하는 일이 있기 때문이다. 끝내 안 되면 전과 같이 실패로 알린다.
     /// </summary>
     public static class MapStorage
     {
@@ -15,6 +18,12 @@ namespace AtelierVerse.World
         public const string LocalFileName = "local.map.json";
         private const string TempSuffix = ".tmp";
         private const string BrokenSuffix = ".broken";
+
+        /// <summary>읽기나 쓰기를 해 보는 횟수. 처음 한 번과 다시 해 보는 것을 합친 수다.</summary>
+        public const int IoAttempts = 4;
+
+        // 다시 해 보기 전에 기다리는 시간(밀리초). 해 볼 때마다 이만큼씩 더 기다린다(25, 50, 75).
+        private const int IoRetryMilliseconds = 25;
 
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
         private static string directoryOverride;
@@ -43,9 +52,33 @@ namespace AtelierVerse.World
             if (!string.IsNullOrEmpty(directory)) System.IO.Directory.CreateDirectory(directory);
 
             string temp = path + TempSuffix;
-            File.WriteAllText(temp, MapDocument.ToJson(document), Utf8NoBom);
-            if (File.Exists(path)) File.Replace(temp, path, null);
-            else File.Move(temp, path);
+            string json = MapDocument.ToJson(document);
+            WithRetry(() => File.WriteAllText(temp, json, Utf8NoBom));
+            WithRetry(() =>
+            {
+                if (File.Exists(path)) File.Replace(temp, path, null);
+                else File.Move(temp, path);
+            });
+        }
+
+        /// <summary>
+        /// 파일을 다루는 일을 해 보고, 파일이 잠겨 있어 실패하면 조금 기다렸다 다시 해 본다.
+        /// 정한 횟수만큼 해 보아도 안 되면 마지막 예외를 그대로 던진다.
+        /// </summary>
+        private static void WithRetry(Action action)
+        {
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    action();
+                    return;
+                }
+                catch (Exception exception) when ((exception is IOException || exception is UnauthorizedAccessException) && attempt < IoAttempts)
+                {
+                    Thread.Sleep(IoRetryMilliseconds * attempt);
+                }
+            }
         }
 
         /// <summary>파일을 읽어 문서로 만든다. 실패하면 document는 null이고 error에 까닭이 담긴다.</summary>
@@ -58,10 +91,10 @@ namespace AtelierVerse.World
                 return false;
             }
 
-            string json;
+            string json = null;
             try
             {
-                json = File.ReadAllText(path, Encoding.UTF8);
+                WithRetry(() => json = File.ReadAllText(path, Encoding.UTF8));
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
             {

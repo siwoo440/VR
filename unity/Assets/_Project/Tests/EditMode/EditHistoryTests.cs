@@ -372,6 +372,230 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(4, changes);
         }
 
+        [Test]
+        public void 묶음으로_한_편집은_되돌리기_한_번에_함께_돌아온다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            int single = Place(history, D, 0);
+
+            history.BeginGroup();
+            Assert.IsTrue(history.IsGrouping);
+            int a = Place(history, A, 1);
+            int b = Place(history, B, 1);
+            int c = Place(history, C, 1);
+            Assert.AreEqual(3, history.GroupSize);
+            Assert.AreEqual(1, history.UndoCount, "묶음은 닫을 때 기록 하나가 됩니다.");
+
+            Assert.IsTrue(history.EndGroup());
+            Assert.IsFalse(history.IsGrouping);
+            Assert.AreEqual(0, history.GroupSize);
+            Assert.AreEqual(2, history.UndoCount);
+            Assert.AreEqual(4, map.Count);
+
+            Assert.IsTrue(history.Undo());
+            Assert.AreEqual(1, map.Count, "묶음의 셋이 한 번에 돌아와야 합니다.");
+            Assert.IsTrue(map.Contains(single));
+            Assert.AreEqual(1, history.UndoCount);
+            Assert.AreEqual(1, history.RedoCount);
+
+            Assert.IsTrue(history.Redo());
+            Assert.AreEqual(4, map.Count);
+            Assert.IsTrue(map.Contains(a) && map.Contains(b) && map.Contains(c), "다시 실행하면 같은 번호로 돌아와야 합니다.");
+            Assert.AreEqual(2, history.UndoCount);
+            Assert.AreEqual(0, history.RedoCount);
+        }
+
+        [Test]
+        public void 묶음에는_놓기와_지우기와_칠하기가_섞여도_된다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            int a = Place(history, A, 0);
+            int b = Place(history, B, 0);
+
+            history.BeginGroup();
+            Assert.IsTrue(history.Replace(a, 2));
+            Assert.IsTrue(history.Remove(b));
+            int c = Place(history, C, 1);
+            Assert.IsTrue(history.EndGroup());
+            Assert.AreEqual(3, history.UndoCount);
+
+            Assert.IsTrue(history.Undo());
+            Assert.AreEqual(0, PartOf(map, a));
+            Assert.IsTrue(map.Contains(b), "지운 블록이 같은 번호로 돌아와야 합니다.");
+            Assert.IsFalse(map.Contains(c));
+
+            Assert.IsTrue(history.Redo());
+            Assert.AreEqual(2, PartOf(map, a));
+            Assert.IsFalse(map.Contains(b));
+            Assert.IsTrue(map.Contains(c));
+        }
+
+        [Test]
+        public void 빈_묶음은_기록을_남기지_않고_편집_하나짜리_묶음은_기록_하나다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+
+            Assert.IsFalse(history.EndGroup(), "열지 않은 묶음을 닫아도 탈이 없어야 합니다.");
+
+            history.BeginGroup();
+            Assert.IsFalse(history.EndGroup());
+            Assert.AreEqual(0, history.UndoCount);
+
+            history.BeginGroup();
+            history.BeginGroup();
+            Place(history, A, 0);
+            Assert.IsTrue(history.EndGroup());
+            Assert.IsFalse(history.EndGroup(), "겹쳐 열어도 묶음은 하나입니다.");
+            Assert.AreEqual(1, history.UndoCount);
+
+            Assert.IsTrue(history.Undo());
+            Assert.AreEqual(0, map.Count);
+        }
+
+        [Test]
+        public void 묶음을_연_채_되돌리면_그때까지의_묶음이_돌아온다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            int single = Place(history, D, 0);
+
+            history.BeginGroup();
+            Place(history, A, 1);
+            Place(history, B, 1);
+
+            Assert.IsTrue(history.Undo());
+            Assert.IsFalse(history.IsGrouping, "되돌리면 열려 있던 묶음이 닫힙니다.");
+            Assert.AreEqual(1, map.Count);
+            Assert.IsTrue(map.Contains(single));
+            Assert.AreEqual(1, history.UndoCount);
+            Assert.AreEqual(1, history.RedoCount);
+
+            // 그 뒤의 편집은 묶음이 아니다.
+            Place(history, C, 0);
+            Assert.AreEqual(2, history.UndoCount);
+        }
+
+        [Test]
+        public void 묶음의_첫_편집에서_다시_실행할_기록을_버린다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            Place(history, A, 0);
+            Assert.IsTrue(history.Undo());
+            Assert.AreEqual(1, history.RedoCount);
+
+            history.BeginGroup();
+            Assert.AreEqual(1, history.RedoCount, "묶음을 열기만 해서는 버리지 않습니다.");
+
+            Place(history, B, 0);
+            Assert.AreEqual(0, history.RedoCount);
+            history.EndGroup();
+        }
+
+        [Test]
+        public void 기록의_상한은_묶음을_하나로_센다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map, 2);
+            int oldest = Place(history, D, 0);
+
+            history.BeginGroup();
+            Place(history, A, 0);
+            Place(history, B, 0);
+            history.EndGroup();
+
+            history.BeginGroup();
+            Place(history, C, 0);
+            Place(history, new Vector3(-1.2f, 0.5f, -1.1f), 0);
+            Place(history, new Vector3(-1.2f, 1.5f, -1.1f), 0);
+            history.EndGroup();
+
+            Assert.AreEqual(2, history.UndoCount, "기록 셋 가운데 가장 오래된 하나를 버려야 합니다.");
+            Assert.IsTrue(history.Undo());
+            Assert.IsTrue(history.Undo());
+            Assert.IsFalse(history.Undo());
+            Assert.AreEqual(1, map.Count);
+            Assert.IsTrue(map.Contains(oldest), "버린 기록의 블록은 되돌릴 수 없으므로 남습니다.");
+        }
+
+        [Test]
+        public void 묶음_안의_편집은_하나씩_알리고_묶음을_되돌릴_때는_한_번만_알린다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+            var heard = new List<(EditKind kind, BlockChange change)>();
+            int counts = 0;
+            history.Edited += (kind, change) => heard.Add((kind, change));
+            history.Changed += () => counts++;
+
+            history.BeginGroup();
+            Place(history, A, 0);
+            Place(history, B, 0);
+            int last = Place(history, C, 0);
+            Assert.AreEqual(3, heard.Count, "소리를 내려면 블록마다 알려야 합니다.");
+            Assert.AreEqual(0, counts, "기록의 수는 묶음을 닫을 때 바뀝니다.");
+
+            history.EndGroup();
+            Assert.AreEqual(1, counts);
+
+            Assert.IsTrue(history.Undo());
+            Assert.IsTrue(history.Redo());
+
+            var kinds = new List<EditKind>();
+            foreach ((EditKind kind, BlockChange _) in heard) kinds.Add(kind);
+            CollectionAssert.AreEqual(new[] { EditKind.Place, EditKind.Place, EditKind.Place, EditKind.Undo, EditKind.Redo }, kinds);
+            Assert.AreEqual(last, heard[3].change.Id, "묶음을 되돌릴 때의 변화는 묶음의 마지막 것입니다.");
+            Assert.AreEqual(3, counts);
+        }
+
+        [Test]
+        public void 묶음을_다시_실행하다_막히면_실행하기_전의_상태로_둔다()
+        {
+            BlockMap map = CreateMap(3);
+            var history = new EditHistory(map);
+
+            history.BeginGroup();
+            Place(history, A, 0);
+            Place(history, B, 0);
+            history.EndGroup();
+            Assert.IsTrue(history.Undo());
+            Assert.AreEqual(0, map.Count);
+
+            // 기록을 거치지 않고 두 개가 놓여, 묶음의 둘 가운데 하나만 들어갈 자리가 남았다.
+            Assert.AreEqual(PlaceResult.Ok, map.Add(0, C, Quaternion.identity, out int extra));
+            Assert.AreEqual(PlaceResult.Ok, map.Add(0, D, Quaternion.identity, out _));
+
+            Assert.IsFalse(history.Redo(), "둘을 다 놓을 수 없으면 다시 실행하지 못한 것입니다.");
+            Assert.AreEqual(2, map.Count, "먼저 놓인 하나가 남아 있으면 안 됩니다.");
+            Assert.AreEqual(1, history.RedoCount, "기록은 그대로 남아 다시 해 볼 수 있어야 합니다.");
+            Assert.AreEqual(0, history.UndoCount);
+
+            // 자리가 나면 다시 실행된다.
+            Assert.IsTrue(map.Remove(extra));
+            Assert.IsTrue(history.Redo());
+            Assert.AreEqual(3, map.Count);
+            Assert.AreEqual(0, history.RedoCount);
+        }
+
+        [Test]
+        public void 기록을_비우면_열려_있던_묶음도_버린다()
+        {
+            BlockMap map = CreateMap();
+            var history = new EditHistory(map);
+
+            history.BeginGroup();
+            Place(history, A, 0);
+            history.Clear();
+
+            Assert.IsFalse(history.IsGrouping);
+            Assert.IsFalse(history.EndGroup());
+            Assert.AreEqual(0, history.UndoCount);
+            Assert.AreEqual(1, map.Count, "기록만 비우고 블록은 그대로 둡니다.");
+        }
+
         private static int PartOf(BlockMap map, int id)
         {
             Assert.IsTrue(map.TryGet(id, out BlockRecord record));
