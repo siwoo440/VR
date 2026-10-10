@@ -173,7 +173,7 @@ node scripts/serve.mjs
 
 ## 다음 할 일
 
-지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
+지금 부족한 부분과 구현 순서는 [`docs/ROADMAP.md`](docs/ROADMAP.md)에, 앞으로 넣어야 하거나 넣으면 좋을 구현 요소의 목록은 [`docs/BACKLOG.md`](docs/BACKLOG.md)에, 블록 말고 만들어 넣을 3D 모델의 목록과 만드는 규칙은 [`docs/MODELS.md`](docs/MODELS.md)에 있습니다. 가장 먼저 할 일은 0단계입니다.
 
 1. 실제 헤드셋으로 확인하기(사용자: Quest Link나 SteamVR을 설치한 뒤 `AtelierVerse-VR.bat`)
 2. Unity Hub에서 Android 빌드 구성 설치(사용자), Quest 단독 빌드와 성능 재기
