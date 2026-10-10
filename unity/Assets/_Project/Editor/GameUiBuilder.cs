@@ -740,13 +740,25 @@ namespace AtelierVerse.EditorTools
             Image panel = UiFactory.Card("Panel", root, Paper, Ink, 28f, 8f);
             UiFactory.Place(panel.rectTransform, UiFactory.Center, Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
-            TMP_Text title = UiFactory.Text("Title", panel.transform, "내 작업실", 30f, Ink, true);
+            TMP_Text title = UiFactory.Text("Title", panel.transform, MapListView.ListTitle, 30f, Ink, true);
             UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -24f), new Vector2(360f, 40f));
 
-            TMP_Text guide = UiFactory.Text("Guide", panel.transform, "이 기기에 저장된 맵입니다. 다른 맵을 열면 지금 맵은 저장됩니다.", 20f, Muted);
-            UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f, 28f));
+            TMP_Text guide = UiFactory.Text("Guide", panel.transform, MapListView.ListGuide, 20f, Muted);
+            UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f - 200f, 28f));
+            guide.overflowMode = TextOverflowModes.Ellipsis;
 
-            // 맵 한 줄: 작은 대표 그림, 이름, 블록 수·저장한 때·설명, 오른쪽에 열기·정보·지우기
+            // 오른쪽 위: 맵 목록과 휴지통을 오가는 단추(22일차). 글자는 MapListView가 바꾼다("휴지통 3" ↔ "맵 목록으로").
+            Button trash = BigButton("Trash", panel.transform, MapListView.TrashTitle, null, Paper, Ink, out TMP_Text trashLabel);
+            UiFactory.Place((RectTransform)trash.transform, UiFactory.TopRight, new Vector2(-PanelPadding - 6f, -24f), new Vector2(184f, 46f));
+            trashLabel.fontSize = 20f;
+
+            // 줄이 하나도 없을 때(휴지통이 비었을 때) 줄의 자리에 보이는 글자.
+            TMP_Text empty = UiFactory.Text("Empty", panel.transform, MapListView.TrashEmptyText, 24f, Muted, false, TextAlignmentOptions.Center);
+            UiFactory.StretchTop(empty.rectTransform, -rowsTop - 2f * (rowHeight + rowGap), rowHeight, PanelPadding);
+            empty.gameObject.SetActive(false);
+
+            // 맵 한 줄: 작은 대표 그림, 이름, 블록 수·저장한 때·설명, 오른쪽에 열기·정보·지우기.
+            // 휴지통에서는 같은 줄의 오른쪽에 되살리기·아주 지우기가 대신 보인다.
             var rowRoots = new GameObject[rowCount];
             var rowThumbnails = new RawImage[rowCount];
             var rowNames = new TMP_Text[rowCount];
@@ -756,6 +768,9 @@ namespace AtelierVerse.EditorTools
             var rowInfoButtons = new Button[rowCount];
             var rowDeletes = new Button[rowCount];
             var rowDeleteLabels = new TMP_Text[rowCount];
+            var rowRestores = new Button[rowCount];
+            var rowPurges = new Button[rowCount];
+            var rowPurgeLabels = new TMP_Text[rowCount];
 
             for (int i = 0; i < rowCount; i++)
             {
@@ -790,6 +805,16 @@ namespace AtelierVerse.EditorTools
                 UiFactory.Place((RectTransform)rowOpens[i].transform, UiFactory.MiddleRight, new Vector2(-14f - 112f - 8f - 92f - 8f, 0f), new Vector2(92f, buttonHeight));
                 openLabel.fontSize = 20f;
 
+                rowPurges[i] = BigButton("Purge", row.transform, "아주 지우기", null, Paper, AtelierPalette.Clay, out rowPurgeLabels[i]);
+                UiFactory.Place((RectTransform)rowPurges[i].transform, UiFactory.MiddleRight, new Vector2(-14f, 0f), new Vector2(150f, buttonHeight));
+                rowPurgeLabels[i].fontSize = 20f;
+                rowPurges[i].gameObject.SetActive(false);
+
+                rowRestores[i] = BigButton("Restore", row.transform, "되살리기", null, Gold, Ink, out TMP_Text restoreLabel);
+                UiFactory.Place((RectTransform)rowRestores[i].transform, UiFactory.MiddleRight, new Vector2(-14f - 150f - 8f, 0f), new Vector2(132f, buttonHeight));
+                restoreLabel.fontSize = 20f;
+                rowRestores[i].gameObject.SetActive(false);
+
                 rowRoots[i] = row.gameObject;
             }
 
@@ -815,6 +840,11 @@ namespace AtelierVerse.EditorTools
 
             var serialized = new SerializedObject(view);
             serialized.FindProperty("root").objectReferenceValue = root.gameObject;
+            serialized.FindProperty("titleLabel").objectReferenceValue = title;
+            serialized.FindProperty("guideLabel").objectReferenceValue = guide;
+            serialized.FindProperty("emptyLabel").objectReferenceValue = empty;
+            serialized.FindProperty("trashButton").objectReferenceValue = trash;
+            serialized.FindProperty("trashLabel").objectReferenceValue = trashLabel;
             serialized.FindProperty("pageLabel").objectReferenceValue = pageLabel;
             serialized.FindProperty("previousButton").objectReferenceValue = previous;
             serialized.FindProperty("nextButton").objectReferenceValue = next;
@@ -835,6 +865,9 @@ namespace AtelierVerse.EditorTools
                 row.FindPropertyRelative("infoButton").objectReferenceValue = rowInfoButtons[i];
                 row.FindPropertyRelative("deleteButton").objectReferenceValue = rowDeletes[i];
                 row.FindPropertyRelative("deleteLabel").objectReferenceValue = rowDeleteLabels[i];
+                row.FindPropertyRelative("restoreButton").objectReferenceValue = rowRestores[i];
+                row.FindPropertyRelative("purgeButton").objectReferenceValue = rowPurges[i];
+                row.FindPropertyRelative("purgeLabel").objectReferenceValue = rowPurgeLabels[i];
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -928,9 +961,12 @@ namespace AtelierVerse.EditorTools
             TMP_Text note = UiFactory.Text("Note", panel.transform, string.Empty, 18f, AtelierPalette.Clay);
             UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 336f), new Vector2(rightWidth, 26f));
 
-            // 아래: 목록으로, 저장
+            // 아래: 목록으로, 사본 만들기, 저장
             Button back = BigButton("BackToList", panel.transform, "목록으로", "Esc", Paper, Ink, out _);
             UiFactory.Place((RectTransform)back.transform, UiFactory.BottomLeft, new Vector2(PanelPadding, 34f), new Vector2(300f, 64f));
+
+            Button duplicate = BigButton("Duplicate", panel.transform, "사본 만들기", null, Paper, Ink, out _);
+            UiFactory.Place((RectTransform)duplicate.transform, UiFactory.BottomCenter, new Vector2(0f, 34f), new Vector2(300f, 64f));
 
             Button save = BigButton("SaveInfo", panel.transform, "저장", null, Gold, Ink, out _);
             UiFactory.Place((RectTransform)save.transform, UiFactory.BottomRight, new Vector2(-PanelPadding, 34f), new Vector2(300f, 64f));
@@ -951,6 +987,7 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("setSpawnButton").objectReferenceValue = setSpawn;
             serialized.FindProperty("clearSpawnButton").objectReferenceValue = clearSpawn;
             serialized.FindProperty("saveButton").objectReferenceValue = save;
+            serialized.FindProperty("duplicateButton").objectReferenceValue = duplicate;
             serialized.FindProperty("backButton").objectReferenceValue = back;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;

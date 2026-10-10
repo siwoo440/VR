@@ -12,6 +12,7 @@ namespace AtelierVerse.Tests
     /// <summary>
     /// 이 기기의 맵들을 다루는 규칙의 검사(17일차): 번호표, 이름 다듬기, 목록, 새 맵, 이름 바꾸기, 지우기(휴지통 폴더로 옮기기),
     /// 마지막으로 연 맵 기억하기. 테스트마다 임시 폴더를 쓰므로 이 기기의 실제 맵 파일은 건드리지 않는다.
+    /// 사본 만들기, 휴지통의 맵 보기, 되살리기, 아주 지우기도 본다(22일차).
     /// </summary>
     public class MapLibraryTests
     {
@@ -34,6 +35,18 @@ namespace AtelierVerse.Tests
         {
             MapStorage.Directory = previousDirectory;
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+
+        /// <summary>휴지통 폴더에 맵 파일을 바로 써 넣는다. key는 휴지통의 파일 이름(번호표-날짜-시각)이다.</summary>
+        private static void WriteTrash(string key, string name, int blocks)
+        {
+            MapDocument document = MapDocument.Create(name, Min, Max);
+            for (int i = 0; i < blocks; i++)
+            {
+                document.blocks.Add(new MapBlock { id = i + 1, part = "block.gold", position = new Vector3(i + 0.5f, 0.5f, 0.5f) });
+            }
+
+            MapStorage.Save(document, MapLibrary.TrashPathOf(key));
         }
 
         private string Save(string id, string name, int blocks, string updatedAt)
@@ -275,6 +288,259 @@ namespace AtelierVerse.Tests
             MapInfo info = MapLibrary.List()[0];
             Assert.AreEqual("탑", info.Name, "저장하지 못했으면 파일의 내용이 그대로여야 합니다.");
             Assert.AreEqual(5, info.BlockCount);
+        }
+
+        [Test]
+        public void 사본은_블록과_설명과_시작_위치와_대표_그림이_같고_이름에_사본이_붙는다()
+        {
+            MapDocument document = MapDocument.Create("탑", Min, Max);
+            document.createdAt = "2026-10-08T03:00:00Z";
+            document.updatedAt = "2026-10-09T01:00:00Z";
+            document.description = "높이 올라가는 탑";
+            document.spawn = new MapSpawn { custom = true, position = new Vector3(1f, 0f, 2f), yaw = 90f };
+            document.blocks.Add(new MapBlock { id = 1, part = "block.gold", position = new Vector3(0.5f, 0.5f, 0.5f) });
+            document.blocks.Add(new MapBlock { id = 2, part = "slab.blue", position = new Vector3(1.3f, 0.5f, 0.7f) });
+            MapStorage.Save(document, MapLibrary.PathOf("map-a"));
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", SceneSnapshot.PngSignature));
+
+            string copy = MapLibrary.Duplicate("map-a");
+
+            Assert.IsNotNull(copy);
+            Assert.AreNotEqual("map-a", copy);
+            Assert.IsTrue(MapLibrary.IsValidId(copy));
+            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf(copy), out MapDocument copied, out _));
+            Assert.AreEqual("탑 사본", copied.name);
+            Assert.AreEqual("높이 올라가는 탑", copied.description);
+            Assert.AreEqual(2, copied.blocks.Count);
+            Assert.AreEqual("slab.blue", copied.blocks[1].part);
+            Assert.Less(Vector3.Distance(new Vector3(1.3f, 0.5f, 0.7f), copied.blocks[1].position), 0.001f);
+            Assert.IsTrue(copied.spawn.custom);
+            Assert.AreEqual(90f, copied.spawn.yaw, 0.01f);
+            Assert.AreNotEqual("2026-10-08T03:00:00Z", copied.createdAt, "사본을 만든 때는 지금입니다.");
+            CollectionAssert.AreEqual(SceneSnapshot.PngSignature, MapLibrary.LoadThumbnail(copy), "대표 그림도 베껴야 합니다.");
+
+            // 원래 맵은 그대로다.
+            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf("map-a"), out MapDocument original, out _));
+            Assert.AreEqual("탑", original.name);
+            Assert.AreEqual("2026-10-09T01:00:00Z", original.updatedAt);
+            Assert.AreEqual(2, original.blocks.Count);
+            Assert.AreEqual(2, MapLibrary.List().Count);
+            Assert.AreEqual(copy, MapLibrary.List()[0].Id, "방금 만든 사본이 목록의 맨 앞에 와야 합니다.");
+        }
+
+        [Test]
+        public void 사본을_거듭_만들면_이름에_번호가_붙고_긴_이름은_사본이_잘리지_않게_줄인다()
+        {
+            Save("map-a", "탑", 1, "2026-10-09T01:00:00Z");
+
+            string first = MapLibrary.Duplicate("map-a");
+            string second = MapLibrary.Duplicate("map-a");
+
+            Assert.AreNotEqual(first, second);
+            Assert.AreEqual("탑 사본", NameOf(first));
+            Assert.AreEqual("탑 사본 2", NameOf(second));
+
+            Assert.AreEqual("새 맵 사본", MapLibrary.CopyName("   "));
+            string copyName = MapLibrary.CopyName(new string('가', MapLibrary.MaxNameLength));
+            Assert.AreEqual(MapLibrary.MaxNameLength, copyName.Length);
+            StringAssert.EndsWith(MapLibrary.CopySuffix, copyName);
+        }
+
+        [Test]
+        public void 사본은_맵이_상한에_닿았거나_원래_맵을_읽지_못하면_만들지_않는다()
+        {
+            Assert.IsNull(MapLibrary.Duplicate("missing"));
+            Assert.IsNull(MapLibrary.Duplicate("../map-a"), "번호표로 쓸 수 없는 글자는 받지 않습니다.");
+
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(MapLibrary.PathOf("broken"), "{ 깨진 파일");
+            Assert.IsNull(MapLibrary.Duplicate("broken"));
+            Assert.AreEqual(1, MapLibrary.Count());
+
+            for (int i = 1; i < MapLibrary.MaxMaps; i++)
+            {
+                Save($"map-{i}", $"맵 {i}", 0, "2026-10-08T03:00:00Z");
+            }
+
+            Assert.AreEqual(MapLibrary.MaxMaps, MapLibrary.Count());
+            Assert.IsNull(MapLibrary.Duplicate("map-1"), "맵이 가득 찼으면 사본을 만들지 않습니다.");
+            Assert.AreEqual(MapLibrary.MaxMaps, MapLibrary.Count());
+        }
+
+        [Test]
+        public void 맵의_수는_맵_파일만_세고_휴지통과_다른_파일은_세지_않는다()
+        {
+            Assert.AreEqual(0, MapLibrary.Count());
+
+            Save("map-a", "탑", 1, "2026-10-09T01:00:00Z");
+            Save("map-b", "성", 1, "2026-10-09T01:00:00Z");
+            MapLibrary.SaveThumbnail("map-a", SceneSnapshot.PngSignature);
+            File.WriteAllText(Path.Combine(directory, MapLibrary.CurrentFileName), "map-a");
+            WriteTrash("map-c-20261008-010203", "지운 맵", 2);
+
+            Assert.AreEqual(2, MapLibrary.Count());
+            Assert.AreEqual(MapLibrary.List().Count, MapLibrary.Count());
+        }
+
+        [Test]
+        public void 휴지통의_맵은_지우기_전의_번호표와_지운_때를_알고_최근에_지운_것이_앞에_온다()
+        {
+            WriteTrash("map-a-20261008-010203", "탑", 3);
+            WriteTrash("map-20261001-120000-20261009-040506", "성", 1);
+            WriteTrash("map-a-20261009-040506-2", "탑 둘", 0);
+            File.WriteAllText(MapLibrary.TrashPathOf("memo"), "{}");
+            File.WriteAllText(MapLibrary.TrashPathOf("broken-20261007-000000"), "{ 깨진 파일");
+
+            List<MapInfo> trash = MapLibrary.ListTrash();
+
+            Assert.AreEqual(4, trash.Count, "휴지통의 꼴(번호표-날짜-시각)이 아닌 파일은 넣지 않습니다.");
+
+            // 번호표에 날짜가 들어 있어도 맨 끝의 날짜와 시각을 지운 때로 읽는다.
+            Assert.AreEqual("map-20261001-120000", trash[0].Id);
+            Assert.AreEqual("map-20261001-120000-20261009-040506", trash[0].TrashKey);
+            Assert.AreEqual("성", trash[0].Name);
+            Assert.IsTrue(trash[0].InTrash);
+            Assert.AreEqual(new DateTime(2026, 10, 9, 4, 5, 6, DateTimeKind.Utc), trash[0].DeletedAt);
+
+            // 같은 때에 둘을 지워 뒤에 번호가 붙은 것.
+            Assert.AreEqual("map-a", trash[1].Id);
+            Assert.AreEqual("map-a-20261009-040506-2", trash[1].TrashKey);
+            Assert.AreEqual(trash[0].DeletedAt, trash[1].DeletedAt);
+
+            Assert.AreEqual("map-a-20261008-010203", trash[2].TrashKey);
+            Assert.AreEqual(3, trash[2].BlockCount);
+
+            Assert.AreEqual("broken", trash[3].Id);
+            Assert.IsFalse(trash[3].Readable, "읽을 수 없는 파일도 보이되 되살릴 수 없다고 알 수 있어야 합니다.");
+
+            Assert.AreEqual(0, MapLibrary.List().Count, "휴지통의 맵은 맵 목록에 나오지 않습니다.");
+        }
+
+        [Test]
+        public void 지운_맵을_되살리면_같은_번호표와_내용과_대표_그림으로_돌아온다()
+        {
+            Save("map-a", "탑", 5, "2026-10-09T01:00:00Z");
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", SceneSnapshot.PngSignature));
+            Assert.IsNotNull(MapLibrary.Trash("map-a"));
+            Assert.AreEqual(0, MapLibrary.List().Count);
+
+            List<MapInfo> trash = MapLibrary.ListTrash();
+            Assert.AreEqual(1, trash.Count);
+            Assert.AreEqual("탑", trash[0].Name);
+            Assert.AreEqual(5, trash[0].BlockCount);
+            Assert.IsTrue(trash[0].HasThumbnail);
+            Assert.Less(Math.Abs((DateTime.UtcNow - trash[0].DeletedAt).TotalSeconds), 30.0, "지운 때는 방금이어야 합니다.");
+            string key = trash[0].TrashKey;
+            CollectionAssert.AreEqual(SceneSnapshot.PngSignature, MapLibrary.LoadTrashThumbnail(key));
+
+            Assert.AreEqual("map-a", MapLibrary.Restore(key));
+
+            List<MapInfo> maps = MapLibrary.List();
+            Assert.AreEqual(1, maps.Count);
+            Assert.AreEqual("map-a", maps[0].Id);
+            Assert.AreEqual("탑", maps[0].Name);
+            Assert.AreEqual(5, maps[0].BlockCount);
+            Assert.IsTrue(maps[0].HasThumbnail, "대표 그림도 함께 돌아와야 합니다.");
+            Assert.IsFalse(maps[0].InTrash);
+            Assert.AreEqual(new DateTime(2026, 10, 9, 1, 0, 0, DateTimeKind.Utc), maps[0].UpdatedAt, "되살린다고 고친 때가 바뀌지 않습니다.");
+            Assert.AreEqual(0, MapLibrary.ListTrash().Count);
+            Assert.IsFalse(File.Exists(MapLibrary.TrashThumbnailPathOf(key)));
+        }
+
+        [Test]
+        public void 되살릴_때_같은_번호표의_맵이_이미_있으면_새_번호표로_돌아온다()
+        {
+            Save("map-a", "탑", 5, "2026-10-09T01:00:00Z");
+            Assert.IsNotNull(MapLibrary.Trash("map-a"));
+            Save("map-a", "새 탑", 1, "2026-10-10T01:00:00Z");
+            string key = MapLibrary.ListTrash()[0].TrashKey;
+
+            string restored = MapLibrary.Restore(key);
+
+            Assert.IsNotNull(restored);
+            Assert.AreNotEqual("map-a", restored, "지금 있는 맵을 덮어쓰면 안 됩니다.");
+            Assert.AreEqual(2, MapLibrary.Count());
+            Assert.AreEqual("새 탑", NameOf("map-a"));
+            Assert.AreEqual("탑", NameOf(restored));
+            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf(restored), out MapDocument document, out _));
+            Assert.AreEqual(5, document.blocks.Count);
+        }
+
+        [Test]
+        public void 되살리기는_맵이_상한에_닿았거나_휴지통에_없는_것이면_하지_않는다()
+        {
+            Save("map-x", "지울 맵", 2, "2026-10-09T01:00:00Z");
+            Assert.IsNotNull(MapLibrary.Trash("map-x"));
+            string key = MapLibrary.ListTrash()[0].TrashKey;
+
+            for (int i = 0; i < MapLibrary.MaxMaps; i++)
+            {
+                Save($"map-{i}", $"맵 {i}", 0, "2026-10-08T03:00:00Z");
+            }
+
+            Assert.IsNull(MapLibrary.Restore(key), "맵이 가득 찼으면 되살리지 않습니다.");
+            Assert.AreEqual(1, MapLibrary.ListTrash().Count, "되살리지 못한 맵은 휴지통에 그대로 있어야 합니다.");
+            Assert.IsNull(MapLibrary.Restore("map-none-20261008-000000"));
+        }
+
+        [Test]
+        public void 휴지통을_가리키는_이름은_휴지통_폴더를_벗어나지_못한다()
+        {
+            Assert.IsTrue(MapLibrary.IsValidTrashKey("map-a-20261008-010203"));
+            Assert.IsTrue(MapLibrary.IsValidTrashKey("map-a-20261008-010203-2"));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey("map-a"), "지운 때가 붙지 않은 이름은 휴지통의 것이 아닙니다.");
+            Assert.IsFalse(MapLibrary.IsValidTrashKey("../map-a-20261008-010203"));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey("..\\map-a-20261008-010203"));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey("MAP-A-20261008-010203"));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey(string.Empty));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey(null));
+            Assert.IsFalse(MapLibrary.IsValidTrashKey(new string('a', MapLibrary.MaxTrashKeyLength) + "-20261008-010203"));
+
+            // 맵 목록에 있는 맵은 아주 지우기로 지울 수 없다. 휴지통을 거쳐야 한다.
+            Save("map-a", "탑", 1, "2026-10-09T01:00:00Z");
+            Assert.IsFalse(MapLibrary.Purge("map-a"));
+            Assert.IsFalse(MapLibrary.Purge("../map-a"));
+            Assert.IsNull(MapLibrary.Restore("../../x-20261008-010203"));
+            Assert.IsNull(MapLibrary.LoadTrashThumbnail("../map-a"));
+            Assert.IsTrue(MapLibrary.Exists("map-a"));
+        }
+
+        [Test]
+        public void 아주_지우면_휴지통의_맵_파일과_대표_그림이_없어지고_다른_맵은_그대로다()
+        {
+            Save("map-a", "탑", 3, "2026-10-09T01:00:00Z");
+            Save("map-b", "성", 2, "2026-10-09T02:00:00Z");
+            Save("map-c", "남는 맵", 1, "2026-10-09T03:00:00Z");
+            Assert.IsTrue(MapLibrary.SaveThumbnail("map-a", SceneSnapshot.PngSignature));
+            Assert.IsNotNull(MapLibrary.Trash("map-a"));
+            Assert.IsNotNull(MapLibrary.Trash("map-b"));
+
+            string keyA = null;
+            string keyB = null;
+            foreach (MapInfo trashed in MapLibrary.ListTrash())
+            {
+                if (trashed.Id == "map-a") keyA = trashed.TrashKey;
+                if (trashed.Id == "map-b") keyB = trashed.TrashKey;
+            }
+
+            Assert.IsTrue(MapLibrary.Purge(keyA));
+
+            Assert.IsFalse(File.Exists(MapLibrary.TrashPathOf(keyA)));
+            Assert.IsFalse(File.Exists(MapLibrary.TrashThumbnailPathOf(keyA)), "대표 그림도 함께 없어져야 합니다.");
+            Assert.AreEqual(1, MapLibrary.ListTrash().Count);
+            Assert.IsFalse(MapLibrary.Purge(keyA), "이미 없는 것을 또 지웠다고 하면 안 됩니다.");
+            Assert.IsNull(MapLibrary.Restore(keyA), "아주 지운 맵은 되살릴 수 없습니다.");
+
+            // 휴지통의 다른 맵과 맵 목록의 맵은 그대로다.
+            Assert.IsTrue(MapLibrary.Exists("map-c"));
+            Assert.AreEqual("map-b", MapLibrary.Restore(keyB));
+            Assert.AreEqual(2, MapLibrary.Count());
+        }
+
+        private static string NameOf(string id)
+        {
+            Assert.IsTrue(MapStorage.TryLoad(MapLibrary.PathOf(id), out MapDocument document, out _), $"맵 {id}을(를) 읽지 못했습니다.");
+            return document.name;
         }
 
         [Test]

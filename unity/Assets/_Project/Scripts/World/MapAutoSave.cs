@@ -27,8 +27,11 @@ namespace AtelierVerse.World
         public const string CreatedMessage = "새 맵을 만들었습니다";
         public const string RenamedMessage = "맵의 이름을 바꿨습니다";
         public const string InfoSavedMessage = "맵 정보를 저장했습니다";
-        public const string DeletedMessage = "맵을 지웠습니다 · 파일은 휴지통 폴더에 남아 있습니다";
+        public const string DeletedMessage = "맵을 지웠습니다 · 휴지통에서 되살릴 수 있습니다";
         public const string TooManyMessage = "맵을 더 만들 수 없습니다";
+        public const string CopiedMessage = "사본을 만들었습니다";
+        public const string RestoredMessage = "맵을 되살렸습니다 · 맵 목록에 있습니다";
+        public const string PurgedMessage = "맵을 아주 지웠습니다";
         public const string SaveFirstFailedMessage = "지금 맵을 저장하지 못해 다른 맵으로 바꾸지 않았습니다";
 
         [SerializeField] private BlockWorld world;
@@ -251,6 +254,63 @@ namespace AtelierVerse.World
             }
 
             return Open(id) ? id : null;
+        }
+
+        /// <summary>
+        /// 맵의 사본을 만든다. 지금 열려 있는 맵이면 남은 변경을 먼저 저장해 사본에 지금 모습이 들어가게 한다.
+        /// 사본을 열지는 않는다(지금 맵에 그대로 있다). 새 맵의 번호표를 돌려주고, 만들지 못하면 까닭을 알리고 null을 돌려준다.
+        /// </summary>
+        public string Duplicate(string id)
+        {
+            if (!MapLibrary.IsValidId(id)) return null;
+
+            if (id == MapId && pending && !SaveNow())
+            {
+                Notice.Post("지금 맵을 저장하지 못해 사본을 만들지 않았습니다", NoticeKind.Error);
+                return null;
+            }
+
+            if (MapLibrary.Count() >= MapLibrary.MaxMaps)
+            {
+                Notice.Post($"{TooManyMessage}(가장 많이 {MapLibrary.MaxMaps}개)", NoticeKind.Warning);
+                return null;
+            }
+
+            string copy = MapLibrary.Duplicate(id);
+            if (copy == null) Notice.Post("사본을 만들지 못했습니다", NoticeKind.Error);
+            return copy;
+        }
+
+        /// <summary>휴지통에 있는 맵의 목록. 최근에 지운 맵이 앞에 온다.</summary>
+        public List<MapInfo> ListTrash()
+        {
+            return MapLibrary.ListTrash();
+        }
+
+        /// <summary>
+        /// 휴지통의 맵을 맵 목록으로 되살린다. 되살린 맵을 열지는 않는다. 되살린 맵의 번호표를 돌려주고,
+        /// 되살리지 못하면 까닭을 알리고 null을 돌려준다.
+        /// </summary>
+        public string Restore(string key)
+        {
+            if (MapLibrary.Count() >= MapLibrary.MaxMaps)
+            {
+                Notice.Post($"맵이 {MapLibrary.MaxMaps}개라 되살릴 수 없습니다 · 맵을 하나 지운 뒤에 되살리세요", NoticeKind.Warning);
+                return null;
+            }
+
+            string id = MapLibrary.Restore(key);
+            if (id == null) Notice.Post("맵을 되살리지 못했습니다", NoticeKind.Error);
+            return id;
+        }
+
+        /// <summary>휴지통의 맵을 아주 지운다. 되찾을 수 없다. 지우지 못하면 알리고 false를 돌려준다.</summary>
+        public bool Purge(string key)
+        {
+            if (MapLibrary.Purge(key)) return true;
+
+            Notice.Post("맵을 아주 지우지 못했습니다", NoticeKind.Error);
+            return false;
         }
 
         /// <summary>맵의 이름을 바꾼다. 지금 열려 있는 맵이면 바로 저장한다. 이름이 비어 있거나 바꾸지 못하면 false다.</summary>

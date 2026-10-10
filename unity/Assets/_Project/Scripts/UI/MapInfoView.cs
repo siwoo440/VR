@@ -13,6 +13,7 @@ namespace AtelierVerse.UI
     /// 대표 그림 찍기와 시작 위치 정하기는 그 맵 안에 있어야 할 수 있으므로, 지금 열려 있는 맵에서만 누를 수 있다.
     /// 무엇을 보일지는 Show로 받고, 무엇을 할지는 요청 이벤트로 알린다. 대표 그림만은 여기서 읽는다.
     /// VR에는 글자판이 없어 이름과 설명을 고칠 수 없다(글자 칸을 잠그고 저장 단추를 감춘다).
+    /// "사본 만들기"는 같은 내용의 새 맵을 만든다(22일차). 글자 칸에 쓰던 것이 아니라 저장되어 있는 맵을 베낀다.
     /// </summary>
     public class MapInfoView : MonoBehaviour
     {
@@ -31,6 +32,7 @@ namespace AtelierVerse.UI
         [SerializeField] private Button setSpawnButton;
         [SerializeField] private Button clearSpawnButton;
         [SerializeField] private Button saveButton;
+        [SerializeField] private Button duplicateButton;
         [SerializeField] private Button backButton;
 
         private Texture2D thumbnailTexture;
@@ -47,6 +49,9 @@ namespace AtelierVerse.UI
 
         /// <summary>시작 위치를 처음 자리로 되돌리기를 눌렀다.</summary>
         public event Action ClearSpawnRequested;
+
+        /// <summary>사본 만들기를 눌렀다. 인자는 맵의 번호표다.</summary>
+        public event Action<string> DuplicateRequested;
 
         /// <summary>목록으로 돌아가기를 눌렀다.</summary>
         public event Action BackRequested;
@@ -91,6 +96,7 @@ namespace AtelierVerse.UI
             if (setSpawnButton != null) setSpawnButton.onClick.AddListener(() => SetSpawnRequested?.Invoke());
             if (clearSpawnButton != null) clearSpawnButton.onClick.AddListener(() => ClearSpawnRequested?.Invoke());
             if (saveButton != null) saveButton.onClick.AddListener(Save);
+            if (duplicateButton != null) duplicateButton.onClick.AddListener(Duplicate);
             if (backButton != null) backButton.onClick.AddListener(() => BackRequested?.Invoke());
         }
 
@@ -162,6 +168,15 @@ namespace AtelierVerse.UI
             string description = descriptionField != null ? MapLibrary.CleanDescription(descriptionField.text) : string.Empty;
             StopEditing();
             SaveRequested?.Invoke(MapId, name, description);
+        }
+
+        /// <summary>보이고 있는 맵의 사본을 만들어 달라고 요청한다.</summary>
+        public void Duplicate()
+        {
+            if (MapId == null) return;
+
+            StopEditing();
+            DuplicateRequested?.Invoke(MapId);
         }
 
         /// <summary>글자 쓰기를 그만둔다. 쓰던 글자는 칸에 남는다.</summary>

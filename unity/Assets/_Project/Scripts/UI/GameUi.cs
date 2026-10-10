@@ -188,12 +188,16 @@ namespace AtelierVerse.UI
                 mapList.CreateRequested += CreateMap;
                 mapList.InfoRequested += OpenMapInfo;
                 mapList.DeleteRequested += DeleteMap;
+                mapList.TrashRequested += ToggleMapTrash;
+                mapList.RestoreRequested += RestoreMap;
+                mapList.PurgeRequested += PurgeMap;
                 mapList.CloseRequested += CloseMapList;
             }
 
             if (mapInfo != null)
             {
                 mapInfo.SaveRequested += SaveMapInfo;
+                mapInfo.DuplicateRequested += DuplicateMap;
                 mapInfo.SnapshotRequested += TakeMapSnapshot;
                 mapInfo.SetSpawnRequested += SetMapSpawn;
                 mapInfo.ClearSpawnRequested += ClearMapSpawn;
@@ -296,6 +300,9 @@ namespace AtelierVerse.UI
             if (mapList != null)
             {
                 mapList.CloseRequested -= CloseMapList;
+                mapList.PurgeRequested -= PurgeMap;
+                mapList.RestoreRequested -= RestoreMap;
+                mapList.TrashRequested -= ToggleMapTrash;
                 mapList.DeleteRequested -= DeleteMap;
                 mapList.InfoRequested -= OpenMapInfo;
                 mapList.CreateRequested -= CreateMap;
@@ -308,6 +315,7 @@ namespace AtelierVerse.UI
                 mapInfo.ClearSpawnRequested -= ClearMapSpawn;
                 mapInfo.SetSpawnRequested -= SetMapSpawn;
                 mapInfo.SnapshotRequested -= TakeMapSnapshot;
+                mapInfo.DuplicateRequested -= DuplicateMap;
                 mapInfo.SaveRequested -= SaveMapInfo;
             }
 
@@ -333,13 +341,17 @@ namespace AtelierVerse.UI
             if (menuAction.WasPressedThisFrame())
             {
                 // 맵 정보 창에서는 메뉴 키로 맵 목록으로 돌아간다. 글자를 쓰는 중이면 쓰기만 그만둔다.
-                // 맵 목록 창이나 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다.
+                // 맵 목록 창이나 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다. 휴지통을 보고 있으면 맵 목록으로 돌아간다.
                 if (IsMapInfoOpen)
                 {
                     if (mapInfo.IsEditingText) mapInfo.StopEditing();
                     else BackToMapList();
                 }
-                else if (IsMapListOpen) CloseMapList();
+                else if (IsMapListOpen)
+                {
+                    if (mapList.ShowingTrash) ShowMapList();
+                    else CloseMapList();
+                }
                 else if (IsPickerOpen) ClosePicker();
                 else ToggleMenu();
             }
@@ -480,9 +492,84 @@ namespace AtelierVerse.UI
             ShowVrMenu(false);
         }
 
+        /// <summary>맵 목록 창에 보이고 있던 것(맵 목록이나 휴지통)을 지금 상태로 다시 채운다.</summary>
         private void RefreshMapList()
         {
-            if (mapList != null && autoSave != null) mapList.Show(autoSave.ListMaps(), autoSave.MapId);
+            if (mapList == null || autoSave == null) return;
+
+            if (mapList.ShowingTrash) mapList.ShowTrash(autoSave.ListTrash());
+            else ShowMapList();
+        }
+
+        /// <summary>맵 목록 창에 맵 목록을 보인다. 휴지통을 보고 있었으면 맵 목록으로 돌아온다.</summary>
+        public void ShowMapList()
+        {
+            if (mapList != null && autoSave != null) mapList.Show(autoSave.ListMaps(), autoSave.MapId, autoSave.ListTrash().Count);
+        }
+
+        /// <summary>맵 목록 창에 휴지통을 보인다. 지운 맵을 되살리거나 아주 지울 수 있다.</summary>
+        public void ShowMapTrash()
+        {
+            if (mapList != null && autoSave != null && IsMapListOpen) mapList.ShowTrash(autoSave.ListTrash());
+        }
+
+        private void ToggleMapTrash()
+        {
+            if (mapList.ShowingTrash) ShowMapList();
+            else ShowMapTrash();
+        }
+
+        /// <summary>휴지통의 맵을 맵 목록으로 되살린다. 되살린 맵을 열지는 않으며 휴지통을 계속 보인다. 못 되살린 까닭은 자동 저장 쪽이 알린다.</summary>
+        private void RestoreMap(string key)
+        {
+            if (autoSave == null) return;
+
+            string name = TrashNameOf(key);
+            if (autoSave.Restore(key) != null) Notice.Post($"{name} · {MapAutoSave.RestoredMessage}");
+            RefreshMapList();
+        }
+
+        /// <summary>휴지통의 맵을 아주 지운다. 창에서 두 번 눌러 확인한 뒤에 온다.</summary>
+        private void PurgeMap(string key)
+        {
+            if (autoSave == null) return;
+
+            string name = TrashNameOf(key);
+            if (autoSave.Purge(key)) Notice.Post($"{name} · {MapAutoSave.PurgedMessage}");
+            RefreshMapList();
+        }
+
+        /// <summary>휴지통에 있는 맵의 보이는 이름. 알림에 쓴다.</summary>
+        private string TrashNameOf(string key)
+        {
+            foreach (MapInfo map in autoSave.ListTrash())
+            {
+                if (map.TrashKey == key) return MapLibrary.DisplayName(map.Name);
+            }
+
+            return MapLibrary.UnnamedLabel;
+        }
+
+        /// <summary>
+        /// 맵 정보 창에서 보던 맵의 사본을 만들고 맵 목록으로 돌아가 사본이 있는 쪽을 보인다(사본은 방금 저장한 맵이라 앞쪽에 있다).
+        /// 사본을 열지는 않는다. 만들지 못한 까닭은 자동 저장 쪽이 알리며, 그때는 맵 정보 창에 그대로 있는다.
+        /// </summary>
+        private void DuplicateMap(string id)
+        {
+            if (autoSave == null) return;
+
+            string copy = autoSave.Duplicate(id);
+            if (copy == null) return;
+
+            string name = MapLibrary.UnnamedLabel;
+            foreach (MapInfo map in autoSave.ListMaps())
+            {
+                if (map.Id == copy) name = MapLibrary.DisplayName(map.Name);
+            }
+
+            Notice.Post($"{name} · {MapAutoSave.CopiedMessage}");
+            BackToMapList();
+            mapList.ShowPage(Mathf.Max(0, mapList.PageOf(copy)));
         }
 
         private void OpenMap(string id)

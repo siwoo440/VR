@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace AtelierVerse.World
@@ -34,11 +35,21 @@ namespace AtelierVerse.World
 
         /// <summary>대표 그림이 있는지.</summary>
         public bool HasThumbnail;
+
+        /// <summary>휴지통에 있는 맵인지. 휴지통의 맵은 열 수 없고 되살리거나 아주 지울 수 있다.</summary>
+        public bool InTrash;
+
+        /// <summary>휴지통에 있는 파일의 이름(확장자 없이). 되살리거나 아주 지울 때 이것으로 가리킨다. 휴지통의 맵이 아니면 null이다.</summary>
+        public string TrashKey;
+
+        /// <summary>지운 시각(UTC). 휴지통의 맵이 아니거나 알 수 없으면 DateTime.MinValue다.</summary>
+        public DateTime DeletedAt;
     }
 
     /// <summary>
     /// 이 기기에 저장된 맵들(17일차). 맵 파일의 폴더(MapStorage.Directory)에서 맵마다 파일 하나(번호표.map.json)를 다룬다.
     /// 목록 보기, 새 맵 만들기, 이름과 설명 바꾸기, 지우기(휴지통 폴더로 옮기기), 마지막으로 연 맵 기억하기를 맡는다.
+    /// 맵의 사본을 만들고, 휴지통의 맵을 보고 되살리거나 아주 지운다(22일차). 아주 지운 맵은 되찾을 수 없다.
     /// 맵의 대표 그림은 맵 파일 옆에 그림 파일(번호표.png)로 둔다(18일차).
     /// 지금 열려 있는 맵의 내용을 읽고 쓰는 일은 MapAutoSave가 맡는다. 파일만 다루므로 편집 모드 테스트로 검사한다.
     /// </summary>
@@ -56,10 +67,20 @@ namespace AtelierVerse.World
         public const int MaxNameLength = 24;
         public const int MaxIdLength = 40;
 
+        /// <summary>사본의 이름 뒤에 붙는 글자.</summary>
+        public const string CopySuffix = " 사본";
+
+        /// <summary>휴지통의 파일 이름(확장자 없이)으로 받는 가장 긴 길이. 번호표에 지운 시각이 붙은 꼴이다.</summary>
+        public const int MaxTrashKeyLength = 80;
+
         /// <summary>이 기기에 둘 수 있는 맵의 수.</summary>
         public const int MaxMaps = 50;
 
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
+
+        // 휴지통의 파일 이름: 번호표-지운날(8자리)-지운시각(6자리), 같은 때에 둘이면 뒤에 -번호. 번호표에도 날짜가 들어 있을 수 있으므로
+        // 번호표를 되도록 길게 잡아, 맨 끝의 날짜와 시각을 지운 때로 읽는다.
+        private static readonly Regex TrashName = new Regex(@"^(?<id>[a-z0-9-]+)-(?<date>\d{8})-(?<time>\d{6})(?:-\d+)?$", RegexOptions.CultureInvariant);
 
         public static string PathOf(string id)
         {
@@ -73,6 +94,36 @@ namespace AtelierVerse.World
         }
 
         public static string TrashDirectory => Path.Combine(MapStorage.Directory, TrashFolderName);
+
+        /// <summary>휴지통에 있는 맵 파일의 경로.</summary>
+        public static string TrashPathOf(string key)
+        {
+            return Path.Combine(TrashDirectory, key + Extension);
+        }
+
+        /// <summary>휴지통에 있는 맵의 대표 그림 파일의 경로. 맵 파일 옆에 같은 이름으로 있다.</summary>
+        public static string TrashThumbnailPathOf(string key)
+        {
+            return Path.Combine(TrashDirectory, key + ThumbnailExtension);
+        }
+
+        /// <summary>
+        /// 휴지통의 파일을 가리키는 이름으로 쓸 수 있는지. 번호표와 같은 글자만 받아 폴더를 벗어나는 글자를 막고,
+        /// 지운 때가 붙은 꼴(번호표-날짜-시각)이어야 한다.
+        /// </summary>
+        public static bool IsValidTrashKey(string key)
+        {
+            if (string.IsNullOrEmpty(key) || key.Length > MaxTrashKeyLength) return false;
+
+            foreach (char letter in key)
+            {
+                bool allowed = (letter >= 'a' && letter <= 'z') || (letter >= '0' && letter <= '9') || letter == '-';
+                if (!allowed) return false;
+            }
+
+            Match match = TrashName.Match(key);
+            return match.Success && IsValidId(match.Groups["id"].Value);
+        }
 
         /// <summary>
         /// 번호표로 쓸 수 있는 글자인지. 영문 소문자, 숫자, 줄표만 받는다. 번호표가 파일 이름이 되므로 폴더를 벗어나는 글자를 막는다.
@@ -95,6 +146,28 @@ namespace AtelierVerse.World
             return IsValidId(id) && File.Exists(PathOf(id));
         }
 
+        /// <summary>이 기기의 맵의 수. 파일을 읽지 않고 센다.</summary>
+        public static int Count()
+        {
+            string directory = MapStorage.Directory;
+            if (!Directory.Exists(directory)) return 0;
+
+            int count = 0;
+            foreach (string path in Directory.GetFiles(directory, "*" + Extension))
+            {
+                if (IsValidId(StemOf(path))) count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>맵 파일의 이름에서 확장자를 뗀 것. 맵 파일의 이름이 아니면 null이다.</summary>
+        private static string StemOf(string path)
+        {
+            string fileName = Path.GetFileName(path);
+            return fileName.EndsWith(Extension, StringComparison.Ordinal) ? fileName.Substring(0, fileName.Length - Extension.Length) : null;
+        }
+
         /// <summary>이 기기의 맵 목록. 최근에 저장한 맵이 앞에 온다.</summary>
         public static List<MapInfo> List()
         {
@@ -104,13 +177,10 @@ namespace AtelierVerse.World
 
             foreach (string path in Directory.GetFiles(directory, "*" + Extension))
             {
-                string fileName = Path.GetFileName(path);
-                if (!fileName.EndsWith(Extension, StringComparison.Ordinal)) continue;
-
-                string id = fileName.Substring(0, fileName.Length - Extension.Length);
+                string id = StemOf(path);
                 if (!IsValidId(id)) continue;
 
-                maps.Add(Describe(id, path));
+                maps.Add(Describe(id, path, ThumbnailPathOf(id)));
             }
 
             maps.Sort((a, b) =>
@@ -121,10 +191,50 @@ namespace AtelierVerse.World
             return maps;
         }
 
-        private static MapInfo Describe(string id, string path)
+        /// <summary>
+        /// 휴지통에 있는 맵의 목록. 최근에 지운 맵이 앞에 온다. Id는 지우기 전의 번호표이고, 되살리거나 아주 지울 때는 TrashKey로 가리킨다.
+        /// 이름이 휴지통의 꼴(번호표-날짜-시각)이 아닌 파일은 넣지 않는다.
+        /// </summary>
+        public static List<MapInfo> ListTrash()
+        {
+            var maps = new List<MapInfo>();
+            string directory = TrashDirectory;
+            if (!Directory.Exists(directory)) return maps;
+
+            foreach (string path in Directory.GetFiles(directory, "*" + Extension))
+            {
+                string key = StemOf(path);
+                if (!IsValidTrashKey(key)) continue;
+
+                Match match = TrashName.Match(key);
+                MapInfo info = Describe(match.Groups["id"].Value, path, TrashThumbnailPathOf(key));
+                info.InTrash = true;
+                info.TrashKey = key;
+                info.DeletedAt = ParseStamp(match.Groups["date"].Value + match.Groups["time"].Value);
+                maps.Add(info);
+            }
+
+            maps.Sort((a, b) =>
+            {
+                int byTime = b.DeletedAt.CompareTo(a.DeletedAt);
+                return byTime != 0 ? byTime : string.CompareOrdinal(a.TrashKey, b.TrashKey);
+            });
+            return maps;
+        }
+
+        /// <summary>휴지통의 파일 이름에 붙은 날짜와 시각(yyyyMMddHHmmss, UTC)을 읽는다. 읽지 못하면 DateTime.MinValue다.</summary>
+        private static DateTime ParseStamp(string stamp)
+        {
+            return DateTime.TryParseExact(stamp, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out DateTime parsed)
+                ? parsed
+                : DateTime.MinValue;
+        }
+
+        private static MapInfo Describe(string id, string path, string thumbnailPath)
         {
             var info = new MapInfo { Id = id, Name = string.Empty, Description = string.Empty, UpdatedAt = DateTime.MinValue, CreatedAt = DateTime.MinValue };
-            info.HasThumbnail = File.Exists(ThumbnailPathOf(id));
+            info.HasThumbnail = File.Exists(thumbnailPath);
             if (!MapStorage.TryLoad(path, out MapDocument document, out _)) return info;
 
             info.Readable = true;
@@ -235,6 +345,159 @@ namespace AtelierVerse.World
             MapDocument document = MapDocument.Create(UniqueName(CleanName(name), maps), minCorner, maxCorner);
             MapStorage.Save(document, PathOf(id));
             return id;
+        }
+
+        /// <summary>
+        /// 맵의 사본을 만들어 새 번호표를 돌려준다. 블록, 설명, 시작 위치, 대표 그림이 같고 이름 뒤에 " 사본"이 붙는다
+        /// (같은 이름이 있으면 번호가 더 붙는다). 만든 때와 고친 때는 지금이다. 원래 맵은 건드리지 않는다.
+        /// 맵이 상한에 닿았거나, 원래 맵을 읽지 못하거나, 쓰지 못하면 null이다.
+        /// </summary>
+        public static string Duplicate(string id)
+        {
+            if (!IsValidId(id)) return null;
+
+            List<MapInfo> maps = List();
+            if (maps.Count >= MaxMaps) return null;
+            if (!MapStorage.TryLoad(PathOf(id), out MapDocument document, out _)) return null;
+
+            string copyId = NewId();
+            string now = MapDocument.Now();
+            document.name = UniqueName(CopyName(document.name), maps);
+            document.createdAt = now;
+            document.updatedAt = now;
+
+            try
+            {
+                MapStorage.Save(document, PathOf(copyId));
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 맵의 사본을 만들지 못했습니다: {exception.Message}");
+                return null;
+            }
+
+            CopyFileQuietly(ThumbnailPathOf(id), ThumbnailPathOf(copyId));
+            return copyId;
+        }
+
+        /// <summary>사본에 붙일 이름. 이름이 길면 " 사본"이 잘리지 않게 앞을 줄인다. 이름이 비어 있으면 "새 맵 사본"이다.</summary>
+        public static string CopyName(string name)
+        {
+            string stem = CleanName(name);
+            if (stem.Length == 0) stem = DefaultName;
+
+            int room = MaxNameLength - CopySuffix.Length;
+            if (stem.Length > room) stem = stem.Substring(0, room).Trim();
+            return stem + CopySuffix;
+        }
+
+        /// <summary>
+        /// 휴지통의 맵을 되살려 맵 목록으로 돌려놓고 번호표를 돌려준다. 지우기 전의 번호표가 비어 있으면 그 번호표로,
+        /// 그 사이에 같은 번호표의 맵이 생겼으면 새 번호표로 돌아온다. 대표 그림도 함께 돌아온다.
+        /// 맵이 상한에 닿았거나, 휴지통에 그 파일이 없거나, 옮기지 못하면 null이다.
+        /// </summary>
+        public static string Restore(string key)
+        {
+            if (!IsValidTrashKey(key)) return null;
+
+            string source = TrashPathOf(key);
+            if (!File.Exists(source) || Count() >= MaxMaps) return null;
+
+            string id = TrashName.Match(key).Groups["id"].Value;
+            if (File.Exists(PathOf(id))) id = NewId();
+
+            try
+            {
+                Directory.CreateDirectory(MapStorage.Directory);
+                File.Move(source, PathOf(id));
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 휴지통의 맵을 되살리지 못했습니다: {exception.Message}");
+                return null;
+            }
+
+            MoveFileQuietly(TrashThumbnailPathOf(key), ThumbnailPathOf(id));
+            return id;
+        }
+
+        /// <summary>
+        /// 휴지통의 맵을 아주 지운다. 맵 파일과 대표 그림이 없어지며 되찾을 수 없다. 맵 목록에 있는 맵은 이것으로 지울 수 없다
+        /// (먼저 Trash로 휴지통에 옮겨야 한다). 지웠으면 true다.
+        /// </summary>
+        public static bool Purge(string key)
+        {
+            if (!IsValidTrashKey(key)) return false;
+
+            string path = TrashPathOf(key);
+            if (!File.Exists(path)) return false;
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 휴지통의 맵을 지우지 못했습니다: {exception.Message}");
+                return false;
+            }
+
+            try
+            {
+                string thumbnail = TrashThumbnailPathOf(key);
+                if (File.Exists(thumbnail)) File.Delete(thumbnail);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 휴지통의 대표 그림을 지우지 못했습니다: {exception.Message}");
+            }
+
+            return true;
+        }
+
+        /// <summary>휴지통에 있는 맵의 대표 그림(PNG)을 읽는다. 없거나 읽지 못하면 null이다.</summary>
+        public static byte[] LoadTrashThumbnail(string key)
+        {
+            if (!IsValidTrashKey(key)) return null;
+
+            string path = TrashThumbnailPathOf(key);
+            try
+            {
+                return File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>파일을 베낀다. 대표 그림처럼 없어도 되는 파일에 쓰며, 원래 파일이 없거나 베끼지 못해도 넘어간다.</summary>
+        private static void CopyFileQuietly(string from, string to)
+        {
+            try
+            {
+                if (File.Exists(from)) File.Copy(from, to, true);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 대표 그림을 베끼지 못했습니다: {exception.Message}");
+            }
+        }
+
+        /// <summary>파일을 옮긴다. 옮길 자리에 이미 파일이 있으면 그것을 대신한다. 원래 파일이 없거나 옮기지 못해도 넘어간다.</summary>
+        private static void MoveFileQuietly(string from, string to)
+        {
+            try
+            {
+                if (!File.Exists(from)) return;
+
+                if (File.Exists(to)) File.Delete(to);
+                File.Move(from, to);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 대표 그림을 옮기지 못했습니다: {exception.Message}");
+            }
         }
 
         /// <summary>맵의 이름을 바꾼다. 번호표와 블록은 그대로다. 파일이 없거나 읽고 쓰지 못하면 false다.</summary>

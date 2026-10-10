@@ -114,6 +114,45 @@ namespace AtelierVerse.Tests
             view.fieldOfView = fieldOfView;
         }
 
+        [UnityTest]
+        public IEnumerator 휴지통의_되살리기와_맵_정보의_사본_만들기를_광선으로_누른다()
+        {
+            yield return LoadVrMaps();
+            string other = MapLibrary.Create("지울 맵", world.BoundsMin, world.BoundsMax);
+            Assert.IsTrue(autoSave.Delete(other));
+
+            ui.OpenMapList();
+            yield return Frames(3);
+
+            // 오른쪽 위의 휴지통 단추를 가리켜 눌러 휴지통을 본다.
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.MapList, "Trash")));
+            yield return PullTrigger();
+            Assert.IsTrue(ui.MapList.ShowingTrash, "휴지통 단추를 가리켜 눌렀는데 휴지통이 보이지 않습니다.");
+            Assert.AreEqual(1, ui.MapList.MapCount);
+
+            yield return PointRightHandAt(CenterOf(ui.MapList.GetRow(0).restoreButton));
+            yield return PullTrigger();
+            Assert.IsTrue(MapLibrary.Exists(other), "되살리기를 가리켜 눌렀는데 되살아나지 않았습니다.");
+
+            // 같은 단추로 맵 목록에 돌아와, 맵 정보 창에서 사본을 만든다.
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.MapList, "Trash")));
+            yield return PullTrigger();
+            Assert.IsFalse(ui.MapList.ShowingTrash);
+            Assert.AreEqual(2, ui.MapList.MapCount);
+
+            int row = ui.MapList.RowOf(MapLibrary.DefaultId);
+            Assert.GreaterOrEqual(row, 0);
+            yield return PointRightHandAt(CenterOf(ui.MapList.GetRow(row).infoButton));
+            yield return PullTrigger();
+            Assert.IsTrue(ui.IsMapInfoOpen);
+
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.MapInfo, "Duplicate")));
+            yield return PullTrigger();
+            Assert.IsTrue(ui.IsMapListOpen, "사본을 만들면 맵 목록으로 돌아가야 합니다.");
+            Assert.AreEqual(3, ui.MapList.MapCount, "사본 만들기를 가리켜 눌렀는데 맵이 늘지 않았습니다.");
+            Assert.AreEqual(MapLibrary.DefaultId, autoSave.MapId);
+        }
+
         private IEnumerator LoadVrMaps()
         {
             yield return LoadVr();
