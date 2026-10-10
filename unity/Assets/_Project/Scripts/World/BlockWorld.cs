@@ -10,6 +10,7 @@ namespace AtelierVerse.World
     /// 씬에 미리 놓인 블록(자식의 PlacedBlock)은 시작할 때 그 자리 그대로 기록에 올린다.
     /// 맵 문서로 내보내고(Export) 문서에서 통째로 바꿔 넣는(Import) 일도 맡는다.
     /// 이용자의 편집은 History(기록 층)를 거쳐야 되돌릴 수 있다. Add·Remove·Set은 기록하지 않는 바탕 동작이다.
+    /// 바닥의 크기(놓을 수 있는 범위의 가로세로)는 맵마다 다를 수 있다(23일차). 맵을 바꿔 넣을 때 그 맵의 크기로 맞춘다.
     /// </summary>
     public class BlockWorld : MonoBehaviour, IBlockStore
     {
@@ -25,6 +26,9 @@ namespace AtelierVerse.World
 
         /// <summary>블록을 놓거나 지우거나 고치면 알린다.</summary>
         public event Action Changed;
+
+        /// <summary>놓을 수 있는 범위(바닥의 크기)가 바뀌면 알린다. 화면의 바닥이 듣고 넓이를 맞춘다.</summary>
+        public event Action BoundsChanged;
 
         public PartCatalog Catalog => catalog;
 
@@ -42,6 +46,27 @@ namespace AtelierVerse.World
 
         /// <summary>놓을 수 있는 범위(상자)의 가장 큰 모서리. 가장 큰 칸의 위 모서리가 된다.</summary>
         public Vector3 BoundsMax => (Vector3)(Vector3Int.Max(minCell, maxCell) + Vector3Int.one) * GridMath.DefaultCellSize;
+
+        /// <summary>바닥의 한 변(칸 수). 바닥은 가운데를 중심으로 한 정사각형이다.</summary>
+        public int FloorSize => Vector3Int.Max(minCell, maxCell).x - Vector3Int.Min(minCell, maxCell).x + 1;
+
+        /// <summary>
+        /// 바닥의 크기를 바꾼다. 고를 수 있는 크기(MapSize.Sizes)만 받는다. 놓인 블록이 새 범위 밖에 남게 되면 바꾸지 않고
+        /// false를 돌려주며 outside에 그 수가 담긴다. 이미 그 크기이면 아무것도 하지 않고 true다.
+        /// </summary>
+        public bool SetFloorSize(int size, out int outside)
+        {
+            outside = 0;
+            if (!MapSize.IsAllowed(size)) return false;
+            if (size == FloorSize) return true;
+            if (!Map.Resize(MapSize.MinOf(size), MapSize.MaxOf(size), out outside)) return false;
+
+            int half = size / 2;
+            minCell = new Vector3Int(-half, 0, -half);
+            maxCell = new Vector3Int(half - 1, MapSize.Height - 1, half - 1);
+            BoundsChanged?.Invoke();
+            return true;
+        }
 
         /// <summary>놓인 블록의 목록.</summary>
         public IReadOnlyCollection<BlockRecord> Blocks => Map.Blocks;
@@ -201,11 +226,12 @@ namespace AtelierVerse.World
 
         /// <summary>
         /// 지금 블록을 모두 지우고 문서의 블록으로 바꿔 넣는다. 읽지 못한 블록의 수는 결과에 담긴다.
-        /// 문서의 범위는 참고용이며 실제 범위는 이 블록 세계의 값이다.
+        /// 바닥의 크기도 문서의 범위에 맞춘다(고를 수 있는 크기 가운데 가장 가까운 것). 그 범위 밖의 블록은 올리지 않는다.
         /// </summary>
         public MapLoadReport Import(MapDocument document)
         {
             ClearAll();
+            SetFloorSize(MapSize.FromBounds(document?.bounds), out _);
             MapLoadReport report = MapDocument.Apply(document, Map, id => catalog != null ? catalog.IndexOf(id) : -1);
 
             foreach (BlockRecord record in Map.Blocks)

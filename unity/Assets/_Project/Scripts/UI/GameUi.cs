@@ -198,6 +198,9 @@ namespace AtelierVerse.UI
             {
                 mapInfo.SaveRequested += SaveMapInfo;
                 mapInfo.DuplicateRequested += DuplicateMap;
+                mapInfo.SkyRequested += SetMapSky;
+                mapInfo.SunRequested += SetMapSun;
+                mapInfo.FloorSizeRequested += SetMapFloorSize;
                 mapInfo.SnapshotRequested += TakeMapSnapshot;
                 mapInfo.SetSpawnRequested += SetMapSpawn;
                 mapInfo.ClearSpawnRequested += ClearMapSpawn;
@@ -315,6 +318,9 @@ namespace AtelierVerse.UI
                 mapInfo.ClearSpawnRequested -= ClearMapSpawn;
                 mapInfo.SetSpawnRequested -= SetMapSpawn;
                 mapInfo.SnapshotRequested -= TakeMapSnapshot;
+                mapInfo.FloorSizeRequested -= SetMapFloorSize;
+                mapInfo.SunRequested -= SetMapSun;
+                mapInfo.SkyRequested -= SetMapSky;
                 mapInfo.DuplicateRequested -= DuplicateMap;
                 mapInfo.SaveRequested -= SaveMapInfo;
             }
@@ -705,6 +711,47 @@ namespace AtelierVerse.UI
             if (autoSave == null || playerSpawn == null || mapInfo.MapId != autoSave.MapId) return;
 
             playerSpawn.Clear();
+            RefreshMapInfo();
+        }
+
+        /// <summary>지금 맵의 하늘을 바꾼다. 바로 보이므로 따로 알리지 않는다.</summary>
+        private void SetMapSky(string id)
+        {
+            if (autoSave == null || mapInfo.MapId != autoSave.MapId) return;
+
+            autoSave.SetSky(id);
+            RefreshMapInfo();
+        }
+
+        /// <summary>
+        /// 지금 맵의 해의 방향과 높이를 바꾼다. 막대를 끄는 동안 이어서 불리므로 창을 다시 채우지 않는다
+        /// (다시 채우려면 맵 파일들을 읽어야 한다). 막대 옆의 숫자는 창이 스스로 고친다.
+        /// </summary>
+        private void SetMapSun(float yaw, float pitch)
+        {
+            if (autoSave == null || mapInfo.MapId != autoSave.MapId) return;
+
+            autoSave.SetSun(yaw, pitch);
+        }
+
+        /// <summary>지금 맵의 바닥 크기를 바꾼다. 줄일 수 없으면 까닭을 알리고 창의 칸을 원래 크기로 되돌린다.</summary>
+        private void SetMapFloorSize(int size)
+        {
+            if (autoSave == null || mapInfo.MapId != autoSave.MapId) return;
+
+            switch (autoSave.SetFloorSize(size, out int outside))
+            {
+                case FloorChange.Changed:
+                    Notice.Post($"바닥을 {size}×{size}로 바꿨습니다");
+                    break;
+                case FloorChange.BlocksOutside:
+                    Notice.Post($"바깥에 블록 {outside}개가 남아 바닥을 줄일 수 없습니다 · 그 블록을 먼저 옮기거나 지우세요", NoticeKind.Warning);
+                    break;
+                case FloorChange.SpawnOutside:
+                    Notice.Post("시작 위치가 바깥에 남아 바닥을 줄일 수 없습니다 · 시작 위치를 먼저 옮기세요", NoticeKind.Warning);
+                    break;
+            }
+
             RefreshMapInfo();
         }
 

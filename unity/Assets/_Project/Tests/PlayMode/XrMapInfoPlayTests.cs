@@ -66,6 +66,54 @@ namespace AtelierVerse.Tests
         }
 
         [UnityTest]
+        public IEnumerator 분위기와_크기_갈래를_광선으로_열어_하늘과_해와_바닥을_고른다()
+        {
+            yield return LoadVrInfo();
+            BlockWorld world = Object.FindAnyObjectByType<BlockWorld>();
+            WorldEnvironment environment = Object.FindAnyObjectByType<WorldEnvironment>();
+            Assert.IsNotNull(environment, "Sandbox 씬에 분위기를 보이는 부품이 없습니다. 23일차 셋업을 실행하세요.");
+
+            ui.OpenMapList();
+            yield return Frames(3);
+            ui.MapList.GetRow(0).infoButton.onClick.Invoke();
+            yield return Frames(3);
+            Assert.IsTrue(ui.IsMapInfoOpen);
+
+            yield return PointRightHandAt(CenterOf(Find<Button>(ui.MapInfo, "InfoSection1")));
+            Assert.IsTrue(ui.Player.IsPointingAtUi);
+            yield return PullTrigger();
+            Assert.AreEqual(MapInfoView.EnvironmentSection, ui.MapInfo.CurrentSection, "갈래의 칸을 가리켜 눌렀는데 갈래가 바뀌지 않았습니다.");
+            yield return Frames(2);
+
+            // 하늘: 밤. 헤드셋의 카메라에도 그 하늘이 보인다.
+            yield return PointRightHandAt(CenterOf(Find<ChoiceBar>(ui.MapInfo, "SkyBar").GetButton(2)));
+            yield return PullTrigger();
+            Assert.AreEqual("night", autoSave.SkyId, "하늘의 칸을 가리켜 눌렀는데 하늘이 바뀌지 않았습니다.");
+            Assert.AreEqual("night", environment.SkyId);
+            Color sky = MapSky.Find("night").sky;
+            Color shown = player.Rig.ViewCamera.backgroundColor;
+            Assert.Less(Mathf.Abs(sky.r - shown.r) + Mathf.Abs(sky.g - shown.g) + Mathf.Abs(sky.b - shown.b), 0.01f, "헤드셋의 카메라에 보이는 하늘이 밤이 아닙니다.");
+
+            // 해의 방향: 막대의 한 자리를 가리켜 누른다.
+            Slider sunYaw = Find<Slider>(ui.MapInfo, "SunYawSlider");
+            var rect = (RectTransform)sunYaw.transform;
+            Vector3 point = rect.TransformPoint(new Vector3(Mathf.Lerp(rect.rect.xMin, rect.rect.xMax, 0.25f), rect.rect.center.y, 0f));
+            yield return PointRightHandAt(point);
+            yield return PullTrigger();
+            Assert.AreEqual(0.25f, sunYaw.normalizedValue, 0.08f, "가리켜 누른 자리로 막대가 옮겨지지 않았습니다.");
+            Assert.AreEqual(ui.MapInfo.ShownSunYaw, autoSave.SunYaw, 0.001f, "막대의 값이 맵에 들어가지 않았습니다.");
+            Assert.AreNotEqual(MapSky.DefaultSunYaw, autoSave.SunYaw);
+            Assert.Less(Quaternion.Angle(MapSky.SunRotation(autoSave.SunYaw, autoSave.SunPitch), environment.Sun.transform.rotation), 0.05f);
+
+            // 바닥: 보통 24.
+            yield return PointRightHandAt(CenterOf(Find<ChoiceBar>(ui.MapInfo, "FloorBar").GetButton(1)));
+            yield return PullTrigger();
+            Assert.AreEqual(24, world.FloorSize, "바닥의 칸을 가리켜 눌렀는데 바닥이 넓어지지 않았습니다.");
+            Assert.AreEqual(2.4f, environment.Floor.transform.localScale.x, 0.001f);
+            Assert.AreEqual(MapInfoView.EnvironmentSection, ui.MapInfo.CurrentSection);
+        }
+
+        [UnityTest]
         public IEnumerator 화면_그림을_찍는다()
         {
             string directory = RequireCaptureDirectory();

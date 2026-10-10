@@ -329,6 +329,33 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 목록과_사본은_맵의_하늘과_해와_바닥_크기를_안다()
+        {
+            MapDocument document = MapDocument.Create("밤의 성", MapSize.MinOf(32), MapSize.MaxOf(32));
+            document.environment = new MapEnvironment { sky = "night", sunYaw = 45f, sunPitch = 70f };
+            document.updatedAt = "2026-10-09T01:00:00Z";
+            MapStorage.Save(document, MapLibrary.PathOf("map-a"));
+            Save("map-b", "보통 맵", 0, "2026-10-08T01:00:00Z");
+
+            MapInfo night = MapLibrary.List().Find(map => map.Id == "map-a");
+            Assert.AreEqual("night", night.Sky);
+            Assert.AreEqual(45f, night.SunYaw, 0.001f);
+            Assert.AreEqual(70f, night.SunPitch, 0.001f);
+            Assert.AreEqual(32, night.FloorSize);
+
+            MapInfo plain = MapLibrary.List().Find(map => map.Id == "map-b");
+            Assert.AreEqual(MapSky.DefaultId, plain.Sky);
+            Assert.AreEqual(MapSize.Default, plain.FloorSize);
+
+            // 사본에도 분위기와 크기가 그대로 들어간다.
+            string copy = MapLibrary.Duplicate("map-a");
+            MapInfo copied = MapLibrary.List().Find(map => map.Id == copy);
+            Assert.AreEqual("night", copied.Sky);
+            Assert.AreEqual(45f, copied.SunYaw, 0.001f);
+            Assert.AreEqual(32, copied.FloorSize);
+        }
+
+        [Test]
         public void 사본을_거듭_만들면_이름에_번호가_붙고_긴_이름은_사본이_잘리지_않게_줄인다()
         {
             Save("map-a", "탑", 1, "2026-10-09T01:00:00Z");

@@ -36,6 +36,17 @@ namespace AtelierVerse.World
         /// <summary>대표 그림이 있는지.</summary>
         public bool HasThumbnail;
 
+        /// <summary>하늘의 이름(MapSky). 읽지 못한 파일이면 맑은 낮이다.</summary>
+        public string Sky;
+
+        /// <summary>해의 방향과 높이(도).</summary>
+        public float SunYaw;
+
+        public float SunPitch;
+
+        /// <summary>바닥의 한 변(칸 수).</summary>
+        public int FloorSize;
+
         /// <summary>휴지통에 있는 맵인지. 휴지통의 맵은 열 수 없고 되살리거나 아주 지울 수 있다.</summary>
         public bool InTrash;
 
@@ -233,7 +244,18 @@ namespace AtelierVerse.World
 
         private static MapInfo Describe(string id, string path, string thumbnailPath)
         {
-            var info = new MapInfo { Id = id, Name = string.Empty, Description = string.Empty, UpdatedAt = DateTime.MinValue, CreatedAt = DateTime.MinValue };
+            var info = new MapInfo
+            {
+                Id = id,
+                Name = string.Empty,
+                Description = string.Empty,
+                UpdatedAt = DateTime.MinValue,
+                CreatedAt = DateTime.MinValue,
+                Sky = MapSky.DefaultId,
+                SunYaw = MapSky.DefaultSunYaw,
+                SunPitch = MapSky.DefaultSunPitch,
+                FloorSize = MapSize.Default,
+            };
             info.HasThumbnail = File.Exists(thumbnailPath);
             if (!MapStorage.TryLoad(path, out MapDocument document, out _)) return info;
 
@@ -244,6 +266,10 @@ namespace AtelierVerse.World
             info.UpdatedAt = ParseTime(document.updatedAt, path);
             info.CreatedAt = ParseTime(document.createdAt, path);
             info.HasSpawn = document.spawn != null && document.spawn.custom;
+            info.Sky = document.environment.sky;
+            info.SunYaw = document.environment.sunYaw;
+            info.SunPitch = document.environment.sunPitch;
+            info.FloorSize = MapSize.FromBounds(document.bounds);
             return info;
         }
 

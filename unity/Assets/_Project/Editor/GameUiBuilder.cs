@@ -878,6 +878,7 @@ namespace AtelierVerse.EditorTools
         /// 맵 정보 창(18일차). 왼쪽에는 대표 그림과 그림 찍기, 오른쪽에는 이름·설명의 글자 칸과 블록 수·날짜, 시작 위치와 그것을 정하는 단추가 있다.
         /// 아래에는 목록으로 돌아가기와 저장이 있다. 맵 목록 창의 줄에 있는 "정보"로 열며, 열려 있는 동안 맵 목록 창은 닫혀 있다.
         /// VR에는 글자판이 없어 저장 단추를 감추고 글자 칸은 MapInfoView가 잠근다.
+        /// 창은 두 갈래다(23일차): 위의 것이 "기본 정보"이고, "분위기와 크기"에는 하늘·해의 방향과 높이·바닥 크기가 있다.
         /// 뒤의 어두운 막은 VR에서 감추도록 따로 돌려준다.
         /// </summary>
         private static MapInfoView BuildMapInfo(RectTransform canvas, out GameObject scrimObject)
@@ -908,60 +909,93 @@ namespace AtelierVerse.EditorTools
             TMP_Text title = UiFactory.Text("Title", panel.transform, "맵 정보", 30f, Ink, true);
             UiFactory.Place(title.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -24f), new Vector2(360f, 40f));
 
-            TMP_Text guide = UiFactory.Text("Guide", panel.transform, "이름과 설명은 저장을 눌러야 바뀝니다. 그림 찍기와 시작 위치는 누르면 바로 바뀝니다.", 20f, Muted);
+            // 오른쪽 위: 갈래를 고르는 칸(23일차). 기본 정보와 분위기·크기를 오간다.
+            ChoiceBar sectionBar = BuildChoiceBar("InfoSections", panel.transform, "InfoSection", new[] { "기본 정보", "분위기와 크기" }, 170f, 44f);
+            var sectionRect = (RectTransform)sectionBar.transform;
+            UiFactory.Place(sectionRect, UiFactory.TopRight, new Vector2(-PanelPadding - 6f, -16f), sectionRect.sizeDelta);
+
+            // 갈래 1: 기본 정보
+            RectTransform info = UiFactory.Rect("InfoPage", panel.transform);
+            UiFactory.Fill(info);
+
+            TMP_Text guide = UiFactory.Text("Guide", info, "이름과 설명은 저장을 눌러야 바뀝니다. 그림 찍기와 시작 위치는 누르면 바로 바뀝니다.", 20f, Muted);
             UiFactory.Place(guide.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -66f), new Vector2(PanelWidth - PanelPadding * 2f, 28f));
             DesktopOnly.Add(guide.gameObject);
 
             // 왼쪽: 대표 그림과 그림 찍기
-            RawImage thumbnail = Thumbnail("Thumbnail", panel.transform, new Vector2(leftWidth, leftWidth * 9f / 16f), 16f, out GameObject noThumbnail);
+            RawImage thumbnail = Thumbnail("Thumbnail", info, new Vector2(leftWidth, leftWidth * 9f / 16f), 16f, out GameObject noThumbnail);
             UiFactory.Place((RectTransform)thumbnail.transform.parent, UiFactory.TopLeft, new Vector2(PanelPadding, -top), new Vector2(leftWidth, leftWidth * 9f / 16f));
 
-            Button snapshot = BigButton("Snapshot", panel.transform, "지금 보는 장면을 대표 그림으로", null, Paper, Ink, out TMP_Text snapshotLabel);
+            Button snapshot = BigButton("Snapshot", info, "지금 보는 장면을 대표 그림으로", null, Paper, Ink, out TMP_Text snapshotLabel);
             UiFactory.Place((RectTransform)snapshot.transform, UiFactory.TopLeft, new Vector2(PanelPadding, -top - leftWidth * 9f / 16f - 14f), new Vector2(leftWidth, 52f));
             snapshotLabel.fontSize = 22f;
 
-            TMP_Text snapshotNote = UiFactory.Text("SnapshotNote", panel.transform, "화면의 단추와 글자는 찍히지 않습니다.", 18f, Muted);
+            TMP_Text snapshotNote = UiFactory.Text("SnapshotNote", info, "화면의 단추와 글자는 찍히지 않습니다.", 18f, Muted);
             UiFactory.Place(snapshotNote.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -top - leftWidth * 9f / 16f - 76f), new Vector2(leftWidth, 26f));
 
             // 오른쪽: 이름, 설명, 블록 수와 날짜, 시작 위치
-            TMP_Text nameTitle = UiFactory.Text("NameTitle", panel.transform, "이름", 20f, Ink, true);
+            TMP_Text nameTitle = UiFactory.Text("NameTitle", info, "이름", 20f, Ink, true);
             UiFactory.Place(nameTitle.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top + 2f), new Vector2(200f, 26f));
 
-            TMP_InputField nameField = InputField("NameField", panel.transform, "맵의 이름");
+            TMP_InputField nameField = InputField("NameField", info, "맵의 이름");
             UiFactory.Place((RectTransform)nameField.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 28f), new Vector2(rightWidth, fieldHeight));
 
-            TMP_Text descriptionTitle = UiFactory.Text("DescriptionTitle", panel.transform, "설명", 20f, Ink, true);
+            TMP_Text descriptionTitle = UiFactory.Text("DescriptionTitle", info, "설명", 20f, Ink, true);
             UiFactory.Place(descriptionTitle.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 88f), new Vector2(200f, 26f));
 
-            TMP_InputField descriptionField = InputField("DescriptionField", panel.transform, "어떤 맵인지 한 줄로");
+            TMP_InputField descriptionField = InputField("DescriptionField", info, "어떤 맵인지 한 줄로");
             UiFactory.Place((RectTransform)descriptionField.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 118f), new Vector2(rightWidth, fieldHeight));
 
-            TMP_Text facts = UiFactory.Text("Facts", panel.transform, "블록 0개", 18f, Muted);
+            TMP_Text facts = UiFactory.Text("Facts", info, "블록 0개", 18f, Muted);
             UiFactory.Place(facts.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 178f), new Vector2(rightWidth, 26f));
             facts.overflowMode = TextOverflowModes.Ellipsis;
 
-            RectTransform divider = UiFactory.Rect("Divider", panel.transform);
+            RectTransform divider = UiFactory.Rect("Divider", info);
             UiFactory.Place(divider, UiFactory.TopLeft, new Vector2(rightLeft, -top - 216f), new Vector2(rightWidth, 2f));
             var dividerLine = divider.gameObject.AddComponent<Image>();
             dividerLine.color = Line;
             dividerLine.raycastTarget = false;
 
-            TMP_Text spawnLabel = UiFactory.Text("SpawnLabel", panel.transform, MapInfoView.DefaultSpawnText, 20f, Ink, true);
+            TMP_Text spawnLabel = UiFactory.Text("SpawnLabel", info, MapInfoView.DefaultSpawnText, 20f, Ink, true);
             UiFactory.Place(spawnLabel.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 232f), new Vector2(rightWidth, 28f));
             spawnLabel.overflowMode = TextOverflowModes.Ellipsis;
 
-            Button setSpawn = BigButton("SetSpawn", panel.transform, "지금 선 자리를 시작 위치로", null, Paper, Ink, out TMP_Text setSpawnLabel);
+            Button setSpawn = BigButton("SetSpawn", info, "지금 선 자리를 시작 위치로", null, Paper, Ink, out TMP_Text setSpawnLabel);
             UiFactory.Place((RectTransform)setSpawn.transform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 270f), new Vector2(318f, 52f));
             setSpawnLabel.fontSize = 20f;
 
-            Button clearSpawn = BigButton("ClearSpawn", panel.transform, "처음 자리로", null, Paper, Ink, out TMP_Text clearSpawnLabel);
+            Button clearSpawn = BigButton("ClearSpawn", info, "처음 자리로", null, Paper, Ink, out TMP_Text clearSpawnLabel);
             UiFactory.Place((RectTransform)clearSpawn.transform, UiFactory.TopLeft, new Vector2(rightLeft + 318f + 12f, -top - 270f), new Vector2(rightWidth - 318f - 12f, 52f));
             clearSpawnLabel.fontSize = 20f;
 
-            TMP_Text note = UiFactory.Text("Note", panel.transform, string.Empty, 18f, AtelierPalette.Clay);
+            TMP_Text note = UiFactory.Text("Note", info, string.Empty, 18f, AtelierPalette.Clay);
             UiFactory.Place(note.rectTransform, UiFactory.TopLeft, new Vector2(rightLeft, -top - 336f), new Vector2(rightWidth, 26f));
 
-            // 아래: 목록으로, 사본 만들기, 저장
+            // 갈래 2: 분위기와 크기(23일차). 하늘, 해의 방향과 높이, 바닥의 크기. 지금 맵이 아니면 MapInfoView가 흐리게 하고 누를 수 없게 한다.
+            RectTransform environment = UiFactory.Rect("EnvironmentPage", panel.transform);
+            UiFactory.Fill(environment);
+            var environmentGroup = environment.gameObject.AddComponent<CanvasGroup>();
+
+            RectTransform environmentRows = UiFactory.Rect("EnvironmentRows", environment);
+            UiFactory.StretchTop(environmentRows, -top + 8f, RowPitch * 4f, PanelPadding);
+
+            RectTransform skyRow = BuildRow(environmentRows, 0, "하늘", false);
+            ChoiceBar sky = BuildChoiceBar("SkyBar", skyRow, "Sky", MapSky.Labels(), ChoiceWidth, ChoiceHeight);
+            PlaceRight(sky);
+
+            Slider sunYaw = BuildSliderRow(environmentRows, 1, "해의 방향", "SunYawSlider", false, out TMP_Text sunYawValue);
+            Slider sunPitch = BuildSliderRow(environmentRows, 2, "해의 높이", "SunPitchSlider", false, out TMP_Text sunPitchValue);
+
+            RectTransform floorRow = BuildRow(environmentRows, 3, "바닥 크기", false);
+            ChoiceBar floorBar = BuildChoiceBar("FloorBar", floorRow, "Floor", MapSize.Labels, ChoiceWidth, ChoiceHeight);
+            PlaceRight(floorBar);
+
+            TMP_Text environmentNote = UiFactory.Text("EnvironmentNote", environment, MapInfoView.EnvironmentNote, 18f, Muted);
+            UiFactory.Place(environmentNote.rectTransform, UiFactory.TopLeft, new Vector2(PanelPadding, -top - RowPitch * 4f - 6f), new Vector2(PanelWidth - PanelPadding * 2f, 26f));
+
+            environment.gameObject.SetActive(false);
+
+            // 아래: 목록으로, 사본 만들기, 저장. 저장은 이름과 설명의 것이라, 고르는 대로 저장되는 "분위기와 크기"에서는 보이지 않는다.
             Button back = BigButton("BackToList", panel.transform, "목록으로", "Esc", Paper, Ink, out _);
             UiFactory.Place((RectTransform)back.transform, UiFactory.BottomLeft, new Vector2(PanelPadding, 34f), new Vector2(300f, 64f));
 
@@ -971,11 +1005,15 @@ namespace AtelierVerse.EditorTools
             Button save = BigButton("SaveInfo", panel.transform, "저장", null, Gold, Ink, out _);
             UiFactory.Place((RectTransform)save.transform, UiFactory.BottomRight, new Vector2(-PanelPadding, 34f), new Vector2(300f, 64f));
             DesktopOnly.Add(save.gameObject);
+            save.gameObject.AddComponent<CanvasGroup>();
 
             root.gameObject.SetActive(false);
 
             var serialized = new SerializedObject(view);
             serialized.FindProperty("root").objectReferenceValue = root.gameObject;
+            serialized.FindProperty("scrim").objectReferenceValue = scrim;
+            serialized.FindProperty("sectionBar").objectReferenceValue = sectionBar;
+            SetObjects(serialized.FindProperty("sections"), info.gameObject, environment.gameObject);
             serialized.FindProperty("thumbnail").objectReferenceValue = thumbnail;
             serialized.FindProperty("noThumbnailLabel").objectReferenceValue = noThumbnail;
             serialized.FindProperty("nameField").objectReferenceValue = nameField;
@@ -989,6 +1027,14 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("saveButton").objectReferenceValue = save;
             serialized.FindProperty("duplicateButton").objectReferenceValue = duplicate;
             serialized.FindProperty("backButton").objectReferenceValue = back;
+            serialized.FindProperty("environmentGroup").objectReferenceValue = environmentGroup;
+            serialized.FindProperty("skyBar").objectReferenceValue = sky;
+            serialized.FindProperty("sunYawSlider").objectReferenceValue = sunYaw;
+            serialized.FindProperty("sunYawValue").objectReferenceValue = sunYawValue;
+            serialized.FindProperty("sunPitchSlider").objectReferenceValue = sunPitch;
+            serialized.FindProperty("sunPitchValue").objectReferenceValue = sunPitchValue;
+            serialized.FindProperty("floorBar").objectReferenceValue = floorBar;
+            serialized.FindProperty("environmentNoteLabel").objectReferenceValue = environmentNote;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }

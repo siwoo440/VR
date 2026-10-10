@@ -22,6 +22,54 @@ namespace AtelierVerse.Tests
         }
 
         [Test]
+        public void 범위를_넓히면_그_밖이던_자리에_놓을_수_있다()
+        {
+            BlockMap map = Create();
+            var far = new Vector3(5f, 0.5f, 0f);
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(far));
+
+            Assert.IsTrue(map.Resize(new Vector3(-6f, 0f, -6f), new Vector3(6f, 4f, 6f), out int outside));
+            Assert.AreEqual(0, outside);
+            Assert.AreEqual(new Vector3(-6f, 0f, -6f), map.Min);
+            Assert.AreEqual(new Vector3(6f, 4f, 6f), map.Max);
+            Assert.AreEqual(PlaceResult.Ok, map.Check(far));
+            Add(map, far);
+        }
+
+        [Test]
+        public void 범위를_줄일_때_밖에_남는_블록이_있으면_바꾸지_않는다()
+        {
+            BlockMap map = Create();
+            Add(map, new Vector3(0f, 0.5f, 0f));
+            int outer = Add(map, new Vector3(2.5f, 0.5f, 2.5f));
+
+            Assert.IsFalse(map.Resize(new Vector3(-1f, 0f, -1f), new Vector3(1f, 4f, 1f), out int outside));
+            Assert.AreEqual(1, outside, "밖에 남는 블록의 수를 알려야 합니다.");
+            Assert.AreEqual(new Vector3(3f, 4f, 3f), map.Max, "바꾸지 못했으면 범위가 그대로여야 합니다.");
+            Assert.AreEqual(2, map.Count, "블록을 지워서 맞추면 안 됩니다.");
+
+            // 밖의 블록을 치우면 줄일 수 있다.
+            Assert.IsTrue(map.Remove(outer));
+            Assert.IsTrue(map.Resize(new Vector3(-1f, 0f, -1f), new Vector3(1f, 4f, 1f), out outside));
+            Assert.AreEqual(new Vector3(1f, 4f, 1f), map.Max);
+            Assert.AreEqual(PlaceResult.OutOfBounds, map.Check(new Vector3(2.5f, 0.5f, 2.5f)));
+        }
+
+        [Test]
+        public void 범위_밖에_남는_블록은_블록의_크기까지_보고_센다()
+        {
+            BlockMap map = Create();
+            Add(map, new Vector3(0f, 0.5f, 0f));
+            Add(map, new Vector3(0.6f, 0.5f, 0f));
+
+            // 둘째 블록은 가운데(0.6)는 상자 안이지만 오른쪽 면(1.1)이 상자(±1)를 벗어난다.
+            Assert.AreEqual(1, map.CountOutside(new Vector3(-1f, 0f, -1f), new Vector3(1f, 4f, 1f)));
+            Assert.AreEqual(0, map.CountOutside(new Vector3(-1f, 0f, -1f), new Vector3(1.2f, 4f, 1f)));
+            Assert.AreEqual(2, map.CountOutside(new Vector3(5f, 0f, 5f), new Vector3(8f, 4f, 8f)));
+            Assert.AreEqual(0, map.CountOutside(map.Min, map.Max));
+        }
+
+        [Test]
         public void 칸에_맞지_않는_자리에도_놓이고_번호가_붙는다()
         {
             BlockMap map = Create();

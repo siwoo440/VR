@@ -263,6 +263,86 @@ namespace AtelierVerse.Tests
             Assert.AreEqual(30f, document.blocks[0].rotation.y, 0.001f);
         }
 
+        // 3판의 파일. 설명과 시작 위치는 있지만 분위기가 없다. 범위는 참고용으로 적혀 있었다.
+        private const string VersionThreeJson = "{\"format\":\"atelier-verse-map\",\"version\":3,\"name\":\"셋째 판의 맵\",\"description\":\"분위기가 없던 때의 맵\","
+            + "\"createdAt\":\"2026-10-10T01:00:00Z\",\"updatedAt\":\"2026-10-10T02:00:00Z\","
+            + "\"bounds\":{\"min\":{\"x\":-8.0,\"y\":0.0,\"z\":-8.0},\"max\":{\"x\":8.0,\"y\":12.0,\"z\":8.0}},"
+            + "\"spawn\":{\"custom\":true,\"position\":{\"x\":1.0,\"y\":0.0,\"z\":2.0},\"yaw\":90.0},"
+            + "\"blocks\":[{\"id\":4,\"part\":\"block.blue\",\"position\":{\"x\":1.37,\"y\":0.5,\"z\":-0.82},\"rotation\":{\"x\":0.0,\"y\":30.0,\"z\":0.0}}],"
+            + "\"assemblies\":[],\"rules\":[]}";
+
+        [Test]
+        public void 분위기가_없던_3판의_파일은_맑은_낮과_처음_크기로_올려_읽는다()
+        {
+            Assert.IsTrue(MapDocument.TryParse(VersionThreeJson, out MapDocument document, out MapFileError error), error.ToString());
+
+            Assert.AreEqual(MapDocument.CurrentVersion, document.version);
+            Assert.AreEqual(3, document.LoadedVersion);
+            Assert.IsTrue(document.WasUpgraded, "옛 판을 읽었으면 사본을 남기고 다시 저장하도록 알려야 합니다.");
+
+            // 분위기는 3판까지의 모습(맑은 낮, 해는 씬의 그 자리)이 된다.
+            Assert.IsNotNull(document.environment);
+            Assert.AreEqual(MapSky.DefaultId, document.environment.sky);
+            Assert.AreEqual(MapSky.DefaultSunYaw, document.environment.sunYaw, 0.001f);
+            Assert.AreEqual(MapSky.DefaultSunPitch, document.environment.sunPitch, 0.001f);
+            Assert.AreEqual(MapSize.Default, MapSize.FromBounds(document.bounds));
+
+            // 3판에 있던 것은 그대로다.
+            Assert.AreEqual("셋째 판의 맵", document.name);
+            Assert.AreEqual("분위기가 없던 때의 맵", document.description);
+            Assert.IsTrue(document.spawn.custom);
+            Assert.AreEqual(90f, document.spawn.yaw, 0.001f);
+            Assert.AreEqual(1, document.blocks.Count);
+            Assert.AreEqual(4, document.blocks[0].id);
+            Assert.Less(Vector3.Distance(new Vector3(1.37f, 0.5f, -0.82f), document.blocks[0].position), 0.0001f);
+        }
+
+        [Test]
+        public void 분위기와_바닥_크기를_저장하고_다시_읽는다()
+        {
+            MapDocument header = MapDocument.Create("노을 지는 탑", MapSize.MinOf(24), MapSize.MaxOf(24));
+            header.environment = new MapEnvironment { sky = "sunset", sunYaw = 120f, sunPitch = 25f };
+
+            string json = MapDocument.ToJson(MapDocument.FromBlocks(header, CreateMap().Blocks, IdOf));
+            StringAssert.Contains("\"environment\"", json);
+            StringAssert.Contains("\"sky\": \"sunset\"", json);
+
+            Assert.IsTrue(MapDocument.TryParse(json, out MapDocument loaded, out MapFileError error), error.ToString());
+            Assert.IsFalse(loaded.WasUpgraded);
+            Assert.AreEqual("sunset", loaded.environment.sky);
+            Assert.AreEqual(120f, loaded.environment.sunYaw, 0.001f);
+            Assert.AreEqual(25f, loaded.environment.sunPitch, 0.001f);
+            Assert.AreEqual(24, MapSize.FromBounds(loaded.bounds), "바닥의 크기는 범위에 적힙니다.");
+        }
+
+        [Test]
+        public void 블록을_문서로_옮길_때_분위기를_머리에서_이어받는다()
+        {
+            MapDocument header = MapDocument.Create("밤의 맵", MapSize.MinOf(16), MapSize.MaxOf(16));
+            header.environment = new MapEnvironment { sky = "night", sunYaw = 45f, sunPitch = 70f };
+
+            MapDocument saved = MapDocument.FromBlocks(header, CreateMap().Blocks, IdOf);
+
+            Assert.AreEqual("night", saved.environment.sky, "이어받지 않으면 저장할 때마다 분위기가 처음 값으로 돌아갑니다.");
+            Assert.AreEqual(45f, saved.environment.sunYaw, 0.001f);
+            Assert.AreNotSame(header.environment, saved.environment);
+
+            // 머리가 없어도 탈이 없다.
+            Assert.AreEqual(MapSky.DefaultId, MapDocument.FromBlocks(null, CreateMap().Blocks, IdOf).environment.sky);
+        }
+
+        [Test]
+        public void 파일의_분위기가_바르지_않으면_다듬어_읽는다()
+        {
+            string json = $"{{\"format\":\"atelier-verse-map\",\"version\":{MapDocument.CurrentVersion},\"name\":\"이상한 맵\","
+                + "\"environment\":{\"sky\":\"rainbow\",\"sunYaw\":-30.0,\"sunPitch\":400.0},\"blocks\":[]}";
+
+            Assert.IsTrue(MapDocument.TryParse(json, out MapDocument document, out MapFileError error), error.ToString());
+            Assert.AreEqual(MapSky.DefaultId, document.environment.sky);
+            Assert.AreEqual(330f, document.environment.sunYaw, 0.001f);
+            Assert.AreEqual(MapSky.MaxSunPitch, document.environment.sunPitch, 0.001f);
+        }
+
         [Test]
         public void 설명과_시작_위치를_저장하고_다시_읽는다()
         {

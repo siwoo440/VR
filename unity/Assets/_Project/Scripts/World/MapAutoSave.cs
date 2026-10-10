@@ -5,6 +5,25 @@ using UnityEngine;
 
 namespace AtelierVerse.World
 {
+    /// <summary>바닥 크기를 바꾸려 한 결과.</summary>
+    public enum FloorChange
+    {
+        /// <summary>바꿨다.</summary>
+        Changed,
+
+        /// <summary>이미 그 크기다.</summary>
+        Same,
+
+        /// <summary>고를 수 없는 크기다.</summary>
+        Invalid,
+
+        /// <summary>줄이면 바깥에 블록이 남는다.</summary>
+        BlocksOutside,
+
+        /// <summary>줄이면 시작 위치가 바깥에 남는다.</summary>
+        SpawnOutside,
+    }
+
     /// <summary>저장 상태. 화면의 저장 표시가 이 값을 보여 준다.</summary>
     public enum SaveState
     {
@@ -20,6 +39,7 @@ namespace AtelierVerse.World
     /// 맵은 여럿일 수 있다(17일차). 다른 맵을 열고, 새 맵을 만들고, 이름을 바꾸고, 지우는 일을 여기서 하며,
     /// 맵을 바꿀 때는 지금 맵의 남은 변경을 먼저 저장한다. 파일의 목록과 이름은 MapLibrary가 다룬다.
     /// 지금 맵의 설명과 시작 위치(캐릭터가 처음 서는 자리)도 여기서 고친다(18일차).
+    /// 지금 맵의 분위기(하늘, 해)와 바닥의 크기도 여기서 고치고, 맵을 열 때 씬에 보이게 한다(23일차).
     /// </summary>
     public class MapAutoSave : MonoBehaviour
     {
@@ -39,6 +59,7 @@ namespace AtelierVerse.World
         [SerializeField] private string mapName = "시험 작업실";
         [SerializeField] private bool loadOnStart = true;
         [SerializeField] private GameObject sampleScenery;
+        [SerializeField] private WorldEnvironment environment;
 
         private MapDocument header;
         private bool pending;
@@ -82,6 +103,18 @@ namespace AtelierVerse.World
         /// <summary>지금 맵의 시작 방향(좌우 각도). HasSpawn일 때만 뜻이 있다.</summary>
         public float SpawnYaw => HasSpawn ? header.spawn.yaw : 0f;
 
+        /// <summary>지금 맵의 하늘의 이름(MapSky).</summary>
+        public string SkyId => header != null && header.environment != null ? header.environment.sky : MapSky.DefaultId;
+
+        /// <summary>지금 맵의 해의 방향(좌우 각도, 도).</summary>
+        public float SunYaw => header != null && header.environment != null ? header.environment.sunYaw : MapSky.DefaultSunYaw;
+
+        /// <summary>지금 맵의 해의 높이(도).</summary>
+        public float SunPitch => header != null && header.environment != null ? header.environment.sunPitch : MapSky.DefaultSunPitch;
+
+        /// <summary>지금 맵의 바닥의 한 변(칸 수).</summary>
+        public int FloorSize => world != null ? world.FloorSize : MapSize.Default;
+
         public string FilePath => MapLibrary.PathOf(MapId);
 
         public bool HasPendingChanges => pending;
@@ -92,6 +125,7 @@ namespace AtelierVerse.World
         {
             if (world == null) world = GetComponent<BlockWorld>();
             if (world == null) world = FindAnyObjectByType<BlockWorld>();
+            if (environment == null) environment = FindAnyObjectByType<WorldEnvironment>();
         }
 
         private void OnEnable()
@@ -117,6 +151,7 @@ namespace AtelierVerse.World
             MapId = MapLibrary.ResolveCurrent();
             header = MapDocument.Create(mapName, world.BoundsMin, world.BoundsMax);
             if (loadOnStart) LoadOrAdopt();
+            ApplyEnvironment();
             ShowScenery();
             MapChanged?.Invoke();
         }
@@ -238,7 +273,8 @@ namespace AtelierVerse.World
             string id;
             try
             {
-                id = MapLibrary.Create(name, world.BoundsMin, world.BoundsMax);
+                // 새 맵은 지금 맵의 크기가 아니라 처음 크기로 시작한다.
+                id = MapLibrary.Create(name, MapSize.MinOf(MapSize.Default), MapSize.MaxOf(MapSize.Default));
             }
             catch (Exception exception) when (exception is System.IO.IOException || exception is UnauthorizedAccessException)
             {
@@ -381,6 +417,65 @@ namespace AtelierVerse.World
             return true;
         }
 
+        /// <summary>
+        /// 지금 맵의 하늘을 바꾼다. 바로 보이고 곧 저장된다. 모르는 이름이면 바꾸지 않고 false다.
+        /// </summary>
+        public bool SetSky(string id)
+        {
+            if (header == null || !MapSky.IsKnown(id)) return false;
+
+            header.environment ??= new MapEnvironment();
+            if (header.environment.sky == id) return true;
+
+            header.environment.sky = id;
+            ApplyEnvironment();
+            MarkDirty();
+            return true;
+        }
+
+        /// <summary>
+        /// 지금 맵의 해의 방향과 높이를 바꾼다. 화면의 단계(방향 15도, 높이 5도)에 맞추며, 바로 보이고 곧 저장된다.
+        /// 막대를 끄는 동안 자주 불리므로 바로 저장하지 않고 다른 변경처럼 잠시 뒤에 저장한다.
+        /// </summary>
+        public bool SetSun(float yaw, float pitch)
+        {
+            if (header == null) return false;
+
+            header.environment ??= new MapEnvironment();
+            yaw = MapSky.SnapYaw(yaw);
+            pitch = MapSky.SnapPitch(pitch);
+            if (Mathf.Approximately(header.environment.sunYaw, yaw) && Mathf.Approximately(header.environment.sunPitch, pitch)) return true;
+
+            header.environment.sunYaw = yaw;
+            header.environment.sunPitch = pitch;
+            ApplyEnvironment();
+            MarkDirty();
+            return true;
+        }
+
+        /// <summary>
+        /// 지금 맵의 바닥 크기를 바꾼다. 바로 보이고 곧 저장된다. 줄일 때 바깥에 블록이 남거나 시작 위치가 남으면 바꾸지 않고
+        /// 그 까닭을 돌려준다(outside에는 바깥에 남는 블록의 수).
+        /// </summary>
+        public FloorChange SetFloorSize(int size, out int outside)
+        {
+            outside = 0;
+            if (world == null || header == null || !MapSize.IsAllowed(size)) return FloorChange.Invalid;
+            if (size == world.FloorSize) return FloorChange.Same;
+            if (HasSpawn && !MapSize.Contains(size, header.spawn.position)) return FloorChange.SpawnOutside;
+            if (!world.SetFloorSize(size, out outside)) return FloorChange.BlocksOutside;
+
+            header.bounds = new MapBounds { min = world.BoundsMin, max = world.BoundsMax };
+            MarkDirty();
+            return FloorChange.Changed;
+        }
+
+        /// <summary>지금 맵의 분위기를 씬에 보인다.</summary>
+        private void ApplyEnvironment()
+        {
+            if (environment != null && header != null) environment.Apply(header.environment);
+        }
+
         /// <summary>자리가 맵의 범위(상자) 안인지. 바닥의 높이와 꼭대기의 높이도 안으로 본다.</summary>
         private bool InsideBounds(Vector3 position)
         {
@@ -416,7 +511,7 @@ namespace AtelierVerse.World
 
             // 남은 맵이 없다. 빈 맵으로 이어 간다. 파일을 쓰지 못해도 빈 맵으로 바꾸고 다음 저장을 기다린다.
             string fresh = MapLibrary.NewId();
-            MapDocument empty = MapDocument.Create(MapLibrary.DefaultName, world.BoundsMin, world.BoundsMax);
+            MapDocument empty = MapDocument.Create(MapLibrary.DefaultName, MapSize.MinOf(MapSize.Default), MapSize.MaxOf(MapSize.Default));
             Switch(fresh, empty, MapLibrary.PathOf(fresh));
             SaveNow();
             return true;
@@ -439,6 +534,10 @@ namespace AtelierVerse.World
         {
             header = document;
             LastLoad = world.Import(document);
+
+            // 블록 세계가 문서의 범위를 고를 수 있는 크기로 맞췄다. 다음에 저장할 때 그 범위가 적히게 머리도 맞춘다.
+            header.bounds = new MapBounds { min = world.BoundsMin, max = world.BoundsMax };
+            ApplyEnvironment();
             pending = false;
 
             if (LastLoad.Skipped > 0)

@@ -66,16 +66,17 @@ namespace AtelierVerse.World
     }
 
     /// <summary>
-    /// 맵 파일의 구조(형식 3판). 자세한 설명은 docs/MAP-FORMAT.md에 있다.
+    /// 맵 파일의 구조(형식 4판). 자세한 설명은 docs/MAP-FORMAT.md에 있다.
     /// JSON으로 바꾸는 것과 읽은 문서를 검사하는 것만 맡고, 파일을 다루는 일은 MapStorage가 맡는다.
-    /// 옛 판의 파일은 읽을 때 지금 판으로 올린다: 1판은 블록을 칸으로 적었고, 2판에는 설명과 시작 위치가 없었다.
+    /// 옛 판의 파일은 읽을 때 지금 판으로 올린다: 1판은 블록을 칸으로 적었고, 2판에는 설명과 시작 위치가 없었고,
+    /// 3판에는 분위기(하늘과 해)가 없었다. 4판부터 범위(bounds)가 바닥의 크기를 정한다(3판까지는 참고용이었다).
     /// 조립품과 동작 규칙은 자리만 두었으며 지금은 항상 비어 있다.
     /// </summary>
     [Serializable]
     public class MapDocument
     {
         public const string FormatName = "atelier-verse-map";
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         /// <summary>설명의 가장 긴 길이(글자 수).</summary>
         public const int MaxDescriptionLength = 80;
@@ -93,6 +94,7 @@ namespace AtelierVerse.World
         public string updatedAt;
         public MapBounds bounds = new MapBounds();
         public MapSpawn spawn = new MapSpawn();
+        public MapEnvironment environment = new MapEnvironment();
         public List<MapBlock> blocks = new List<MapBlock>();
         public string[] assemblies = Array.Empty<string>();
         public string[] rules = Array.Empty<string>();
@@ -121,7 +123,7 @@ namespace AtelierVerse.World
 
         /// <summary>
         /// 블록 기록을 문서로 옮긴다. 부품 번호는 partIdOf로 저장용 이름이 된다. 블록은 번호 순으로 적는다.
-        /// 이름, 설명, 만든 시각, 범위, 시작 위치는 header의 것을 이어받는다.
+        /// 이름, 설명, 만든 시각, 범위, 시작 위치, 분위기는 header의 것을 이어받는다.
         /// </summary>
         public static MapDocument FromBlocks(MapDocument header, IEnumerable<BlockRecord> blocks, Func<int, string> partIdOf)
         {
@@ -132,6 +134,7 @@ namespace AtelierVerse.World
                 name = header?.name ?? string.Empty,
                 description = header?.description ?? string.Empty,
                 spawn = header?.spawn != null ? header.spawn.Clone() : new MapSpawn(),
+                environment = header?.environment != null ? header.environment.Clone() : new MapEnvironment(),
                 createdAt = string.IsNullOrEmpty(header?.createdAt) ? Now() : header.createdAt,
                 updatedAt = Now(),
                 bounds = new MapBounds { min = header?.bounds?.min ?? Vector3.zero, max = header?.bounds?.max ?? Vector3.zero },
@@ -214,6 +217,7 @@ namespace AtelierVerse.World
             parsed.name ??= string.Empty;
             parsed.description ??= string.Empty;
             parsed.spawn = Sanitize(parsed.spawn);
+            parsed.environment = MapSky.Sanitize(parsed.environment);
             parsed.createdAt ??= string.Empty;
             parsed.updatedAt ??= string.Empty;
             parsed.bounds ??= new MapBounds();
@@ -332,6 +336,7 @@ namespace AtelierVerse.World
         /// 방향(0~3)은 위에서 보아 시계 방향으로 90도씩 돈 각도가 된다. 번호는 파일에 적힌 순서대로 1부터 붙인다.
         /// 범위는 가장 작은 칸의 아래 모서리부터 가장 큰 칸의 위 모서리까지의 상자가 된다.
         /// 2판에서 3판으로 올릴 때는 바꿀 것이 없다. 3판에 새로 생긴 설명과 시작 위치는 빈 값(정하지 않음)이 된다.
+        /// 3판에서 4판으로 올릴 때도 바꿀 것이 없다. 4판에 새로 생긴 분위기는 맑은 낮(3판까지의 모습)이 된다.
         /// </summary>
         private static MapDocument UpgradeFromV1(MapDocumentV1 old)
         {

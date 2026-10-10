@@ -62,8 +62,8 @@ namespace AtelierVerse.World
 
         private readonly Dictionary<int, BlockRecord> blocks = new Dictionary<int, BlockRecord>();
         private readonly Dictionary<Vector3Int, int> centers = new Dictionary<Vector3Int, int>();
-        private readonly Vector3 min;
-        private readonly Vector3 max;
+        private Vector3 min;
+        private Vector3 max;
         private readonly Func<int, Vector3> halfSizeOf;
         private int nextId = 1;
 
@@ -80,6 +80,41 @@ namespace AtelierVerse.World
         }
 
         public int Count => blocks.Count;
+
+        /// <summary>범위를 이 상자로 바꾸면 그 밖에 남게 되는 블록의 수.</summary>
+        public int CountOutside(Vector3 minCorner, Vector3 maxCorner)
+        {
+            Vector3 low = Vector3.Min(minCorner, maxCorner);
+            Vector3 high = Vector3.Max(minCorner, maxCorner);
+            float slack = Precision * 0.5f;
+            int outside = 0;
+
+            foreach (BlockRecord record in blocks.Values)
+            {
+                Vector3 half = HalfOf(record.Part);
+                Vector3 position = record.Position;
+                bool inside = position.x >= low.x + half.x - slack && position.x <= high.x - half.x + slack
+                    && position.y >= low.y + half.y - slack && position.y <= high.y - half.y + slack
+                    && position.z >= low.z + half.z - slack && position.z <= high.z - half.z + slack;
+                if (!inside) outside++;
+            }
+
+            return outside;
+        }
+
+        /// <summary>
+        /// 놓을 수 있는 범위를 바꾼다(23일차). 놓인 블록이 새 범위 밖에 남게 되면 바꾸지 않고 false를 돌려주며, outside에 그 수가 담긴다.
+        /// 넓히는 것은 언제나 된다.
+        /// </summary>
+        public bool Resize(Vector3 minCorner, Vector3 maxCorner, out int outside)
+        {
+            outside = CountOutside(minCorner, maxCorner);
+            if (outside > 0) return false;
+
+            min = Vector3.Min(minCorner, maxCorner);
+            max = Vector3.Max(minCorner, maxCorner);
+            return true;
+        }
 
         /// <summary>놓을 수 있는 블록 수의 상한.</summary>
         public int Capacity { get; }
