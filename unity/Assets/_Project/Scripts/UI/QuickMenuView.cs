@@ -27,6 +27,7 @@ namespace AtelierVerse.UI
         [SerializeField] private Button viewTile;
         [SerializeField] private TMP_Text viewTileTitle;
         [SerializeField] private CanvasGroup viewTileGroup;
+        [SerializeField] private Button mapsTile;
         [SerializeField] private GameObject[] desktopOnly;
         [SerializeField] private GameObject[] vrOnly;
         [SerializeField] private string quitText = "게임 끝내기";
@@ -38,6 +39,9 @@ namespace AtelierVerse.UI
         public event Action RespawnRequested;
         public event Action ToggleViewRequested;
         public event Action QuitRequested;
+
+        /// <summary>"내 작업실" 타일을 눌렀다. 맵 목록 창을 연다.</summary>
+        public event Action MapsRequested;
 
         public bool IsOpen => root != null && root.activeSelf;
 
@@ -63,6 +67,7 @@ namespace AtelierVerse.UI
             if (respawnButton != null) respawnButton.onClick.AddListener(() => RespawnRequested?.Invoke());
             if (respawnTile != null) respawnTile.onClick.AddListener(() => RespawnRequested?.Invoke());
             if (viewTile != null) viewTile.onClick.AddListener(() => ToggleViewRequested?.Invoke());
+            if (mapsTile != null) mapsTile.onClick.AddListener(() => MapsRequested?.Invoke());
             if (quitButton != null) quitButton.onClick.AddListener(OnQuitPressed);
 
             ShowTab(0);

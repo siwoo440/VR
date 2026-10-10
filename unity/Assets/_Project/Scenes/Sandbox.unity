@@ -2345,7 +2345,7 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427102695}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &1552575288
+--- !u!1001 &1563832846
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2487,6 +2487,7 @@ MonoBehaviour:
   delay: 1
   mapName: "\uC2DC\uD5D8 \uC791\uC5C5\uC2E4"
   loadOnStart: 1
+  sampleScenery: {fileID: 115232760}
 --- !u!1001 &1636803331
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3198,4 +3199,4 @@ SceneRoots:
   - {fileID: 1420306126}
   - {fileID: 1026811134}
   - {fileID: 1566298761}
-  - {fileID: 1552575288}
+  - {fileID: 1563832846}

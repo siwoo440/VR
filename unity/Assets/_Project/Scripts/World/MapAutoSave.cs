@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AtelierVerse.Core;
 using UnityEngine;
 
@@ -14,15 +15,25 @@ namespace AtelierVerse.World
     }
 
     /// <summary>
-    /// 블록 세계를 이 기기의 맵 파일과 맞춘다. 시작할 때 파일이 있으면 불러오고, 없으면 씬의 블록을 첫 맵으로 삼아 저장한다.
+    /// 블록 세계를 이 기기의 맵 파일과 맞춘다. 시작할 때 마지막으로 연 맵을 불러오고, 맵이 하나도 없으면 씬의 블록을 첫 맵으로 삼아 저장한다.
     /// 블록이 바뀌면 잠시 뒤에 저장하고, 앱을 끝내거나 씬을 떠날 때 남은 변경을 저장한다.
+    /// 맵은 여럿일 수 있다(17일차). 다른 맵을 열고, 새 맵을 만들고, 이름을 바꾸고, 지우는 일을 여기서 하며,
+    /// 맵을 바꿀 때는 지금 맵의 남은 변경을 먼저 저장한다. 파일의 목록과 이름은 MapLibrary가 다룬다.
     /// </summary>
     public class MapAutoSave : MonoBehaviour
     {
+        public const string OpenedMessage = "맵을 열었습니다";
+        public const string CreatedMessage = "새 맵을 만들었습니다";
+        public const string RenamedMessage = "맵의 이름을 바꿨습니다";
+        public const string DeletedMessage = "맵을 지웠습니다 · 파일은 휴지통 폴더에 남아 있습니다";
+        public const string TooManyMessage = "맵을 더 만들 수 없습니다";
+        public const string SaveFirstFailedMessage = "지금 맵을 저장하지 못해 다른 맵으로 바꾸지 않았습니다";
+
         [SerializeField] private BlockWorld world;
         [SerializeField] private float delay = 1f;
         [SerializeField] private string mapName = "시험 작업실";
         [SerializeField] private bool loadOnStart = true;
+        [SerializeField] private GameObject sampleScenery;
 
         private MapDocument header;
         private bool pending;
@@ -30,6 +41,9 @@ namespace AtelierVerse.World
 
         /// <summary>저장 상태나 안내 문구가 바뀌면 알린다.</summary>
         public event Action Changed;
+
+        /// <summary>다른 맵이 열리거나 지금 맵의 이름이 바뀌면 알린다.</summary>
+        public event Action MapChanged;
 
         public SaveState State { get; private set; } = SaveState.Idle;
 
@@ -45,7 +59,13 @@ namespace AtelierVerse.World
         /// <summary>옛 판의 파일을 새 판으로 올려 읽었을 때 원래 파일을 남겨 둔 경로. 없으면 null이다.</summary>
         public string BackupPath { get; private set; }
 
-        public string FilePath => MapStorage.LocalPath;
+        /// <summary>지금 열려 있는 맵의 번호표.</summary>
+        public string MapId { get; private set; } = MapLibrary.DefaultId;
+
+        /// <summary>지금 열려 있는 맵의 이름. 화면에는 MapLibrary.DisplayName을 거쳐 보인다.</summary>
+        public string MapName => header != null ? header.name ?? string.Empty : mapName;
+
+        public string FilePath => MapLibrary.PathOf(MapId);
 
         public bool HasPendingChanges => pending;
 
@@ -77,8 +97,11 @@ namespace AtelierVerse.World
                 return;
             }
 
+            MapId = MapLibrary.ResolveCurrent();
             header = MapDocument.Create(mapName, world.BoundsMin, world.BoundsMax);
             if (loadOnStart) LoadOrAdopt();
+            ShowScenery();
+            MapChanged?.Invoke();
         }
 
         private void Update()
@@ -97,7 +120,7 @@ namespace AtelierVerse.World
         }
 
         /// <summary>
-        /// 파일이 있으면 불러와 씬의 블록을 대신하고, 없으면 지금 씬의 블록을 첫 맵으로 저장한다.
+        /// 지금 맵의 파일이 있으면 불러와 씬의 블록을 대신하고, 없으면 지금 씬의 블록을 첫 맵으로 저장한다.
         /// 읽지 못하는 파일은 옆으로 옮겨 두고 씬의 블록으로 시작한다.
         /// </summary>
         public void LoadOrAdopt()
@@ -105,28 +128,7 @@ namespace AtelierVerse.World
             string path = FilePath;
             if (MapStorage.TryLoad(path, out MapDocument document, out MapFileError error))
             {
-                header = document;
-                LastLoad = world.Import(document);
-                pending = false;
-
-                if (LastLoad.Skipped > 0)
-                {
-                    string skipped = $"블록 {LastLoad.Skipped}개를 읽지 못했습니다";
-                    Set(SaveState.Saved, skipped);
-                    Notice.Post(skipped, NoticeKind.Warning);
-                }
-                else
-                {
-                    Set(SaveState.Saved, "불러왔습니다");
-                }
-
-                // 옛 판의 파일이면 원래 파일을 옆에 남기고, 곧 지금 판으로 다시 저장한다.
-                if (document.WasUpgraded)
-                {
-                    BackupPath = MapStorage.Backup(path, $".v{document.LoadedVersion}.bak");
-                    MarkDirty();
-                }
-
+                Apply(document, path);
                 return;
             }
 
@@ -169,6 +171,173 @@ namespace AtelierVerse.World
             return true;
         }
 
+        /// <summary>이 기기의 맵 목록. 지금 맵의 남은 변경을 먼저 저장해, 목록의 블록 수와 시각이 지금 상태와 맞게 한다.</summary>
+        public List<MapInfo> ListMaps()
+        {
+            if (pending) SaveNow();
+            return MapLibrary.List();
+        }
+
+        /// <summary>
+        /// 다른 맵을 연다. 지금 맵의 남은 변경을 먼저 저장하고, 그 맵의 블록으로 통째로 바꾼다(되돌리기 기록도 비워진다).
+        /// 맵이 없거나 읽지 못하거나 지금 맵을 저장하지 못하면 바꾸지 않고 false를 돌려준다. 이미 열려 있는 맵이면 아무 일도 하지 않는다.
+        /// </summary>
+        public bool Open(string id)
+        {
+            if (world == null || !MapLibrary.IsValidId(id)) return false;
+            if (id == MapId) return true;
+
+            string path = MapLibrary.PathOf(id);
+            if (!MapStorage.TryLoad(path, out MapDocument document, out MapFileError error))
+            {
+                Notice.Post(Describe(error), NoticeKind.Error);
+                return false;
+            }
+
+            if (pending && !SaveNow())
+            {
+                Notice.Post(SaveFirstFailedMessage, NoticeKind.Error);
+                return false;
+            }
+
+            Switch(id, document, path);
+            return true;
+        }
+
+        /// <summary>
+        /// 빈 맵을 새로 만들어 연다. 이름을 주지 않으면 "새 맵"이며, 같은 이름이 있으면 뒤에 번호가 붙는다.
+        /// 만든 맵의 번호표를 돌려주고, 만들지 못하면 null이다.
+        /// </summary>
+        public string CreateNew(string name = null)
+        {
+            if (world == null) return null;
+
+            if (pending && !SaveNow())
+            {
+                Notice.Post(SaveFirstFailedMessage, NoticeKind.Error);
+                return null;
+            }
+
+            string id;
+            try
+            {
+                id = MapLibrary.Create(name, world.BoundsMin, world.BoundsMax);
+            }
+            catch (Exception exception) when (exception is System.IO.IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Atelier Verse] 새 맵을 만들지 못했습니다: {exception.Message}", this);
+                Notice.Post("새 맵을 만들지 못했습니다", NoticeKind.Error);
+                return null;
+            }
+
+            if (id == null)
+            {
+                Notice.Post($"{TooManyMessage}(가장 많이 {MapLibrary.MaxMaps}개)", NoticeKind.Warning);
+                return null;
+            }
+
+            return Open(id) ? id : null;
+        }
+
+        /// <summary>맵의 이름을 바꾼다. 지금 열려 있는 맵이면 바로 저장한다. 이름이 비어 있거나 바꾸지 못하면 false다.</summary>
+        public bool Rename(string id, string name)
+        {
+            string cleaned = MapLibrary.CleanName(name);
+            if (!MapLibrary.IsValidId(id) || cleaned.Length == 0) return false;
+
+            if (id != MapId) return MapLibrary.Rename(id, cleaned);
+
+            string before = header.name;
+            header.name = cleaned;
+            if (!SaveNow())
+            {
+                header.name = before;
+                return false;
+            }
+
+            MapChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// 맵을 지운다(파일을 휴지통 폴더로 옮긴다). 지금 열려 있는 맵을 지우면 가장 최근에 저장한 다른 맵을 열고,
+        /// 다른 맵이 없으면 빈 맵을 새로 만들어 연다. 지우지 못하면 false다.
+        /// </summary>
+        public bool Delete(string id)
+        {
+            if (!MapLibrary.IsValidId(id)) return false;
+            if (id != MapId) return MapLibrary.Trash(id) != null;
+
+            // 휴지통에 마지막 상태가 남도록 남은 변경을 먼저 저장한다.
+            if (pending && !SaveNow()) return false;
+            if (MapLibrary.Trash(id) == null) return false;
+
+            foreach (MapInfo other in MapLibrary.List())
+            {
+                string path = MapLibrary.PathOf(other.Id);
+                if (!other.Readable || !MapStorage.TryLoad(path, out MapDocument document, out _)) continue;
+
+                Switch(other.Id, document, path);
+                return true;
+            }
+
+            // 남은 맵이 없다. 빈 맵으로 이어 간다. 파일을 쓰지 못해도 빈 맵으로 바꾸고 다음 저장을 기다린다.
+            string fresh = MapLibrary.NewId();
+            MapDocument empty = MapDocument.Create(MapLibrary.DefaultName, world.BoundsMin, world.BoundsMax);
+            Switch(fresh, empty, MapLibrary.PathOf(fresh));
+            SaveNow();
+            return true;
+        }
+
+        /// <summary>지금 맵을 id의 맵으로 바꾸고 그 문서의 블록을 올린다.</summary>
+        private void Switch(string id, MapDocument document, string path)
+        {
+            MapId = id;
+            MapLibrary.RememberCurrent(id);
+            SetAsidePath = null;
+            BackupPath = null;
+            Apply(document, path);
+            ShowScenery();
+            MapChanged?.Invoke();
+        }
+
+        /// <summary>읽은 문서를 블록 세계에 올리고 저장 표시를 맞춘다. 옛 판의 파일이면 사본을 남기고 곧 다시 저장한다.</summary>
+        private void Apply(MapDocument document, string path)
+        {
+            header = document;
+            LastLoad = world.Import(document);
+            pending = false;
+
+            if (LastLoad.Skipped > 0)
+            {
+                string skipped = $"블록 {LastLoad.Skipped}개를 읽지 못했습니다";
+                Set(SaveState.Saved, skipped);
+                Notice.Post(skipped, NoticeKind.Warning);
+            }
+            else
+            {
+                Set(SaveState.Saved, "불러왔습니다");
+            }
+
+            if (document.WasUpgraded)
+            {
+                BackupPath = MapStorage.Backup(path, $".v{document.LoadedVersion}.bak");
+                MarkDirty();
+            }
+        }
+
+        /// <summary>
+        /// 씬에 처음부터 놓여 있는 꾸밈(나무, 지붕)은 블록이 아니어서 맵 파일에 들어가지 않는다.
+        /// 처음부터 있던 맵에서만 보이고, 새로 만든 맵은 빈 바닥으로 시작하도록 감춘다.
+        /// </summary>
+        private void ShowScenery()
+        {
+            if (sampleScenery == null) return;
+
+            bool show = MapId == MapLibrary.DefaultId;
+            if (sampleScenery.activeSelf != show) sampleScenery.SetActive(show);
+        }
+
         private void MarkDirty()
         {
             pending = true;
@@ -187,6 +356,7 @@ namespace AtelierVerse.World
         {
             switch (error)
             {
+                case MapFileError.Missing: return "맵 파일이 없습니다";
                 case MapFileError.NewerVersion: return "새 판의 맵 파일이라 읽지 못했습니다";
                 case MapFileError.WrongFormat: return "이 서비스의 맵 파일이 아닙니다";
                 case MapFileError.ReadFailed: return "맵 파일을 열지 못했습니다";

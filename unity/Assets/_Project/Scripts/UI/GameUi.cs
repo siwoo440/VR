@@ -16,6 +16,7 @@ namespace AtelierVerse.UI
     /// 캐릭터는 이 기기의 캐릭터(LocalPlayer)로만 알고, 키보드·마우스인지 VR인지는 그쪽에 묻는다.
     /// VR에서는 화면을 눈앞의 판(XrUiPanel)으로 띄우고, 부품 칸과 상태 표시는 왼손 위의 부품 판(XrHandPalette)에 보인다.
     /// 부품 고르는 창(PartPickerView)을 열고 닫으며, 창에서 고른 부품을 부품 칸에 넣고 그 배치를 이 기기에 저장한다.
+    /// 맵 목록 창(MapListView)을 열고 닫으며, 창의 요청(열기, 새 맵, 이름 바꾸기, 지우기)을 자동 저장(MapAutoSave)에 전한다.
     /// 오른손 광선은 가리킨 화면이나 블록을 놓을 자리에서 끝나게 한다.
     /// </summary>
     public class GameUi : MonoBehaviour
@@ -34,6 +35,11 @@ namespace AtelierVerse.UI
         private const string MapName = "Game";
         private const int LocalPeopleCount = 1;
 
+        // 방 이름 칸: 글자 양옆의 여백과 칸의 가장 좁은·넓은 너비. 넓은 쪽은 위 가운데의 알림 띠에 닿지 않는 값이다.
+        private const float RoomChipPadding = 80f;
+        private const float RoomChipMinWidth = 170f;
+        private const float RoomChipMaxWidth = 560f;
+
         private static readonly Key[] DigitKeys =
         {
             Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6, Key.Digit7, Key.Digit8, Key.Digit9,
@@ -46,6 +52,7 @@ namespace AtelierVerse.UI
         [SerializeField] private HotbarView hotbar;
         [SerializeField] private QuickMenuView menu;
         [SerializeField] private PartPickerView picker;
+        [SerializeField] private MapListView mapList;
         [SerializeField] private PeopleListView[] peopleLists;
         [SerializeField] private GameObject peoplePanel;
         [SerializeField] private GameObject crosshair;
@@ -81,6 +88,7 @@ namespace AtelierVerse.UI
         private InputAction undoAction;
         private InputAction redoAction;
         private InputAction partsAction;
+        private InputAction mapsAction;
         private BlockBuilder builder;
         private BlockWorld world;
         private MapAutoSave autoSave;
@@ -93,7 +101,10 @@ namespace AtelierVerse.UI
         public bool IsPickerOpen => picker != null && picker.IsOpen;
 
         /// <summary>메뉴나 부품 고르는 창처럼 조작을 막는 창이 열려 있는지.</summary>
-        public bool IsModalOpen => IsMenuOpen || IsPickerOpen;
+        public bool IsModalOpen => IsMenuOpen || IsPickerOpen || IsMapListOpen;
+
+        /// <summary>맵 목록 창이 열려 있는지.</summary>
+        public bool IsMapListOpen => mapList != null && mapList.IsOpen;
 
         public bool IsPeopleListVisible => peoplePanel != null && peoplePanel.activeSelf;
 
@@ -102,6 +113,11 @@ namespace AtelierVerse.UI
         public QuickMenuView Menu => menu;
 
         public PartPickerView Picker => picker;
+
+        public MapListView MapList => mapList;
+
+        /// <summary>화면 위쪽의 방 이름 자리에 적힌 글자. 지금 열려 있는 맵의 이름과 인원이다.</summary>
+        public string RoomText => roomLabel != null ? roomLabel.text : string.Empty;
 
         /// <summary>이 기기의 캐릭터.</summary>
         public LocalPlayer Player => player;
@@ -138,6 +154,7 @@ namespace AtelierVerse.UI
             undoAction = map.FindAction("Undo", true);
             redoAction = map.FindAction("Redo", true);
             partsAction = map.FindAction("Parts", true);
+            mapsAction = map.FindAction("Maps", true);
             map.Enable();
 
             if (menu != null)
@@ -146,6 +163,16 @@ namespace AtelierVerse.UI
                 menu.RespawnRequested += RespawnAndClose;
                 menu.ToggleViewRequested += ToggleViewAndClose;
                 menu.QuitRequested += AppExit.Request;
+                menu.MapsRequested += OpenMapList;
+            }
+
+            if (mapList != null)
+            {
+                mapList.OpenRequested += OpenMap;
+                mapList.CreateRequested += CreateMap;
+                mapList.RenameRequested += RenameMap;
+                mapList.DeleteRequested += DeleteMap;
+                mapList.CloseRequested += CloseMapList;
             }
 
             if (menuButton != null) menuButton.onClick.AddListener(ToggleMenu);
@@ -183,14 +210,24 @@ namespace AtelierVerse.UI
             if (builder != null) builder.StateChanged += ShowBuildState;
 
             if (world != null) world.Changed += ShowBlockCount;
-            if (autoSave != null) autoSave.Changed += ShowSaveState;
+            if (autoSave != null)
+            {
+                autoSave.Changed += ShowSaveState;
+                autoSave.MapChanged += OnMapChanged;
+            }
+
             GameSettings.Changed += ApplySettings;
         }
 
         private void OnDisable()
         {
             GameSettings.Changed -= ApplySettings;
-            if (autoSave != null) autoSave.Changed -= ShowSaveState;
+            if (autoSave != null)
+            {
+                autoSave.MapChanged -= OnMapChanged;
+                autoSave.Changed -= ShowSaveState;
+            }
+
             if (world != null) world.Changed -= ShowBlockCount;
             if (builder != null) builder.StateChanged -= ShowBuildState;
             if (palette != null)
@@ -228,6 +265,16 @@ namespace AtelierVerse.UI
                 menu.RespawnRequested -= RespawnAndClose;
                 menu.ToggleViewRequested -= ToggleViewAndClose;
                 menu.QuitRequested -= AppExit.Request;
+                menu.MapsRequested -= OpenMapList;
+            }
+
+            if (mapList != null)
+            {
+                mapList.CloseRequested -= CloseMapList;
+                mapList.DeleteRequested -= DeleteMap;
+                mapList.RenameRequested -= RenameMap;
+                mapList.CreateRequested -= CreateMap;
+                mapList.OpenRequested -= OpenMap;
             }
 
             map?.Disable();
@@ -251,13 +298,22 @@ namespace AtelierVerse.UI
         {
             if (menuAction.WasPressedThisFrame())
             {
-                // 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다.
-                if (IsPickerOpen) ClosePicker();
+                // 맵 목록 창이나 부품 고르는 창이 열려 있으면 메뉴 키는 그 창을 닫는다. 이름을 고치는 중이면 고치기만 그만둔다.
+                if (IsMapListOpen)
+                {
+                    if (mapList.IsEditingName) mapList.CancelRename();
+                    else CloseMapList();
+                }
+                else if (IsPickerOpen) ClosePicker();
                 else ToggleMenu();
             }
             else if (IsMenuOpen)
             {
                 ReadMenuKeys();
+            }
+            else if (IsMapListOpen)
+            {
+                ReadMapListKeys();
             }
             else if (IsPickerOpen)
             {
@@ -284,6 +340,7 @@ namespace AtelierVerse.UI
             if (menu == null || menu.IsOpen) return;
 
             if (IsPickerOpen) picker.Close();
+            if (IsMapListOpen) mapList.Close();
 
             if (player != null)
             {
@@ -324,7 +381,7 @@ namespace AtelierVerse.UI
         /// <summary>부품 고르는 창을 열고 slot 칸에 넣게 한다. 메뉴처럼 창이 열려 있는 동안 캐릭터 조작을 막는다.</summary>
         public void OpenPickerFor(int slot)
         {
-            if (picker == null || IsMenuOpen) return;
+            if (picker == null || IsMenuOpen || IsMapListOpen) return;
 
             if (!picker.IsOpen)
             {
@@ -345,6 +402,113 @@ namespace AtelierVerse.UI
 
             if (player != null) player.ResumeControl();
             ShowVrMenu(false);
+        }
+
+        /// <summary>
+        /// 맵 목록 창을 연다. 메뉴나 부품 고르는 창이 열려 있으면 그것을 닫고 연다. 창이 열려 있는 동안 캐릭터 조작을 막는다.
+        /// 메뉴의 "내 작업실" 타일과 M 키가 부른다.
+        /// </summary>
+        public void OpenMapList()
+        {
+            if (mapList == null || autoSave == null || mapList.IsOpen) return;
+
+            bool wasModal = IsModalOpen;
+            if (IsMenuOpen) menu.Close();
+            if (IsPickerOpen) picker.Close();
+
+            if (!wasModal)
+            {
+                if (player != null) player.SetInputBlocked(true);
+                ShowVrMenu(true);
+            }
+
+            mapList.Open();
+            RefreshMapList();
+        }
+
+        /// <summary>맵 목록 창을 닫고 바로 조작으로 돌아간다.</summary>
+        public void CloseMapList()
+        {
+            if (mapList == null || !mapList.IsOpen) return;
+
+            mapList.Close();
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+
+            if (player != null) player.ResumeControl();
+            ShowVrMenu(false);
+        }
+
+        private void RefreshMapList()
+        {
+            if (mapList != null && autoSave != null) mapList.Show(autoSave.ListMaps(), autoSave.MapId);
+        }
+
+        private void OpenMap(string id)
+        {
+            if (autoSave == null) return;
+
+            if (!autoSave.Open(id))
+            {
+                RefreshMapList();
+                return;
+            }
+
+            EnterMap(MapAutoSave.OpenedMessage);
+        }
+
+        private void CreateMap()
+        {
+            if (autoSave == null) return;
+
+            if (autoSave.CreateNew() == null)
+            {
+                RefreshMapList();
+                return;
+            }
+
+            EnterMap(MapAutoSave.CreatedMessage);
+        }
+
+        /// <summary>맵을 바꾼 뒤: 창을 닫고 캐릭터를 시작 위치로 보내고 어느 맵인지 알린다.</summary>
+        private void EnterMap(string message)
+        {
+            CloseMapList();
+            if (player != null) player.Motor.Respawn();
+            Notice.Post($"{MapLibrary.DisplayName(autoSave.MapName)} · {message}");
+        }
+
+        private void RenameMap(string id, string name)
+        {
+            if (autoSave == null) return;
+
+            if (autoSave.Rename(id, name)) Notice.Post(MapAutoSave.RenamedMessage);
+            else Notice.Post("맵의 이름을 바꾸지 못했습니다", NoticeKind.Warning);
+            RefreshMapList();
+        }
+
+        private void DeleteMap(string id)
+        {
+            if (autoSave == null) return;
+
+            bool wasCurrent = id == autoSave.MapId;
+            if (!autoSave.Delete(id))
+            {
+                Notice.Post("맵을 지우지 못했습니다", NoticeKind.Error);
+                RefreshMapList();
+                return;
+            }
+
+            // 지금 맵을 지웠으면 다른 맵이 열려 있다. 캐릭터를 시작 위치로 보낸다.
+            if (wasCurrent && player != null) player.Motor.Respawn();
+            Notice.Post(MapAutoSave.DeletedMessage);
+            RefreshMapList();
+        }
+
+        /// <summary>다른 맵이 열리거나 지금 맵의 이름이 바뀌면 화면의 맵 이름과 블록 수를 다시 적는다.</summary>
+        private void OnMapChanged()
+        {
+            ShowRoomInfo();
+            ShowBlockCount();
         }
 
         public void TogglePicker()
@@ -517,9 +681,17 @@ namespace AtelierVerse.UI
         {
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame) RespawnAndClose();
+            else if (mapsAction.WasPressedThisFrame()) OpenMapList();
         }
 
         /// <summary>부품 고르는 창이 열려 있을 때의 키: 부품 창 키로 닫고, 숫자 키로 넣을 칸을 고른다.</summary>
+        /// <summary>맵 목록 창이 열려 있을 때의 키: 맵 목록 키로 닫는다. 이름을 고치는 중에는 글자를 치는 키가 듣지 않게 한다.</summary>
+        private void ReadMapListKeys()
+        {
+            if (mapList.IsEditingName) return;
+            if (mapsAction.WasPressedThisFrame()) CloseMapList();
+        }
+
         private void ReadPickerKeys()
         {
             if (partsAction.WasPressedThisFrame())
@@ -543,6 +715,12 @@ namespace AtelierVerse.UI
             if (partsAction.WasPressedThisFrame())
             {
                 OpenPicker();
+                return;
+            }
+
+            if (mapsAction.WasPressedThisFrame())
+            {
+                OpenMapList();
                 return;
             }
 
@@ -570,9 +748,12 @@ namespace AtelierVerse.UI
 
         private void ShowRoomInfo()
         {
+            // 방의 이름 자리에는 지금 열려 있는 맵의 이름을 적는다. 자동 저장이 없는 씬에서는 정해 둔 이름을 쓴다.
+            string room = autoSave != null ? MapLibrary.DisplayName(autoSave.MapName) : roomName;
             string muted = ColorUtility.ToHtmlStringRGB(AtelierPalette.Muted);
-            if (roomLabel != null) roomLabel.text = $"{roomName}  <color=#{muted}>{LocalPeopleCount}/{RoomRules.MaxPeople}</color>";
-            if (menuRoomLabel != null) menuRoomLabel.text = $"{roomName} · {LocalPeopleCount}/{RoomRules.MaxPeople}";
+            if (roomLabel != null) roomLabel.text = $"{room}  <color=#{muted}>{LocalPeopleCount}/{RoomRules.MaxPeople}</color>";
+            if (menuRoomLabel != null) menuRoomLabel.text = $"{room} · {LocalPeopleCount}/{RoomRules.MaxPeople}";
+            FitRoomChip();
             if (menuNameLabel != null) menuNameLabel.text = localDisplayName;
             // 어느 판에서 생긴 문제인지 알 수 있도록 메뉴에 버전을 적는다. 값은 프로젝트 설정의 bundleVersion이다.
             if (brandLabel != null) brandLabel.text = $"{BrandName}  v{Application.version}";
@@ -587,6 +768,15 @@ namespace AtelierVerse.UI
                 Nameplate nameplate = player.GetComponentInChildren<Nameplate>(true);
                 if (nameplate != null) nameplate.SetName(localDisplayName);
             }
+        }
+
+        /// <summary>방 이름 칸의 너비를 이름에 맞춘다. 맵의 이름은 길이가 제각각이다. 너무 길면 칸을 더 넓히지 않고 글자를 줄여 보인다.</summary>
+        private void FitRoomChip()
+        {
+            if (roomLabel == null || !(roomLabel.transform.parent is RectTransform chip)) return;
+
+            float width = Mathf.Clamp(RoomChipPadding + roomLabel.GetPreferredValues(roomLabel.text).x, RoomChipMinWidth, RoomChipMaxWidth);
+            chip.sizeDelta = new Vector2(width, chip.sizeDelta.y);
         }
 
         /// <summary>고른 부품을 블록 놓기에 알리고, 부품을 골랐을 때만 놓기 안내를 보인다.</summary>

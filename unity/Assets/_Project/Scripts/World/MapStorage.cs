@@ -26,7 +26,7 @@ namespace AtelierVerse.World
             set => directoryOverride = string.IsNullOrEmpty(value) ? null : value;
         }
 
-        /// <summary>이 기기에 하나 있는 맵 파일의 경로.</summary>
+        /// <summary>처음부터 있던 맵(번호표 local)의 파일 경로. 16일차까지는 맵이 이것 하나였다. 여러 맵은 MapLibrary가 다룬다.</summary>
         public static string LocalPath => Path.Combine(Directory, LocalFileName);
 
         public static bool Exists(string path)
