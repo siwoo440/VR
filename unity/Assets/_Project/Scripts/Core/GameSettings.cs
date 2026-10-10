@@ -14,12 +14,14 @@ namespace AtelierVerse.Core
         public const float MinFieldOfView = 50f;
         public const float MaxFieldOfView = 100f;
         public const float DefaultFieldOfView = 70f;
+        public const float DefaultSoundVolume = 0.7f;
 
         private const string LookKey = "settings.lookSensitivity";
         private const string FieldOfViewKey = "settings.fieldOfView";
         private const string PeopleListKey = "settings.showPeopleList";
         private const string SnapLevelKey = "settings.snapLevel";
         private const string HotbarPartsKey = "settings.hotbarParts";
+        private const string SoundVolumeKey = "settings.soundVolume";
 
         public static event Action Changed;
 
@@ -35,6 +37,13 @@ namespace AtelierVerse.Core
         {
             get => Mathf.Clamp(PlayerPrefs.GetFloat(FieldOfViewKey, DefaultFieldOfView), MinFieldOfView, MaxFieldOfView);
             set => SetFloat(FieldOfViewKey, Mathf.Clamp(value, MinFieldOfView, MaxFieldOfView));
+        }
+
+        /// <summary>전체 소리 크기(0~1). 0이면 소리가 나지 않는다.</summary>
+        public static float SoundVolume
+        {
+            get => Mathf.Clamp01(PlayerPrefs.GetFloat(SoundVolumeKey, DefaultSoundVolume));
+            set => SetFloat(SoundVolumeKey, Mathf.Clamp01(value));
         }
 
         /// <summary>화면 오른쪽 위의 사람들 목록을 보일지 여부.</summary>
@@ -87,6 +96,7 @@ namespace AtelierVerse.Core
             PlayerPrefs.DeleteKey(PeopleListKey);
             PlayerPrefs.DeleteKey(SnapLevelKey);
             PlayerPrefs.DeleteKey(HotbarPartsKey);
+            PlayerPrefs.DeleteKey(SoundVolumeKey);
             Changed?.Invoke();
         }
 

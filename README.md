@@ -3,7 +3,7 @@
 3D 공간에서 자신의 맵을 만들고 꾸민 뒤 다른 사람을 초대해 함께 머무는 VR 샌드박스 서비스입니다.
 
 - 운영: Palettra Games
-- 현재 단계: 기획, 화면 시안, Unity 프로젝트 18일차(시작 위치 정하기와 맵 정보. VR은 실제 헤드셋 확인 전)
+- 현재 단계: 기획, 화면 시안, Unity 프로젝트 19일차(기본 소리. VR은 실제 헤드셋 확인 전)
 - 기획 문서: 사업 계획서(Google 문서)의 "12. Atelier | Verse (VR 샌드박스 서비스)" 탭
 - 다른 환경에서 이어서 작업할 때: [`CLAUDE-HANDOFF.md`](CLAUDE-HANDOFF.md)
 - 서비스 이름은 가칭이며 상표·도메인 확인 전입니다.
@@ -58,6 +58,7 @@
 | 16일차 | 모양이 다른 부품(판, 기둥, 경사, 계단)과 부품 고르는 창. 크기는 블록 한 변 1을 기준으로 정함 | [`unity/Devlogs/Day16`](unity/Devlogs/Day16/README.md) |
 | 17일차 | 여러 맵 다루기. 맵 목록(내 작업실)에서 새 맵, 열기, 이름 바꾸기, 지우기 | [`unity/Devlogs/Day17`](unity/Devlogs/Day17/README.md) |
 | 18일차 | 시작 위치 정하기와 맵 정보. 맵마다 처음 서는 자리, 설명, 대표 그림. 맵 형식 3판 | [`unity/Devlogs/Day18`](unity/Devlogs/Day18/README.md) |
+| 19일차 | 기본 소리. 걷기·블록·단추·알림의 소리 22가지(코드로 만듦)와 설정의 소리 크기. 소리 미리 듣기 파일 | [`unity/Devlogs/Day19`](unity/Devlogs/Day19/README.md) |
 
 Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에서 재생을 누르면 걸어 볼 수 있습니다. 놓은 블록은 이 기기의 맵 폴더(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\maps\`)에 맵마다 파일 하나로 자동 저장됩니다. 형식은 [`docs/MAP-FORMAT.md`](docs/MAP-FORMAT.md)에 있습니다.
 
@@ -71,6 +72,7 @@ Unity Hub에서 `unity` 폴더를 열고 `Assets/_Project/Scenes/Sandbox` 씬에
 | 부품 고르는 창 | B (부품 칸에 넣을 부품을 고름. 판·기둥·경사·계단은 여기서 넣음) |
 | 내 작업실(맵 목록) | M 또는 메뉴의 "내 작업실". 새 맵, 열기, 정보, 지우기 |
 | 맵 정보 | 맵 목록에서 줄의 "정보". 이름과 설명 고치기, 지금 보는 장면을 대표 그림으로 찍기, 지금 선 자리를 시작 위치로 정하기 |
+| 소리 크기 | Esc 메뉴의 설정 탭에서 "소리 크기". 0%면 끔 |
 | 블록 놓기, 지우기 | 부품을 고른 뒤 마우스 왼쪽, 오른쪽. 블록은 칸에 맞추지 않고 가리킨 자리에 놓임 |
 | 블록 칠하기 | 부품을 고르고 블록을 가리킨 뒤 마우스 가운데 또는 F |
 | 블록 돌리기 | R(시계 방향), T(반대). 놓기 전에 15도씩 |

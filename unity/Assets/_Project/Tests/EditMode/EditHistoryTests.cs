@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AtelierVerse.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -19,6 +20,57 @@ namespace AtelierVerse.Tests
         private static BlockMap CreateMap(int capacity = 10)
         {
             return new BlockMap(new Vector3(-2f, 0f, -2f), new Vector3(3f, 4f, 3f), capacity);
+        }
+
+        [Test]
+        public void 편집이_이루어지면_무엇을_했는지와_어느_블록인지_알린다()
+        {
+            var history = new EditHistory(CreateMap());
+            var heard = new List<(EditKind kind, BlockChange change)>();
+            history.Edited += (kind, change) => heard.Add((kind, change));
+
+            int id = Place(history, A, 0);
+            Assert.IsTrue(history.Replace(id, 1));
+            Assert.IsTrue(history.Move(id, B, Quaternion.identity));
+            Assert.IsTrue(history.Undo());
+            Assert.IsTrue(history.Redo());
+            Assert.IsTrue(history.Remove(id));
+
+            var kinds = new List<EditKind>();
+            foreach ((EditKind kind, BlockChange _) in heard) kinds.Add(kind);
+            CollectionAssert.AreEqual(new[] { EditKind.Place, EditKind.Paint, EditKind.Move, EditKind.Undo, EditKind.Redo, EditKind.Remove }, kinds);
+
+            // 소리를 그 자리에서 내려면 블록의 자리를 알아야 한다.
+            Assert.IsTrue(heard[0].change.HasAfter);
+            Assert.Less(Vector3.Distance(A, heard[0].change.After.Position), 0.001f);
+            Assert.AreEqual(1, heard[1].change.After.Part);
+            Assert.Less(Vector3.Distance(B, heard[2].change.After.Position), 0.001f);
+            Assert.AreEqual(id, heard[3].change.Id, "되돌리기는 원래 편집의 변화를 함께 알립니다.");
+            Assert.IsTrue(heard[5].change.HadBefore);
+            Assert.IsFalse(heard[5].change.HasAfter);
+            Assert.Less(Vector3.Distance(B, heard[5].change.Before.Position), 0.001f);
+        }
+
+        [Test]
+        public void 이루어지지_않은_편집은_알리지_않는다()
+        {
+            var history = new EditHistory(CreateMap(1));
+            int count = 0;
+            history.Edited += (_, _) => count++;
+
+            int id = Place(history, A, 0);
+            Assert.AreEqual(1, count);
+
+            Assert.AreEqual(PlaceResult.Full, history.Place(0, C, Quaternion.identity, out _));
+            Assert.IsFalse(history.Replace(id, 0), "이미 같은 부품입니다.");
+            Assert.IsFalse(history.Move(id, A, Quaternion.identity), "이미 그 자리입니다.");
+            Assert.IsFalse(history.Remove(999));
+            Assert.IsFalse(history.Redo());
+            Assert.AreEqual(1, count, "이루어지지 않은 편집에 소리가 나면 안 됩니다.");
+
+            Assert.IsTrue(history.Undo());
+            Assert.IsFalse(history.Undo(), "되돌릴 것이 없습니다.");
+            Assert.AreEqual(2, count);
         }
 
         private static int Place(EditHistory history, Vector3 position, int part)

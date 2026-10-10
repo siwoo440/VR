@@ -21,6 +21,15 @@ namespace AtelierVerse.Player
         private const int MaxLiftSteps = 64;
         private const float FloorSkin = 0.06f;
 
+        // 발소리를 알리는 간격: 걸을 때와 달릴 때의 한 걸음 길이. 이보다 느리면(제자리, 벽에 막힘) 걸음으로 세지 않는다.
+        private const float WalkStride = 1.6f;
+        private const float SprintStride = 2.1f;
+        private const float FirstStride = 0.5f;
+        private const float MinStepSpeed = 0.5f;
+
+        // 이보다 느리게 내려앉으면(걷다가 턱을 내려옴, 시작할 때 바닥에 닿음) 내려앉은 것으로 알리지 않는다.
+        private const float LandSpeed = 4f;
+
         [SerializeField] private AvatarView avatar;
         [SerializeField] private float walkSpeed = 3.5f;
         [SerializeField] private float sprintSpeed = 6f;
@@ -38,9 +47,19 @@ namespace AtelierVerse.Player
 
         // 자신의 마지막 걸음에서 바닥에 닿았는지. Shift처럼 다른 이동이 끼어도 점프와 중력의 판단이 흔들리지 않게 따로 기억한다.
         private bool grounded;
+        private float strideLeft = FirstStride;
 
         /// <summary>날기를 켜거나 끌 때 알린다. 값이 true이면 날고 있다.</summary>
         public event Action<bool> FlyModeChanged;
+
+        /// <summary>바닥을 딛고 한 걸음을 걸을 때마다 알린다. 발소리에 쓴다.</summary>
+        public event Action Stepped;
+
+        /// <summary>뛰어오를 때 알린다.</summary>
+        public event Action Jumped;
+
+        /// <summary>떨어지다가 바닥에 내려앉으면 알린다. 값은 닿을 때의 빠르기(m/s)다.</summary>
+        public event Action<float> Landed;
 
         /// <summary>날고 있는지(만들기 시점). 시작할 때와 시작 위치로 돌아갈 때는 걷기다.</summary>
         public bool IsFlying { get; private set; }
@@ -227,15 +246,50 @@ namespace AtelierVerse.Player
             if (grounded)
             {
                 verticalVelocity = -1f;
-                if (jump) verticalVelocity = Mathf.Sqrt(-2f * gravity * jumpHeight);
+                if (jump)
+                {
+                    verticalVelocity = Mathf.Sqrt(-2f * gravity * jumpHeight);
+                    Jumped?.Invoke();
+                }
             }
 
             verticalVelocity += gravity * deltaTime;
             Vector3 planar = PlanarDirection() * (Sprint ? sprintSpeed : walkSpeed);
+
+            bool wasGrounded = grounded;
+            float fallSpeed = -verticalVelocity;
+            Vector3 before = transform.position;
             controller.Move((planar + Vector3.up * verticalVelocity) * deltaTime);
             grounded = controller.isGrounded;
 
+            if (!wasGrounded && grounded && fallSpeed >= LandSpeed) Landed?.Invoke(fallSpeed);
+            CountStride(before, deltaTime);
+
             if (avatar != null) avatar.Animate(planar.magnitude, deltaTime);
+        }
+
+        /// <summary>
+        /// 바닥을 딛고 실제로 옮겨 간 거리를 세어, 한 걸음 길이를 갈 때마다 알린다. 벽에 막혀 제자리걸음을 하면 세지 않는다.
+        /// 달릴 때는 걸음이 길어, 빠르기만큼 발소리가 잦아지지는 않는다.
+        /// </summary>
+        private void CountStride(Vector3 before, float deltaTime)
+        {
+            Vector3 moved = transform.position - before;
+            moved.y = 0f;
+            float distance = moved.magnitude;
+
+            if (!grounded || deltaTime <= 0f || distance / deltaTime < MinStepSpeed)
+            {
+                // 멈췄다가 다시 걸으면 첫 발소리가 곧 나게 한다.
+                strideLeft = Mathf.Min(strideLeft, FirstStride);
+                return;
+            }
+
+            strideLeft -= distance;
+            if (strideLeft > 0f) return;
+
+            strideLeft = Sprint ? SprintStride : WalkStride;
+            Stepped?.Invoke();
         }
 
         /// <summary>날기. 중력 없이 움직이고 팔다리는 흔들지 않는다.</summary>

@@ -4,10 +4,10 @@
 이 문서는 다른 컴퓨터나 새 대화에서 Claude가 Atelier | Verse 개발을 바로 이어가기 위한 전달 문서입니다. 작업 기준은 이 파일이 포함된 `origin/main` 최신 커밋입니다.
 
 - 마지막 갱신: 2026년 10월 10일
-- 마지막 작업: Unity 18일차(시작 위치 정하기와 맵 정보. 맵마다 캐릭터가 처음 서는 자리와 방향, 바닥의 표식, 맵 정보 창에서 이름·설명 저장과 대표 그림 찍기, 맵 목록의 작은 그림. 맵 형식 3판과 2판 파일 올려 읽기. PC와 VR 양쪽이며 VR은 글자 쓰기 없음)
-- 마지막 검증: 편집 모드 테스트 183개 통과, 플레이 모드 테스트 192개 통과(그림 찍기 18개 포함, `-captureDir` 없이 돌리면 그 18개는 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(이 컴퓨터의 2판 저장 파일이 사본을 남기고 3판으로 올라감, 그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`은 기기가 없어 키보드·마우스로 돌아옴). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). **글자판으로 한글을 치는 것도 확인하지 못함.** 에디터와 실행 파일에서 직접 조작해 보는 확인, 게임패드의 키, Quest 실행도 하지 않음
+- 마지막 작업: Unity 19일차(기본 소리. 걷기·뛰기·내려앉기, 블록 놓기·지우기·칠하기·옮기기·돌리기·잡기, 되돌리기, 단추와 창, 경고·오류 알림, 대표 그림 찍기의 소리 22가지를 코드로 만들어 냄. 블록과 발의 소리는 그 자리에서, 화면의 소리는 한 번에 하나만. 설정에 소리 크기. 소리 미리 듣기 파일을 내보내는 에디터 도구. PC와 VR 양쪽)
+- 마지막 검증: 편집 모드 테스트 280개 통과, 플레이 모드 테스트 207개 통과(그림 찍기 18개 포함, `-captureDir` 없이 돌리면 그 18개는 건너뜀). Windows 빌드 성공과 실행 파일의 자동 확인 통과(그냥 실행하면 VR 프로그램을 찾은 흔적 0줄, `-vr`은 기기가 없어 키보드·마우스로 돌아옴). **소리를 귀로 들어 보지 못함**(테스트는 소리를 내 달라는 부탁이 올라왔는지와 소리의 길이·크기만 봄. 스피커에서 나는지, 듣기 좋은지는 사용자가 확인해야 함). **실제 헤드셋과 컨트롤러로는 확인하지 못함**(이 컴퓨터에 PC VR 런타임이 없음). **글자판으로 한글을 치는 것도 확인하지 못함.** 에디터와 실행 파일에서 직접 조작해 보는 확인, 게임패드의 키, Quest 실행도 하지 않음
 - 검증 환경: Windows 11, Unity `6000.3.21f1`, Node.js `24.19.0`
-- 다음 작업: Unity 19일차. 기본 소리(코드로 만든 소리와 소리 크기 설정). 사용자가 헤드셋으로 켜 본 결과나 직접 써 본 느낌이 있으면 그것부터. 순서는 `docs/BACKLOG.md` 2절
+- 다음 작업: Unity 20일차. 설정 늘리기(창과 전체 화면, 화면 품질, 마우스 위아래 뒤집기). 사용자가 소리를 들어 본 결과나 헤드셋으로 켜 본 결과가 있으면 그것부터. 순서는 `docs/BACKLOG.md` 2절
 
 ---
 ## Claude에게 전달할 시작 문구
@@ -24,7 +24,7 @@
 5. 화면 시안은 `node scripts/serve.mjs` 실행 뒤 `http://127.0.0.1:3100/`에서 확인(설치할 패키지 없음)
 6. Windows 실행 파일은 `node scripts/build-windows.mjs --run`으로 만들고 자동 확인(1~2분, `unity/Builds/Windows/AtelierVerse.exe`). VR로 켜려면 그 옆의 `AtelierVerse-VR.bat`
 
-에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day18`가 적혀 있기 때문입니다.
+에디터를 처음 열어도 일차별 셋업은 다시 실행되지 않습니다. 셋업이 만든 프리팹·씬·자산이 이미 커밋되어 있고, 적용 기록(`unity/ProjectSettings/AtelierVerseSetupState.txt`)에 `Day01`~`Day19`가 적혀 있기 때문입니다.
 
 ### Windows 환경 참고
 
@@ -209,11 +209,24 @@
 - 맵 목록 창: 줄마다 작은 대표 그림, "이름" 단추가 "정보"로. 이름 고치는 글자 칸은 없앰.
 - `Day18Setup`: 캐릭터 프리팹에 `PlayerSpawn`, 씬에 표식과 재질, 게임 화면 프리팹 다시 조립.
 
+### Unity 19일차
+
+- 소리의 길: 게임 코드가 일을 알림 → `GameSounds`(게임 화면)가 어느 소리인지 고름 → `Sfx.Play`(화면의 소리)·`Sfx.PlayAt`(자리가 있는 소리) → `SfxPlayer`(게임 화면)가 실제로 냄. `Sfx`는 듣는 쪽이 없어도 탈이 없는 부탁 창구(`Sfx.Played`)이고, 테스트는 이 알림을 듣고 확인함.
+- 소리 22가지(`SfxId`): Step, Jump, Land, FlyOn, FlyOff, Place, Remove, Paint, Move, Rotate, Grab, Release, Snap, Undo, Redo, Click, Select, Open, Close, Warn, Error, Shutter. **차례를 바꾸거나 사이에 끼우면 미리 듣기 파일의 차례와 일지의 표가 어긋나므로 새 소리는 끝에 더함.**
+- `SfxSynth`: 소리를 코드로 만듦(44100Hz, 한 줄기). 음(`Tone`), 걸러 낸 잡음(`Noise`, 정해진 씨앗), 두 음 잇기(`Notes`)를 섞고 `Finish`가 가장 큰 값을 맞추며 처음과 끝을 0으로 함. 만들 때마다 같음. 소리 파일 자산은 없음.
+- `SfxPlayer`: 시작할 때 클립 22개를 만들고 소리 부품 10개(`SfxVoice1`~`10`)를 돌려 씀. 자리가 있는 소리는 3차원(2.5 안은 그대로, 28에서 들리지 않음), 없는 소리는 2차원. 발소리와 블록 소리는 낼 때마다 높낮이를 조금 달리함. 소리 크기는 `AudioListener.volume`에 넣음.
+- 알리는 자리: `EditHistory.Edited(EditKind, BlockChange)`(이루어진 편집만), `BlockBuilder.Happened(BuildEvent)`(돌리기·잡기·놓아주기·맞추기), `CharacterMotor.Stepped`·`Jumped`·`Landed`(발소리는 땅 위에서 실제로 움직인 수평 거리로 셈: 걷기 1.6, 달리기 2.1마다).
+- `GameSounds`: 화면의 소리는 한 프레임에 하나만(`Priority`의 차례: 오류, 경고, 찰칵, 고르기, 창 열기·닫기, 되돌리기·다시 실행, 맞추기, 잡기·놓아주기, 돌리기, 날기, 단추). 단추와 켜고 끄는 칸은 `Start`에서 한꺼번에 소리를 달고 부품 칸의 칸은 뺌. 창 열기·닫기는 `GameUi.IsModalOpen`이 바뀔 때. 보통 알림은 소리 없음.
+- 설정: `GameSettings.SoundVolume`(0~1, 처음 값 0.7, `settings.soundVolume`), 설정 탭의 `SoundSlider`(0이면 "끔"). 막대를 움직이면 고르기 소리로 크기를 들려 줌.
+- `SoundPreview`(에디터, 메뉴 `Atelier Verse/소리 미리 듣기 파일 만들기`): 22가지를 0.6초 칸마다 이어 붙인 WAV를 내보냄. `unity/Devlogs/Day19/sounds-preview.wav`가 그 결과이며 게임은 이 파일을 쓰지 않음. **소리를 고치면 이 파일을 다시 만들어 함께 커밋함.**
+- `Day19Setup`: 캐릭터 프리팹의 소리 듣는 부품(`AudioListener`)이 하나인지 확인, 게임 화면 프리팹 다시 조립(`SfxPlayer`, `GameSounds`, 설정의 소리 크기 줄).
+
 ### 아직 동작하지 않는 것
 
-- **VR은 실제 헤드셋으로 확인하지 못했습니다.** VR 조작(10일차), OpenXR 연결(11일차), VR 메뉴(12일차), VR에서 만들기(13일차), VR의 돌리기·옮기기(15일차)는 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. 부품 판과 메뉴의 크기·자리는 그림만 보고 정했고, 판은 블록에 가릴 수 있습니다. 오른손으로 가리키고 왼손에 부품 판을 드는 것으로 고정되어 있습니다. VR에서는 저장 표시가 보이지 않고 놓을 때의 진동과 소리가 없습니다. Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
+- **VR은 실제 헤드셋으로 확인하지 못했습니다.** VR 조작(10일차), OpenXR 연결(11일차), VR 메뉴(12일차), VR에서 만들기(13일차), VR의 돌리기·옮기기(15일차)는 가상 기기와 VR 프로그램이 없는 PC로만 확인했습니다. 부품 판과 메뉴의 크기·자리는 그림만 보고 정했고, 판은 블록에 가릴 수 있습니다. 오른손으로 가리키고 왼손에 부품 판을 드는 것으로 고정되어 있습니다. VR에서는 저장 표시가 보이지 않고 놓을 때의 진동이 없습니다(소리는 19일차에 넣었지만 헤드셋에서 방향과 크기를 확인하지 못했습니다). Quest 단독 빌드도 없습니다(XR 설정은 PC용뿐).
 - 다른 사람의 캐릭터는 아직 없습니다.
 - 맵은 이 기기에만 저장됩니다(여러 개). 계정에는 저장되지 않고, 맵의 사본 만들기와 휴지통에서 되살리는 화면이 없습니다. VR에서는 맵의 이름과 설명을 고칠 수 없습니다. 실행 파일에서 글자판으로 한글을 치는 것은 확인하지 못했습니다. 맵의 크기는 모든 맵이 같고, 시작 위치는 맵에 하나이며 표식은 늘 보입니다. 대표 그림은 창을 열기 전에 보던 장면으로만 찍습니다.
+- **소리는 귀로 들어 보지 못했습니다**(19일차). 높이·길이·크기를 숫자로만 정했으므로 거슬리거나 어울리지 않는 소리가 있을 수 있습니다. 소리 크기는 하나뿐이고(게임 전체), 모든 부품이 같은 소리를 내며, 배경 소리는 없습니다. 다른 사람의 소리도 없습니다(혼자 쓰는 상태).
 - 블록은 좌우로만 돌릴 수 있고(기울이기 없음), 옮기기는 한 번에 하나입니다. 부품의 크기는 바꿀 수 없고 색은 여섯 가지뿐입니다. 경사와 계단의 겹침 검사는 둘러싸는 상자로 봅니다. 부품 고르는 창과 돌리기·옮기기·맞추기의 게임패드 키는 없거나 확인하지 않았습니다. 되돌리기와 칠하기는 블록 하나가 기록 하나이며 되돌리기의 게임패드 키가 없습니다.
 - 날기 속도는 하나(7m/s)이고 벽을 통과하지 못합니다.
 - 빌드는 Mono이며 아이콘·시작 화면은 Unity 기본값입니다. 실행 파일에서 사람이 직접 조작해 본 적은 없습니다.
@@ -228,7 +241,8 @@
 
 | 커밋 | 내용 |
 | --- | --- |
-| (이 문서가 든 커밋) | 18일차 : 시작 위치 정하기와 맵 정보 |
+| (이 문서가 든 커밋) | 19일차 : 기본 소리 |
+| `9d9d96f` | 18일차 : 시작 위치 정하기와 맵 정보 |
 | `affbaa1` | 17일차 : 여러 맵 다루기 |
 | `dd6d2a3` | 16일차 : 모양이 다른 부품과 부품 고르는 창 |
 | `5af3db8` | 15일차 : 돌리기·옮기기와 맞추기 도우미 |
@@ -293,16 +307,16 @@ unity/Assets/_Project/
   Art/Textures/     Grid.png
   Art/UI/           Rounded, RoundedLine, Icon_*.png (셋업이 그린 그림)
   Data/             PartCatalog.asset (부품 목록: 모양 다섯 × 색 여섯)
-  Editor/           Day1Setup ~ Day18Setup, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
+  Editor/           Day1Setup ~ Day19Setup, SoundPreview, GameUiBuilder, UiFactory, PlayerWiring, ProjectSetupRunner, DynamicFontGuard, DevCapture, BuildPlayer, XrBootConfig, XrEditorMenu
   Input/            AtelierInput.inputactions (Player 맵, Game 맵, XR 맵, UI 맵)
   Prefabs/          Player_Desktop, GameUI, Block, BlockGhost
   Scenes/           Boot, Sandbox
-  Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel), XrSession, SceneSnapshot
+  Scripts/Core/     AtelierPalette, GameSettings, RoomRules, AppExit, Bootstrap, Notice(+NoticeModel), XrSession, SceneSnapshot, Sfx(+SfxId), SfxSynth, SfxPlayer
   Scripts/Player/   CharacterMotor, ViewRig, DesktopPlayerController, XrRig, XrPlayerController, PlayerModeSwitch, LocalPlayer, PlayerSpawn, AvatarView, Nameplate, BlockBuilder
-  Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar, XrUiPanel, XrHandPalette, PartPickerView, MapListView(+MapThumbnail), MapInfoView
+  Scripts/UI/       GameUi, HotbarModel, HotbarView, QuickMenuView, SettingsPanel, PeopleListView, NoticeBar, XrUiPanel, XrHandPalette, PartPickerView, MapListView(+MapThumbnail), MapInfoView, GameSounds
   Scripts/World/    GridMath, PlacementMath, BlockMap(+BlockRecord), BlockWorld, PlacedBlock, PartCatalog, PartMeshes(+PartShape), MapDocument, MapStorage, MapLibrary(+MapInfo), SpawnMarker, MapAutoSave, EditHistory
-  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests, XrUiPanelTests, UiInputTests, XrHandPaletteTests, PlacementMathTests, PartShapeTests, MapLibraryTests
-  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTestBase, XrPlayTests, XrMenuPlayTests, XrBuildPlayTests, ArrangePlayTests, XrArrangePlayTests, PartsPlayTests, XrPartsPlayTests, MapsPlayTests, XrMapsPlayTests, MapInfoPlayTests, XrMapInfoPlayTests
+  Tests/EditMode/   GridMathTests, HotbarModelTests, ViewAndSettingsTests, BlockMapTests, MapDocumentTests, EditHistoryTests, NoticeModelTests, FlyMoveTests, BuildPlayerTests, BootstrapArgsTests, ControlModeTests, XrSessionTests, XrBootConfigTests, XrUiPanelTests, UiInputTests, XrHandPaletteTests, PlacementMathTests, PartShapeTests, MapLibraryTests, SfxSynthTests, SoundPreviewTests
+  Tests/PlayMode/   PlayTestBase, SandboxPlayTests, GameUiPlayTests, BuildPlayTests, SavePlayTests, UndoPlayTests, PaintPlayTests, FlyPlayTests, VersionPlayTests, MotorPlayTests, XrPlayTestBase, XrPlayTests, XrMenuPlayTests, XrBuildPlayTests, ArrangePlayTests, XrArrangePlayTests, PartsPlayTests, XrPartsPlayTests, MapsPlayTests, XrMapsPlayTests, MapInfoPlayTests, XrMapInfoPlayTests, SoundPlayTests, XrSoundPlayTests
 unity/Assets/TextMesh Pro/   TextMesh Pro 기본 자산(Unity가 넣은 것)
 unity/Assets/Settings/       URP 설정(PC용, 모바일용)
 unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일). 11일차 셋업이 만든 것
@@ -334,6 +348,10 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 - **맵 파일에 항목을 더할 때는 판을 올립니다**(18일차에 2판 → 3판). `MapDocument`에 항목을 더하고, `FromBlocks`가 머리(header)에서 이어받게 하고(빠뜨리면 저장할 때마다 값이 지워집니다), `TryParse`에서 빈 값을 채우고, 옛 판의 JSON을 테스트 자료로 둡니다(`MapDocumentTests`, `MapInfoPlayTests`). 옛 판을 읽으면 `WasUpgraded`가 참이 되어 사본을 남기고 다시 저장합니다. 맵 파일을 고쳐 쓰는 곳(`MapLibrary.UpdateInfo`)도 사본을 남깁니다.
 - **캐릭터를 시작 위치로 보내는 일은 `PlayerSpawn`이 맡습니다.** 맵을 바꾸는 코드에서 `Motor.Respawn()`을 따로 부르지 않습니다. 시작 위치는 캐릭터의 발이 닿는 자리이고(블록의 자리처럼 가운데가 아님), `Respawn`은 막힌 자리를 피해 위로 올려 세웁니다.
 - 화면 요소의 층(5)에는 화면(캔버스)과 시작 위치 표식이 있습니다. 대표 그림을 찍을 때 이 층을 빼므로, 그림에 들어가면 안 되는 것은 이 층에 둡니다.
+- **어느 소리를 낼지는 `GameSounds`만 정합니다**(19일차). 블록 놓기·캐릭터·화면의 코드에서 `Sfx.Play`를 직접 부르지 않고, 무슨 일이 일어났는지를 알리는 자리(event)를 두어 `GameSounds`가 듣게 합니다. 지금 직접 부르는 곳은 둘뿐입니다: 설정의 소리 크기 막대(크기를 들려 주려고), 대표 그림 찍기의 찰칵.
+- 편집에 소리나 반응을 달 때는 `EditHistory.Edited`를 씁니다. `BlockWorld.Changed`는 맵을 불러올 때와 되돌릴 때도 올라와 소리가 겹치거나 한꺼번에 납니다.
+- 새 소리는 `SfxId`의 끝에 더하고 `SfxSynth.Build`에 만드는 법을 한 줄 더합니다. `SfxSynthTests`가 모든 소리에 길이(0.3초 미만), 처음과 끝의 0, 가장 큰 값(0.2~0.7)을 봅니다. 화면의 소리라면 `GameSounds.Priority`에도 넣습니다(빠지면 단추 소리와 같은 맨 뒤 차례가 됩니다).
+- 테스트에서 소리를 확인할 때는 `Sfx.Played`를 듣습니다(`SoundPlayTests`). 스피커에서 나는 소리를 확인하는 테스트는 없습니다.
 - 글자를 써넣는 칸이 열려 있을 때는 글자 키가 게임의 키로 듣지 않게 합니다(`MapListView.IsEditingName`을 `GameUi`가 봄). 글자 칸을 더 만들면(대화, 맵 설명) 같은 검사를 넣습니다.
 - `BlockBuilder`는 조준 광선이 닿은 면 위의 그 자리에 블록을 얹습니다(`BlockMap.RestOn`으로 반 변만큼 띄움, `ClampHeight`로 바닥에 묻히지 않게). 캐릭터는 `Ignore Raycast` 층이라 광선에 걸리지 않고, 겹침 검사(`OverlapBoxNonAlloc`)에는 걸려서 자기가 선 자리에는 놓이지 않습니다. 겹침 검사는 놓인 블록(`PlacedBlock`)을 세지 않습니다.
 - 부품을 고르거나 마우스를 잡은 바로 그 프레임에는 놓지 않습니다(한 프레임 기다림). 마우스를 잡는 누름으로 블록이 놓이는 것을 막기 위해서입니다.
@@ -422,6 +440,7 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 - 창 없이 실행하면 초당 수천 프레임으로 돕니다. 시간에 기대는 플레이 모드 테스트는 `Application.targetFrameRate`를 60으로 맞춥니다.
 - `InputTestFixture`로 넣은 키는 다음 프레임에 반영됩니다. 누르고 두 프레임 뒤에 떼는 `Tap` 도우미를 씁니다.
 - 테스트는 개인 설정(`GameSettings`)을 바꾸므로 시작할 때 값을 저장하고 끝날 때 되돌립니다.
+- 소리 크기 설정은 `AudioListener.volume`(게임 전체의 값)에 들어갑니다. `SfxPlayer`가 켜질 때와 설정이 바뀔 때 넣습니다. 플레이 모드 테스트의 바탕(`PlayTestBase`)은 소리 크기 설정을 저장해 두었다가 되돌립니다.
 - 화면에 겹쳐 그리는 캔버스는 카메라 그림에 찍히지 않습니다. 화면 그림은 `GameUiPlayTests`의 `화면_그림을_찍는다`가 캔버스를 잠시 카메라 앞에 붙여서 찍습니다.
 
 ---
@@ -433,11 +452,14 @@ unity/Assets/XR/             XR 설정(OpenXR 로더, 컨트롤러 프로파일)
 # 편집 모드 테스트 (-quit을 붙이지 않는다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform EditMode -testResults <결과.xml> -logFile <로그>
 
-# 플레이 모드 테스트. -captureDir을 주면 화면 그림 38장도 찍는다(2~18일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
+# 플레이 모드 테스트. -captureDir을 주면 화면 그림 38장도 찍는다(2~19일차의 그림이 한 폴더에 나오므로 필요한 것만 일지에 남긴다)
 Unity.exe -batchmode -projectPath <프로젝트> -runTests -testPlatform PlayMode -captureDir <그림 폴더> -testResults <결과.xml> -logFile <로그>
 
 # 아직 적용하지 않은 일차의 셋업 적용
 Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVerse.EditorTools.ProjectSetupRunner.RunFromCommandLine -logFile <로그>
+
+# 소리 미리 듣기 파일 다시 만들기(소리를 고친 뒤에)
+Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVerse.EditorTools.SoundPreview.ExportFromCommandLine -soundOut <저장소>/unity/Devlogs/Day19/sounds-preview.wav -logFile <로그>
 
 # 특정 일차의 셋업 다시 적용
 Unity.exe -batchmode -quit -projectPath <프로젝트> -executeMethod AtelierVerse.EditorTools.Day2Setup.Apply -logFile <로그>
@@ -493,7 +515,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 - 헤드셋으로 확인하기: Meta Quest Link 또는 SteamVR을 설치해 헤드셋을 PC에 잇고, `unity/Builds/Windows/AtelierVerse-VR.bat`을 열어 화면·두 손·스틱 이동·눈높이, 왼손 메뉴 단추로 뜨는 메뉴(글자가 읽히는지, 판의 거리와 크기, 광선의 방향, 방아쇠로 눌리는지), 왼손 위의 부품 판과 블록 놓기·지우기·칠하기(판의 크기와 자리, 가리킨 곳에 놓이는지)를 확인(방법은 `unity/Devlogs`의 `Day11`·`Day12`·`Day13` 일지에 있는 "직접 확인하는 방법"). 이 컴퓨터에는 OpenXR 런타임이 없음
 - Unity Hub에서 `6000.3.21f1`에 Android Build Support 설치(Quest 단독 빌드 전)
 - Meta 개발자 계정 등록과 Quest의 개발자 모드 켜기
-- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기(칸에 붙지 않고 가리킨 자리에 놓이는지, 겹쳐 놓이는지. 자유 배치가 손에 맞는지), M 맵 목록(새 맵, 맵 오가기, 지우기)과 맵 정보(이름과 설명을 한글로 쳐서 저장하기, 대표 그림 찍기, 시작 위치 정하고 R로 돌아가기), B 부품 창과 새 부품(판·기둥·경사·계단을 놓고 걸어 오르기), R·T 돌리기와 G 옮기기와 C 맞추기(쓸 만한지), 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인
+- 에디터에서 Sandbox 씬을 실행해 걷기와 메뉴, 블록 놓기(칸에 붙지 않고 가리킨 자리에 놓이는지, 겹쳐 놓이는지. 자유 배치가 손에 맞는지), M 맵 목록(새 맵, 맵 오가기, 지우기)과 맵 정보(이름과 설명을 한글로 쳐서 저장하기, 대표 그림 찍기, 시작 위치 정하고 R로 돌아가기), B 부품 창과 새 부품(판·기둥·경사·계단을 놓고 걸어 오르기), R·T 돌리기와 G 옮기기와 C 맞추기(쓸 만한지), 가운데 단추·F 칠하기, Ctrl+Z 되돌리기, 알림 띠, V 날기, 껐다 켰을 때 블록이 남는지 직접 확인. **소리 듣기**(`unity/Devlogs/Day19/sounds-preview.wav`로 22가지를 차례로 듣고, 게임에서 발소리가 걸음에 맞는지, 멀리 놓은 블록의 소리가 작게 들리는지, 설정의 소리 크기가 듣는지)
 - `unity/Builds/Windows/AtelierVerse.exe`를 직접 열어 창 크기, 조작, 메뉴의 "게임 끝내기"를 확인
 - 통합 계정의 실제 연결(홈페이지 저장소의 `docs/UNIFIED-ACCOUNT.md`)
 
@@ -503,9 +525,9 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 순서와 끝난 기준은 `docs/ROADMAP.md` 3절에, 남은 구현 요소의 전체 목록은 `docs/BACKLOG.md`에 있습니다. 지금은 0단계입니다. 다음 일차를 고를 때는 `docs/BACKLOG.md` 2절 "가장 먼저 할 것"을 위에서부터 봅니다.
 
 1. **헤드셋으로 켜 본 결과가 있으면 그것부터.** 사용자가 `AtelierVerse-VR.bat`으로 켜 본 결과(화면이 나오는지, 두 손, 눈높이, 스틱, 메뉴의 글자와 판의 거리·크기, 광선의 방향, 부품 판의 크기와 자리, 가리킨 곳에 블록이 놓이는지, 돌리기와 옮기기의 단추가 손에 맞는지)를 받아 고칩니다. VR 화면이 켜지지 않으면 실행 로그(`%USERPROFILE%\AppData\LocalLow\Palettra Games\Atelier Verse\Player.log`)의 `[XR]` 줄을 봅니다. 그래픽 장치가 둘인 PC에서만 켜지지 않으면 사전 초기화를 남긴 VR 전용 빌드를 검토합니다(`docs/BACKLOG.md` 3.4).
-2. **19일차: 기본 소리.** 지금은 소리가 전혀 없습니다. 발소리, 블록을 놓고 지우고 칠할 때의 소리, 단추 소리, 알림 소리를 넣고, 설정 탭에 소리 크기를 더합니다(`GameSettings`). 소리 파일은 내려받지 않고 코드로 만듭니다(셋업이 짧은 소리를 만들어 자산으로 저장하거나 실행 중에 만듦). 소리를 내는 곳은 한곳(예: `Sfx`)으로 모으고, 블록 놓기 같은 코드는 무슨 일이 일어났는지만 알리게 합니다. VR의 진동은 실제 기기 확인 뒤로 둡니다. 그다음이 설정 늘리기(창과 전체 화면, 화면 품질)와 끌어서 여러 개 놓기입니다.
-3. **VR의 나머지.** 부품 판 다듬기(크기, 손 위의 자리, 손목에 붙이기나 놓아두기), VR 메뉴와 부품 판을 늘 위에 그리기(지금은 블록에 가릴 수 있음), 판의 크기와 거리 설정, 주로 쓰는 손 고르기, 놓을 때의 진동과 소리, 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
-4. 그 뒤는 1-A(혼자 만들기)의 나머지: 설정 늘리기, 끌어서 여러 개 놓기와 칠하기, 부품 수 상한 정하기(Quest에서 재기).
+2. **20일차: 설정 늘리기.** 설정 탭에 창과 전체 화면, 화면 품질, 마우스 위아래 뒤집기를 더합니다(`GameSettings`, `SettingsPanel`, `GameUiBuilder`의 설정 쪽). 설정 탭의 줄이 넷에서 더 늘어나므로 줄의 간격과 탭의 높이를 먼저 봅니다. 창·전체 화면과 화면 품질은 빌드한 실행 파일에서 확인해야 하므로 `scripts/build-windows.mjs`의 실행 확인(창 크기 인자를 줌)과 부딪치지 않게 합니다. VR에서는 창과 마우스 설정이 뜻이 없으므로 감추거나 안내합니다. 사용자가 소리를 들어 본 결과를 주면 `SfxSynth.Build`의 숫자를 고치고 미리 듣기 파일을 다시 만듭니다. 그다음이 끌어서 여러 개 놓기입니다.
+3. **VR의 나머지.** 부품 판 다듬기(크기, 손 위의 자리, 손목에 붙이기나 놓아두기), VR 메뉴와 부품 판을 늘 위에 그리기(지금은 블록에 가릴 수 있음), 판의 크기와 거리 설정, 주로 쓰는 손 고르기, 놓을 때의 진동(소리는 19일차에 넣음. `GameSounds`가 듣는 알림에 이어 붙임), 순간 이동과 부드럽게 돌기, 시야 좁히기. Quest 단독 빌드는 Android Build Support가 설치된 뒤입니다(`C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines`에 `AndroidPlayer` 폴더가 있는지 확인). 그때 Android용 XR 설정을 셋업에 더합니다.
+4. 그 뒤는 1-A(혼자 만들기)의 나머지: 끌어서 여러 개 놓기와 칠하기, 소리 다듬기(들어 본 결과로), 부품 수 상한 정하기(Quest에서 재기).
 
 화면 시안 쪽의 다음 작업은 `docs/PAGES.md` 6절에 있습니다.
 
@@ -537,7 +559,7 @@ node scripts/unity-verify.mjs clean                  # 끝나면 사본 지우�
 4. `docs/BACKLOG.md`: 앞으로 구현할 요소
 5. `docs/PAGES.md`: 화면 구성과 게임 화면(4.1절)
 6. `docs/MAP-FORMAT.md`: 맵 파일 형식
-7. `unity/Devlogs/Day18/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
+7. `unity/Devlogs/Day19/README.md`부터 거꾸로: 일차별로 한 일과 검사 결과
 
 ---
 ## 완료 보고 기준

@@ -120,6 +120,10 @@ namespace AtelierVerse.EditorTools
             var root = new GameObject("GameUI");
             var ui = root.AddComponent<GameUi>();
 
+            // 소리: 무슨 일이 일어났는지 듣고 소리를 고르는 부품과, 실제로 소리를 내는 부품(19일차).
+            root.AddComponent<SfxPlayer>();
+            root.AddComponent<GameSounds>();
+
             RectTransform canvas = CreateCanvas(root.transform, out TrackedDeviceRaycaster trackedRaycaster);
             RectTransform hud = UiFactory.Rect("Hud", canvas);
             UiFactory.Fill(hud);
@@ -1393,8 +1397,9 @@ namespace AtelierVerse.EditorTools
 
             Slider look = BuildSliderRow(page, 0, "마우스 감도", "LookSlider", out TMP_Text lookValue);
             Slider fieldOfView = BuildSliderRow(page, 1, "시야각", "FieldOfViewSlider", out TMP_Text fieldOfViewValue);
+            Slider sound = BuildSliderRow(page, 2, "소리 크기", "SoundSlider", out TMP_Text soundValue);
 
-            RectTransform toggleRow = BuildRow(page, 2, "사람들 목록 보이기");
+            RectTransform toggleRow = BuildRow(page, 3, "사람들 목록 보이기");
             Image toggleBox = UiFactory.Box("PeopleToggle", toggleRow, Paper, 10f);
             UiFactory.Place(toggleBox.rectTransform, UiFactory.MiddleRight, Vector2.zero, new Vector2(40f, 40f));
             toggleBox.raycastTarget = true;
@@ -1413,7 +1418,7 @@ namespace AtelierVerse.EditorTools
 
             // 위의 두 설정은 키보드·마우스에만 쓰인다. VR에서는 그렇다고 알려 둔다.
             TMP_Text vrNote = UiFactory.Text("VrNote", page, "마우스 감도와 시야각은 키보드·마우스로 할 때 적용됩니다.", 20f, Muted);
-            UiFactory.Place(vrNote.rectTransform, UiFactory.TopLeft, new Vector2(0f, -4f - 3 * 76f), new Vector2(960f, 30f));
+            UiFactory.Place(vrNote.rectTransform, UiFactory.BottomLeft, new Vector2(240f, 16f), new Vector2(720f, 30f));
             VrOnly.Add(vrNote.gameObject);
 
             Button reset = BigButton("Reset", page, "기본값으로", null, Paper, Ink, out _);
@@ -1425,6 +1430,8 @@ namespace AtelierVerse.EditorTools
             serialized.FindProperty("lookValue").objectReferenceValue = lookValue;
             serialized.FindProperty("fieldOfViewSlider").objectReferenceValue = fieldOfView;
             serialized.FindProperty("fieldOfViewValue").objectReferenceValue = fieldOfViewValue;
+            serialized.FindProperty("soundSlider").objectReferenceValue = sound;
+            serialized.FindProperty("soundValue").objectReferenceValue = soundValue;
             serialized.FindProperty("peopleListToggle").objectReferenceValue = toggle;
             serialized.FindProperty("resetButton").objectReferenceValue = reset;
             serialized.ApplyModifiedPropertiesWithoutUndo();

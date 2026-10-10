@@ -6,6 +6,15 @@ using UnityEngine.InputSystem;
 
 namespace AtelierVerse.Player
 {
+    /// <summary>블록 놓기에서 일어난 일 가운데 맵의 기록에 남지 않는 것들. 소리처럼 손에 오는 반응을 주는 데 쓴다.</summary>
+    public enum BuildEvent
+    {
+        Rotated,
+        Grabbed,
+        Released,
+        SnapChanged,
+    }
+
     /// <summary>놓을 수 없는 까닭. 알림 띠에 보여 준다.</summary>
     public enum BlockedReason
     {
@@ -73,6 +82,9 @@ namespace AtelierVerse.Player
 
         /// <summary>돌린 각도, 맞추기 단계, 블록을 잡았는지가 바뀌면 알린다. 화면의 표시가 듣는다.</summary>
         public event Action StateChanged;
+
+        /// <summary>돌렸거나, 블록을 잡았거나 내려놓았거나, 맞추기 단계를 바꿨을 때 알린다. 놓기·지우기·칠하기·옮기기는 기록 층(History)이 알린다.</summary>
+        public event Action<BuildEvent> Happened;
 
         /// <summary>놓을 부품의 번호. 고른 부품이 없으면 NoPart다.</summary>
         public int SelectedPart { get; set; } = NoPart;
@@ -244,6 +256,7 @@ namespace AtelierVerse.Player
 
             Yaw = PlacementMath.StepYaw(Yaw, steps);
             StateChanged?.Invoke();
+            Happened?.Invoke(BuildEvent.Rotated);
         }
 
         /// <summary>맞추기 도우미를 다음 단계로 바꾸고 알린다(끔 → 1칸 → 1/2칸 → 1/4칸 → 끔).</summary>
@@ -260,6 +273,7 @@ namespace AtelierVerse.Player
 
             GameSettings.SnapLevel = level;
             StateChanged?.Invoke();
+            Happened?.Invoke(BuildEvent.SnapChanged);
         }
 
         /// <summary>맞추기 단계를 바꿨을 때의 알림 문구.</summary>
@@ -277,6 +291,7 @@ namespace AtelierVerse.Player
 
             ReleaseCarried();
             Notice.Post(GrabCancelledMessage);
+            Happened?.Invoke(BuildEvent.Released);
         }
 
         /// <summary>
@@ -368,6 +383,7 @@ namespace AtelierVerse.Player
             hasRemoveTarget = false;
             Notice.Post(GrabbedMessage);
             StateChanged?.Invoke();
+            Happened?.Invoke(BuildEvent.Grabbed);
             return true;
         }
 
@@ -385,6 +401,8 @@ namespace AtelierVerse.Player
             int id = carriedBlockId;
             bool moved = world.History.Move(id, TargetPosition, TargetRotation);
             ReleaseCarried();
+            // 제자리에 그대로 내려놓았으면 옮긴 것이 아니므로, 내려놓았다는 것만 알린다.
+            if (!moved) Happened?.Invoke(BuildEvent.Released);
             return moved;
         }
 

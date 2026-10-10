@@ -16,6 +16,7 @@ namespace AtelierVerse.Tests
         private float savedLook;
         private float savedFieldOfView;
         private bool savedPeopleList;
+        private float savedSound;
 
         [SetUp]
         public void SaveSettings()
@@ -23,6 +24,7 @@ namespace AtelierVerse.Tests
             savedLook = GameSettings.LookSensitivity;
             savedFieldOfView = GameSettings.FieldOfView;
             savedPeopleList = GameSettings.ShowPeopleList;
+            savedSound = GameSettings.SoundVolume;
         }
 
         [TearDown]
@@ -31,6 +33,45 @@ namespace AtelierVerse.Tests
             GameSettings.LookSensitivity = savedLook;
             GameSettings.FieldOfView = savedFieldOfView;
             GameSettings.ShowPeopleList = savedPeopleList;
+            GameSettings.SoundVolume = savedSound;
+        }
+
+        [Test]
+        public void 소리_크기는_0에서_1_사이로_맞추고_기본값은_70퍼센트다()
+        {
+            GameSettings.ResetToDefaults();
+            Assert.AreEqual(GameSettings.DefaultSoundVolume, GameSettings.SoundVolume, 0.0001f);
+            Assert.AreEqual(0.7f, GameSettings.DefaultSoundVolume, 0.0001f);
+
+            GameSettings.SoundVolume = 0.25f;
+            Assert.AreEqual(0.25f, GameSettings.SoundVolume, 0.0001f);
+
+            GameSettings.SoundVolume = 4f;
+            Assert.AreEqual(1f, GameSettings.SoundVolume, 0.0001f);
+
+            GameSettings.SoundVolume = -1f;
+            Assert.AreEqual(0f, GameSettings.SoundVolume, 0.0001f, "0이면 소리가 꺼집니다.");
+        }
+
+        [Test]
+        public void 소리_크기가_바뀔_때만_알린다()
+        {
+            GameSettings.SoundVolume = 0.5f;
+            int changes = 0;
+            void Count() => changes++;
+
+            GameSettings.Changed += Count;
+            try
+            {
+                GameSettings.SoundVolume = 0.5f;
+                GameSettings.SoundVolume = 0.3f;
+            }
+            finally
+            {
+                GameSettings.Changed -= Count;
+            }
+
+            Assert.AreEqual(1, changes);
         }
 
         [Test]

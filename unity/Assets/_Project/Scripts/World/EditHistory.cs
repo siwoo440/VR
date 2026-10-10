@@ -21,6 +21,17 @@ namespace AtelierVerse.World
         bool Set(BlockRecord record);
     }
 
+    /// <summary>편집의 종류. 편집이 이루어졌을 때 무엇이 일어났는지 알리는 데 쓴다(소리 등).</summary>
+    public enum EditKind
+    {
+        Place,
+        Remove,
+        Paint,
+        Move,
+        Undo,
+        Redo,
+    }
+
     /// <summary>블록 하나의 변화. 앞이나 뒤에 블록이 없었으면 HadBefore·HasAfter가 false다.</summary>
     public struct BlockChange
     {
@@ -68,6 +79,12 @@ namespace AtelierVerse.World
         /// <summary>되돌릴 수 있는 기록이나 다시 실행할 기록의 수가 바뀌면 알린다.</summary>
         public event Action Changed;
 
+        /// <summary>
+        /// 편집이 이루어지면 알린다: 무엇을 했는지와 어느 블록이 어떻게 바뀌었는지. 이루어지지 않은 편집은 알리지 않는다.
+        /// 되돌리기와 다시 실행의 변화는 원래 편집의 것(앞 → 뒤)이다.
+        /// </summary>
+        public event Action<EditKind, BlockChange> Edited;
+
         /// <summary>기억하는 기록의 상한. 넘으면 오래된 것부터 버린다.</summary>
         public int Capacity { get; }
 
@@ -83,7 +100,7 @@ namespace AtelierVerse.World
         public PlaceResult Place(int partIndex, Vector3 position, Quaternion rotation, out int id)
         {
             PlaceResult result = store.Add(partIndex, position, rotation, out id);
-            if (result == PlaceResult.Ok && store.TryGet(id, out BlockRecord placed)) Push(BlockChange.Placed(placed));
+            if (result == PlaceResult.Ok && store.TryGet(id, out BlockRecord placed)) Push(BlockChange.Placed(placed), EditKind.Place);
             return result;
         }
 
@@ -99,7 +116,7 @@ namespace AtelierVerse.World
             if (!store.TryGet(id, out BlockRecord before)) return false;
             if (!store.Remove(id)) return false;
 
-            Push(BlockChange.Removed(before));
+            Push(BlockChange.Removed(before), EditKind.Remove);
             return true;
         }
 
@@ -111,7 +128,7 @@ namespace AtelierVerse.World
 
             BlockRecord after = before;
             after.Part = partIndex;
-            return Change(before, after);
+            return Change(before, after, EditKind.Paint);
         }
 
         /// <summary>있는 블록의 자리와 방향을 바꾸고(옮기기, 돌리기) 기록한다. 블록이 없거나 이미 그 자리와 방향이면 기록하지 않는다.</summary>
@@ -124,7 +141,7 @@ namespace AtelierVerse.World
             after.Rotation = rotation;
             if (before.SamePose(after)) return false;
 
-            return Change(before, after);
+            return Change(before, after, EditKind.Move);
         }
 
         /// <summary>마지막 편집을 되돌린다. 되돌릴 것이 없거나 되돌리지 못하면 false이고 기록은 그대로 남는다.</summary>
@@ -138,6 +155,7 @@ namespace AtelierVerse.World
             undoList.RemoveAt(undoList.Count - 1);
             redoStack.Push(change);
             Changed?.Invoke();
+            Edited?.Invoke(EditKind.Undo, change);
             return true;
         }
 
@@ -152,6 +170,7 @@ namespace AtelierVerse.World
             redoStack.Pop();
             undoList.Add(change);
             Changed?.Invoke();
+            Edited?.Invoke(EditKind.Redo, change);
             return true;
         }
 
@@ -165,22 +184,23 @@ namespace AtelierVerse.World
             Changed?.Invoke();
         }
 
-        private bool Change(BlockRecord before, BlockRecord after)
+        private bool Change(BlockRecord before, BlockRecord after, EditKind kind)
         {
             if (!store.Set(after)) return false;
 
             // 기록에는 다듬어진 값(자리의 단위, 방향의 정규화)을 남긴다.
             if (store.TryGet(after.Id, out BlockRecord stored)) after = stored;
-            Push(BlockChange.Changed(before, after));
+            Push(BlockChange.Changed(before, after), kind);
             return true;
         }
 
-        private void Push(BlockChange change)
+        private void Push(BlockChange change, EditKind kind)
         {
             redoStack.Clear();
             undoList.Add(change);
             if (undoList.Count > Capacity) undoList.RemoveAt(0);
             Changed?.Invoke();
+            Edited?.Invoke(kind, change);
         }
 
         /// <summary>

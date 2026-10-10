@@ -592,8 +592,15 @@ namespace AtelierVerse.UI
             if (autoSave == null || player == null || mapInfo.MapId != autoSave.MapId) return;
 
             byte[] png = SceneSnapshot.CapturePng(player.ViewCamera, SceneSnapshot.DefaultWidth, SceneSnapshot.DefaultHeight, 1 << UiLayer);
-            if (png != null && MapLibrary.SaveThumbnail(autoSave.MapId, png)) Notice.Post(SnapshotMessage);
-            else Notice.Post("대표 그림을 저장하지 못했습니다", NoticeKind.Error);
+            if (png != null && MapLibrary.SaveThumbnail(autoSave.MapId, png))
+            {
+                Notice.Post(SnapshotMessage);
+                Sfx.Play(SfxId.Shutter);
+            }
+            else
+            {
+                Notice.Post("대표 그림을 저장하지 못했습니다", NoticeKind.Error);
+            }
             RefreshMapInfo();
         }
 
